@@ -5,10 +5,8 @@ import java.io.*;
 import java.util.*;
 import java.lang.*;
 import heap.*;
-import bufmgr.*;
-import diskmgr.*;
 import global.*;
-import btree.*;
+import tests.TestDriver;
 
 /** Note that in JAVA, methods can't be overridden to be more private.
  Therefore, the declaration of all private functions are now declared
@@ -17,16 +15,29 @@ import btree.*;
 
 //watching point: RID rid, some of them may not have to be newed.
 
-class Driver  implements GlobalConst
+class Driver  extends TestDriver implements GlobalConst
 {
     protected String dbpath;
     protected String logpath;
 
-    public void runTests () {
+    private static int   NUM_RECORDS = 0;
+    private static int   PGNUM = 12;
+    private static int   COLS = 1;
+    private static RID   rid;
+    private static Heapfile  f = null;
+    private boolean status = OK;
 
-        Random random = new Random();
-        dbpath = "MAIN" + random.nextInt() + ".minibase-db";
-        logpath = "MAIN" + random.nextInt() + ".minibase-log";
+    public Driver(){
+        super("main");
+    }
+
+    public boolean runTests () {
+        System.out.println ("\n" + "Running " + testName() + " tests...." + "\n");
+
+        dbpath = "/tmp/main"+System.getProperty("user.name")+".minibase-db";
+        logpath = "/tmp/main"+System.getProperty("user.name")+".minibase-log";
+        // Each page can handle at most 25 tuples on original data => 7308 / 25 = 292
+        SystemDefs sysdef = new SystemDefs(dbpath,100, NUMBUF,"Clock");
 
         // Kill anything that might be hanging around
         String newdbpath;
@@ -54,9 +65,6 @@ class Driver  implements GlobalConst
         remove_logcmd = remove_cmd + newlogpath;
         remove_dbcmd = remove_cmd + newdbpath;
 
-        //This step seems redundant for me.  But it's in the original
-        //C++ code.  So I am keeping it as of now, just in case I
-        //I missed something
         try {
             Runtime.getRuntime().exec(remove_logcmd);
             Runtime.getRuntime().exec(remove_dbcmd);
@@ -66,7 +74,7 @@ class Driver  implements GlobalConst
         }
 
         //Run the tests. Return type different from C++
-        runAllTests();
+        boolean _pass = runAllTests();
 
         //Clean up again
         try {
@@ -77,15 +85,16 @@ class Driver  implements GlobalConst
             System.err.println ("IO error: "+e);
         }
 
-        System.out.print ("\n" + "..." + " Finished ");
-        System.out.println (".\n\n");
+        System.out.print ("\n" + "..." + testName() + " tests ");
+        System.out.print (_pass==OK ? "completely successfully" : "failed");
+        System.out.print (".\n\n");
 
-
+        return _pass;
     }
 
     private void menu() {
         System.out.println("-------------------------- MENU ------------------");
-        System.out.println("\n\n[0]   Display input data");
+        System.out.println("\n\n[0]   Read input data");
         System.out.println("[1]   Run Nested Loop skyline");
 
         System.out.println("\n[2]   Run Block Nested Loop skyline");
@@ -95,12 +104,107 @@ class Driver  implements GlobalConst
         System.out.println("\n[5]  Quit!");
         System.out.print("Hi, make your choice :");
     }
+    
+    private void readDataIntoHeap() throws IOException, InvalidTupleSizeException, InvalidTypeException {
 
+        // Create the heap file object
+        try {
+            f = new Heapfile("file_1");
+        }
+        catch (Exception e) {
+            status = FAIL;
+            System.err.println ("*** Could not create heap file\n");
+            e.printStackTrace();
+        }
 
-    protected void runAllTests (){
+        if ( status == OK && SystemDefs.JavabaseBM.getNumUnpinnedBuffers()
+                != SystemDefs.JavabaseBM.getNumBuffers() ) {
+            System.err.println ("*** The heap file has left pages pinned\n");
+            status = FAIL;
+        }
+
+        if ( status == OK ) {
+
+            // Read data and construct tuples
+            File file = new File("data/subset.txt");
+            Scanner sc = new Scanner(file);
+
+            COLS = sc.nextInt()+1;
+
+            // creating the sailors relation
+            AttrType [] Stypes = new AttrType[5];
+            Stypes[0] = new AttrType (AttrType.attrReal);
+            Stypes[1] = new AttrType (AttrType.attrReal);
+            Stypes[2] = new AttrType (AttrType.attrReal);
+            Stypes[3] = new AttrType (AttrType.attrReal);
+            Stypes[4] = new AttrType (AttrType.attrReal);
+
+            //SOS
+            short [] Ssizes = null;
+
+            Tuple t = new Tuple();
+            try {
+                t.setHdr((short) 5,Stypes, Ssizes);
+            }
+            catch (Exception e) {
+                System.err.println("*** error in Tuple.setHdr() ***");
+                status = FAIL;
+                e.printStackTrace();
+            }
+
+            int size = t.size();
+            System.out.println("Size: "+size);
+
+            t = new Tuple(size);
+            try {
+                t.setHdr((short) 5, Stypes, Ssizes);
+            }
+            catch (Exception e) {
+                System.err.println("*** error in Tuple.setHdr() ***");
+                status = FAIL;
+                e.printStackTrace();
+            }
+
+            while (sc.hasNextLine()) {
+                // create a tuple of appropriate size
+
+                double[] doubleArray = Arrays.stream(Arrays.stream(sc.nextLine().trim()
+                        .split("\\s+"))
+                        .filter(s -> !s.isEmpty())
+                        .toArray(String[]::new))
+                        .mapToDouble(Double::parseDouble)
+                        .toArray();
+
+                for(int i=1; i<doubleArray.length; i++) {
+                    try {
+                        t.setFloFld(i, (float) doubleArray[i]);
+                    } catch (Exception e) {
+                        status = FAIL;
+                        e.printStackTrace();
+                    }
+                }
+
+                try {
+                    rid = f.insertRecord(t.returnTupleByteArray());
+                }
+                catch (Exception e) {
+                    status = FAIL;
+                    e.printStackTrace();
+                }
+
+                System.out.println("RID: "+rid);
+            }
+        }
+    }
+
+    protected String testName () {
+        return "Main Driver";
+    }
+
+    protected boolean runAllTests (){
         int choice=1;
 
-        while(choice!=19) {
+        while(choice!=5) {
             menu();
 
             try{
@@ -108,7 +212,7 @@ class Driver  implements GlobalConst
 
                 switch(choice) {
                     case 0:
-
+                        readDataIntoHeap();
                         break;
                     case 1:
 
@@ -141,6 +245,7 @@ class Driver  implements GlobalConst
 
             }
         }
+        return true;
     }
 }
 
@@ -189,8 +294,8 @@ public class AppDriver implements  GlobalConst{
             driver.runTests();
         }
         catch (Exception e) {
+            System.err.println ("Error encountered during running main driver:\n");
             e.printStackTrace();
-            System.err.println ("Error encountered during buffer manager tests:\n");
             Runtime.getRuntime().exit(1);
         }
     }
