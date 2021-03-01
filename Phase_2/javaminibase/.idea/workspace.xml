@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="f5432548-04a4-4643-a5d7-c13878fc0c82" name="Default Changelist" comment="" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="CodeStyleSettingsInfer">
+    <option name="done" value="true" />
+  </component>
+  <component name="ProjectCodeStyleSettingsMigration">
+    <option name="version" value="1" />
+  </component>
+  <component name="ProjectId" id="1p8HNNMht4naPR0lHs4wcZr9DSu" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">
+    <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
+    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="settings.editor.selected.configurable" value="reference.projectsettings.compiler.javacompiler" />
+  </component>
+  <component name="RunManager" selected="Makefile.db">
+    <configuration name="BMTest" type="MAKEFILE_TARGET_RUN_CONFIGURATION" factoryName="Makefile" temporary="true">
+      <makefile filename="$PROJECT_DIR$/src/tests/Makefile" target="BMTest" workingDirectory="" arguments="">
+        <envs />
+      </makefile>
+      <method v="2" />
+    </configuration>
+    <configuration name="clean" type="MAKEFILE_TARGET_RUN_CONFIGURATION" factoryName="Makefile" temporary="true">
+      <makefile filename="$PROJECT_DIR$/src/Makefile" target="clean" workingDirectory="" arguments="">
+        <envs />
+      </makefile>
+      <method v="2" />
+    </configuration>
+    <configuration name="db" type="MAKEFILE_TARGET_RUN_CONFIGURATION" factoryName="Makefile" temporary="true">
+      <makefile filename="$PROJECT_DIR$/src/Makefile" target="db" workingDirectory="" arguments="">
+        <envs />
+      </makefile>
+      <method v="2" />
+    </configuration>
+    <configuration name="doc" type="MAKEFILE_TARGET_RUN_CONFIGURATION" factoryName="Makefile" temporary="true">
+      <makefile filename="$PROJECT_DIR$/src/Makefile" target="doc" workingDirectory="" arguments="">
+        <envs />
+      </makefile>
+      <method v="2" />
+    </configuration>
+    <configuration name="test" type="MAKEFILE_TARGET_RUN_CONFIGURATION" factoryName="Makefile" temporary="true">
+      <makefile filename="$PROJECT_DIR$/src/Makefile" target="test" workingDirectory="" arguments="">
+        <envs />
+      </makefile>
+      <method v="2" />
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Makefile.db" />
+        <item itemvalue="Makefile.test" />
+        <item itemvalue="Makefile.BMTest" />
+        <item itemvalue="Makefile.clean" />
+        <item itemvalue="Makefile.doc" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SvnConfiguration">
+    <configuration />
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="f5432548-04a4-4643-a5d7-c13878fc0c82" name="Default Changelist" comment="" />
+      <created>1614557756246</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1614557756246</updated>
+    </task>
+    <servers />
+  </component>
+  <component name="WindowStateProjectService">
+    <state width="1358" height="231" key="GridCell.Tab.0.bottom" timestamp="1614559587997">
+      <screen x="38" y="23" width="1402" height="877" />
+    </state>
+    <state width="1358" height="231" key="GridCell.Tab.0.bottom/38.23.1402.877/-191.-1057.1920.1057@38.23.1402.877" timestamp="1614559587997" />
+    <state width="1358" height="231" key="GridCell.Tab.0.bottom/39.23.1401.877/-191.-1057.1920.1057@39.23.1401.877" timestamp="1614558284225" />
+    <state width="1358" height="231" key="GridCell.Tab.0.center" timestamp="1614559587996">
+      <screen x="38" y="23" width="1402" height="877" />
+    </state>
+    <state width="1358" height="231" key="GridCell.Tab.0.center/38.23.1402.877/-191.-1057.1920.1057@38.23.1402.877" timestamp="1614559587996" />
+    <state width="1358" height="231" key="GridCell.Tab.0.center/39.23.1401.877/-191.-1057.1920.1057@39.23.1401.877" timestamp="1614558284224" />
+    <state width="1358" height="231" key="GridCell.Tab.0.left" timestamp="1614559587995">
+      <screen x="38" y="23" width="1402" height="877" />
+    </state>
+    <state width="1358" height="231" key="GridCell.Tab.0.left/38.23.1402.877/-191.-1057.1920.1057@38.23.1402.877" timestamp="1614559587995" />
+    <state width="1358" height="231" key="GridCell.Tab.0.left/39.23.1401.877/-191.-1057.1920.1057@39.23.1401.877" timestamp="1614558284223" />
+    <state width="1358" height="231" key="GridCell.Tab.0.right" timestamp="1614559587996">
+      <screen x="38" y="23" width="1402" height="877" />
+    </state>
+    <state width="1358" height="231" key="GridCell.Tab.0.right/38.23.1402.877/-191.-1057.1920.1057@38.23.1402.877" timestamp="1614559587996" />
+    <state width="1358" height="231" key="GridCell.Tab.0.right/39.23.1401.877/-191.-1057.1920.1057@39.23.1401.877" timestamp="1614558284224" />
+    <state x="241" y="100" key="SettingsEditor" timestamp="1614557993387">
+      <screen x="39" y="23" width="1401" height="877" />
+    </state>
+    <state x="241" y="100" key="SettingsEditor/39.23.1401.877/-191.-1057.1920.1057@39.23.1401.877" timestamp="1614557993387" />
+    <state x="440" y="218" width="600" height="566" key="find.popup" timestamp="1614559131338">
+      <screen x="38" y="23" width="1402" height="877" />
+    </state>
+    <state x="440" y="218" width="600" height="566" key="find.popup/38.23.1402.877/-191.-1057.1920.1057@38.23.1402.877" timestamp="1614559131338" />
+  </component>
+</project>
