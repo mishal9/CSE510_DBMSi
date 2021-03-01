@@ -22,6 +22,28 @@ class Driver  implements GlobalConst
     protected String dbpath;
     protected String logpath;
 
+    private static int   NUM_RECORDS = 0;
+    private static int   SORTPGNUM = 12;
+    private static int   COLS = 1;
+    private static RID   rid;
+    private static Heapfile  f = null;
+    private boolean status = true;
+
+
+    public Driver(){
+        try {
+            f = new Heapfile("test1.in");
+        }
+        catch (Exception e) {
+            status = false;
+            e.printStackTrace();
+        }
+    }
+
+    // Create unsorted data file "test1.in"
+
+
+
     public void runTests () {
 
         Random random = new Random();
@@ -95,6 +117,28 @@ class Driver  implements GlobalConst
         System.out.println("\n[5]  Quit!");
         System.out.print("Hi, make your choice :");
     }
+    
+    private void readData() throws FileNotFoundException {
+        File file = new File("data/subset.txt");
+        Scanner sc = new Scanner(file);
+
+        COLS = sc.nextInt();
+        AttrType[] attrType = new AttrType[COLS];
+
+        while (sc.hasNextLine()) {
+            double[] doubleArray = Arrays.stream(Arrays.stream(sc.nextLine().trim()
+                    .split("\\s+"))
+                    .filter(s -> !s.isEmpty())
+                    .toArray(String[]::new))
+                    .mapToDouble(Double::parseDouble)
+                    .toArray();
+
+            for(double x: doubleArray)
+                System.out.print(x+"\t");
+
+            System.out.println();
+        }
+    }
 
 
     protected void runAllTests (){
@@ -108,7 +152,7 @@ class Driver  implements GlobalConst
 
                 switch(choice) {
                     case 0:
-
+                        readData();
                         break;
                     case 1:
 
