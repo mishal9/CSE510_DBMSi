@@ -30,8 +30,7 @@ public class BTreeFloatTest implements GlobalConst {
 	private BTreeFile file;
 	private int keyType = AttrType.attrInteger;
 	private int deleteFashion = 1;
-	private AttrType[] attrType;
-
+	
 	protected String dbpath;
 	protected String logpath;
 
@@ -72,7 +71,9 @@ public class BTreeFloatTest implements GlobalConst {
 		// create an scan on the heapfile
 		System.out.println("will try to scan data");
 		try {
-
+			AttrType[] attrType = new AttrType[2];
+			attrType[0] = new AttrType(AttrType.attrReal);
+			attrType[1] = new AttrType(AttrType.attrInteger);
 
 			Tuple t = new Tuple();
 
@@ -310,8 +311,5 @@ public class BTreeFloatTest implements GlobalConst {
 		//SystemDefs.MINIBASE_RESTART_FLAG=true;
 		SystemDefs sysdef = new SystemDefs(dbpath, 300, NUMBUF, "Clock");
 
-		attrType = new AttrType[2];
-		attrType[0] = new AttrType(AttrType.attrInteger);
-		attrType[1] = new AttrType(AttrType.attrInteger);
 	}
 }
