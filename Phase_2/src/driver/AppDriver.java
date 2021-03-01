@@ -85,7 +85,7 @@ class Driver  implements GlobalConst
 
     private void menu() {
         System.out.println("-------------------------- MENU ------------------");
-        System.out.println("\n\n[0]   Display input data");
+        System.out.println("\n\n[0]   Read input data");
         System.out.println("[1]   Run Nested Loop skyline");
 
         System.out.println("\n[2]   Run Block Nested Loop skyline");
@@ -100,7 +100,7 @@ class Driver  implements GlobalConst
     protected void runAllTests (){
         int choice=1;
 
-        while(choice!=19) {
+        while(choice!=5) {
             menu();
 
             try{
