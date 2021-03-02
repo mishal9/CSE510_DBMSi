@@ -68,7 +68,7 @@ public class SortPref extends Iterator implements GlobalConst
     {
         // don't know what will happen if n_R_runs > _n_pages
         if (n_R_runs > _n_pages)
-            throw new LowMemException("Sort.java: Not enough memory to sort in two passes.");
+            throw new LowMemException("SortPref.java: Not enough memory to sort in two passes.");
 
         int i;
         pnode cur_node;  // need pq_defs.java
@@ -97,7 +97,7 @@ public class SortPref extends Iterator implements GlobalConst
                 temp_tuple.setHdr(n_cols, _in, str_lens);
             }
             catch (Exception e) {
-                throw new SortException(e, "Sort.java: Tuple.setHdr() failed");
+                throw new SortException(e, "SortPref.java: Tuple.setHdr() failed");
             }
 
             temp_tuple =i_buf[i].Get(temp_tuple);  // need io_bufs.java
@@ -109,13 +109,9 @@ public class SortPref extends Iterator implements GlobalConst
 	*/
                 cur_node.tuple = temp_tuple; // no copy needed
                 try {
-                    Q.enq(cur_node);
-                }
-                catch (UnknowAttrType e) {
-                    throw new SortException(e, "Sort.java: UnknowAttrType caught from Q.enq()");
-                }
-                catch (TupleUtilsException e) {
-                    throw new SortException(e, "Sort.java: TupleUtilsException caught from Q.enq()");
+                    Q.enq(cur_node, _in);
+                } catch (Exception e) {
+                    throw new SortException(e, "SortPref.java: caught from Q.enq()");
                 }
 
             }
@@ -153,7 +149,7 @@ public class SortPref extends Iterator implements GlobalConst
             lastElem.setHdr(n_cols, _in, str_lens);
         }
         catch (Exception e) {
-            throw new SortException(e, "Sort.java: setHdr() failed");
+            throw new SortException(e, "SortPref.java: setHdr() failed");
         }
 
         int run_num = 0;  // keeps track of the number of runs
@@ -171,7 +167,7 @@ public class SortPref extends Iterator implements GlobalConst
             try {
                 MIN_VAL(lastElem, sortFldType);
             } catch (UnknowAttrType e) {
-                throw new SortException(e, "Sort.java: UnknowAttrType caught from MIN_VAL()");
+                throw new SortException(e, "SortPref.java: UnknowAttrType caught from MIN_VAL()");
             } catch (Exception e) {
                 throw new SortException(e, "MIN_VAL failed");
             }
@@ -180,7 +176,7 @@ public class SortPref extends Iterator implements GlobalConst
             try {
                 MAX_VAL(lastElem, sortFldType);
             } catch (UnknowAttrType e) {
-                throw new SortException(e, "Sort.java: UnknowAttrType caught from MAX_VAL()");
+                throw new SortException(e, "SortPref.java: UnknowAttrType caught from MAX_VAL()");
             } catch (Exception e) {
                 throw new SortException(e, "MIN_VAL failed");
             }
@@ -192,7 +188,7 @@ public class SortPref extends Iterator implements GlobalConst
                 tuple = _am.get_next();  // according to Iterator.java
             } catch (Exception e) {
                 e.printStackTrace();
-                throw new SortException(e, "Sort.java: get_next() failed");
+                throw new SortException(e, "SortPref.java: get_next() failed");
             }
 
             if (tuple == null) {
@@ -201,7 +197,7 @@ public class SortPref extends Iterator implements GlobalConst
             cur_node = new pnode();
             cur_node.tuple = new Tuple(tuple); // tuple copy needed --  Bingjie 4/29/98
 
-            pcurr_Q.enq(cur_node);
+            pcurr_Q.enq(cur_node, _in);
             p_elems_curr_Q ++;
         }
 
@@ -218,10 +214,10 @@ public class SortPref extends Iterator implements GlobalConst
             if ((comp_res < 0 && order.tupleOrder == TupleOrder.Ascending) || (comp_res > 0 && order.tupleOrder == TupleOrder.Descending)) {
                 // doesn't fit in current run, put into the other queue
                 try {
-                    pother_Q.enq(cur_node);
+                    pother_Q.enq(cur_node, _in);
                 }
-                catch (UnknowAttrType e) {
-                    throw new SortException(e, "Sort.java: UnknowAttrType caught from Q.enq()");
+                catch (Exception e) {
+                    throw new SortException(e, "SortPref.java: caught from Q.enq()");
                 }
                 p_elems_other_Q ++;
             }
@@ -263,7 +259,7 @@ public class SortPref extends Iterator implements GlobalConst
                     temp_files[run_num] = new Heapfile(null);
                 }
                 catch (Exception e) {
-                    throw new SortException(e, "Sort.java: create Heapfile failed");
+                    throw new SortException(e, "SortPref.java: create Heapfile failed");
                 }
 
                 // need io_bufs.java
@@ -274,7 +270,7 @@ public class SortPref extends Iterator implements GlobalConst
                     try {
                         MIN_VAL(lastElem, sortFldType);
                     } catch (UnknowAttrType e) {
-                        throw new SortException(e, "Sort.java: UnknowAttrType caught from MIN_VAL()");
+                        throw new SortException(e, "SortPref.java: UnknowAttrType caught from MIN_VAL()");
                     } catch (Exception e) {
                         throw new SortException(e, "MIN_VAL failed");
                     }
@@ -283,7 +279,7 @@ public class SortPref extends Iterator implements GlobalConst
                     try {
                         MAX_VAL(lastElem, sortFldType);
                     } catch (UnknowAttrType e) {
-                        throw new SortException(e, "Sort.java: UnknowAttrType caught from MAX_VAL()");
+                        throw new SortException(e, "SortPref.java: UnknowAttrType caught from MAX_VAL()");
                     } catch (Exception e) {
                         throw new SortException(e, "MIN_VAL failed");
                     }
@@ -314,10 +310,10 @@ public class SortPref extends Iterator implements GlobalConst
                     cur_node.tuple = new Tuple(tuple); // tuple copy needed --  Bingjie 4/29/98
 
                     try {
-                        pcurr_Q.enq(cur_node);
+                        pcurr_Q.enq(cur_node, _in);
                     }
-                    catch (UnknowAttrType e) {
-                        throw new SortException(e, "Sort.java: UnknowAttrType caught from Q.enq()");
+                    catch (Exception e) {
+                        throw new SortException(e, "SortPref.java: caught from Q.enq()");
                     }
                     p_elems_curr_Q ++;
                 }
@@ -358,7 +354,7 @@ public class SortPref extends Iterator implements GlobalConst
                         temp_files[run_num] = new Heapfile(null);
                     }
                     catch (Exception e) {
-                        throw new SortException(e, "Sort.java: create Heapfile failed");
+                        throw new SortException(e, "SortPref.java: create Heapfile failed");
                     }
 
                     // need io_bufs.java
@@ -369,7 +365,7 @@ public class SortPref extends Iterator implements GlobalConst
                         try {
                             MIN_VAL(lastElem, sortFldType);
                         } catch (UnknowAttrType e) {
-                            throw new SortException(e, "Sort.java: UnknowAttrType caught from MIN_VAL()");
+                            throw new SortException(e, "SortPref.java: UnknowAttrType caught from MIN_VAL()");
                         } catch (Exception e) {
                             throw new SortException(e, "MIN_VAL failed");
                         }
@@ -378,7 +374,7 @@ public class SortPref extends Iterator implements GlobalConst
                         try {
                             MAX_VAL(lastElem, sortFldType);
                         } catch (UnknowAttrType e) {
-                            throw new SortException(e, "Sort.java: UnknowAttrType caught from MAX_VAL()");
+                            throw new SortException(e, "SortPref.java: UnknowAttrType caught from MAX_VAL()");
                         } catch (Exception e) {
                             throw new SortException(e, "MIN_VAL failed");
                         }
@@ -432,7 +428,7 @@ public class SortPref extends Iterator implements GlobalConst
                 new_tuple.setHdr(n_cols, _in, str_lens);
             }
             catch (Exception e) {
-                throw new SortException(e, "Sort.java: setHdr() failed");
+                throw new SortException(e, "SortPref.java: setHdr() failed");
             }
 
             new_tuple = i_buf[cur_node.run_num].Get(new_tuple);
@@ -443,11 +439,9 @@ public class SortPref extends Iterator implements GlobalConst
 	*/
                 cur_node.tuple = new_tuple;  // no copy needed -- I think Bingjie 4/22/98
                 try {
-                    Q.enq(cur_node);
-                } catch (UnknowAttrType e) {
-                    throw new SortException(e, "Sort.java: UnknowAttrType caught from Q.enq()");
-                } catch (TupleUtilsException e) {
-                    throw new SortException(e, "Sort.java: TupleUtilsException caught from Q.enq()");
+                    Q.enq(cur_node, _in);
+                } catch (Exception e) {
+                    throw new SortException(e, "SortPref.java: caught from Q.enq()");
                 }
             }
             else {
@@ -495,8 +489,7 @@ public class SortPref extends Iterator implements GlobalConst
                 break;
             default:
                 // don't know how to handle attrSymbol, attrNull
-                //System.err.println("error in sort.java");
-                throw new UnknowAttrType("Sort.java: don't know how to handle attrSymbol, attrNull");
+                throw new UnknowAttrType("SortPref.java: don't know how to handle attrSymbol, attrNull");
         }
 
         return;
@@ -537,8 +530,7 @@ public class SortPref extends Iterator implements GlobalConst
                 break;
             default:
                 // don't know how to handle attrSymbol, attrNull
-                //System.err.println("error in sort.java");
-                throw new UnknowAttrType("Sort.java: don't know how to handle attrSymbol, attrNull");
+                throw new UnknowAttrType("SortPref.java: don't know how to handle attrSymbol, attrNull");
         }
 
         return;
@@ -599,7 +591,7 @@ public class SortPref extends Iterator implements GlobalConst
             t.setHdr(len_in, _in, str_sizes);
         }
         catch (Exception e) {
-            throw new SortException(e, "Sort.java: t.setHdr() failed");
+            throw new SortException(e, "SortPref.java: t.setHdr() failed");
         }
         tuple_size = t.size();
 
@@ -618,7 +610,7 @@ public class SortPref extends Iterator implements GlobalConst
                 get_buffer_pages(_n_pages, bufs_pids, bufs);
             }
             catch (Exception e) {
-                throw new SortException(e, "Sort.java: BUFmgr error");
+                throw new SortException(e, "SortPref.java: BUFmgr error");
             }
         }
         else {
@@ -638,7 +630,7 @@ public class SortPref extends Iterator implements GlobalConst
             temp_files[0] = new Heapfile(null);
         }
         catch (Exception e) {
-            throw new SortException(e, "Sort.java: Heapfile error");
+            throw new SortException(e, "SortPref.java: Heapfile error");
         }
 
         o_buf = new OBuf();
@@ -649,14 +641,14 @@ public class SortPref extends Iterator implements GlobalConst
         max_elems_in_heap = 200;
         sortFldLen = 20;
 
-        Q = new pnodeSplayPQ(0, in[0], order);
+        Q = new pnodeSplayPQ(order, n_cols, _str_sizes, _pref_list, _pref_list_length);
 
         op_buf = new Tuple(tuple_size);   // need Tuple.java
         try {
             op_buf.setHdr(n_cols, _in, str_lens);
         }
         catch (Exception e) {
-            throw new SortException(e, "Sort.java: op_buf.setHdr() failed");
+            throw new SortException(e, "SortPref.java: op_buf.setHdr() failed");
         }
     }
 
@@ -722,7 +714,7 @@ public class SortPref extends Iterator implements GlobalConst
                 _am.close();
             }
             catch (Exception e) {
-                throw new SortException(e, "Sort.java: error in closing iterator.");
+                throw new SortException(e, "SortPref.java: error in closing iterator.");
             }
 
             if (useBM) {
@@ -730,7 +722,7 @@ public class SortPref extends Iterator implements GlobalConst
                     free_buffer_pages(_n_pages, bufs_pids);
                 }
                 catch (Exception e) {
-                    throw new SortException(e, "Sort.java: BUFmgr error");
+                    throw new SortException(e, "SortPref.java: BUFmgr error");
                 }
                 for (int i=0; i<_n_pages; i++) bufs_pids[i].pid = INVALID_PAGE;
             }
@@ -741,7 +733,7 @@ public class SortPref extends Iterator implements GlobalConst
                         temp_files[i].deleteFile();
                     }
                     catch (Exception e) {
-                        throw new SortException(e, "Sort.java: Heapfile error");
+                        throw new SortException(e, "SortPref.java: Heapfile error");
                     }
                     temp_files[i] = null;
                 }

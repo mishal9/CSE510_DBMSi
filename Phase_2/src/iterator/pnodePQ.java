@@ -25,6 +25,18 @@ public abstract class pnodePQ
   /** the sorting order (Ascending or Descending) */
   protected TupleOrder            sort_order;
 
+  /** the length of input attributes */
+  protected short                 _len_in;
+
+  /** the length of string type attributes */
+  protected short[]               _str_sizes;
+
+  /** the array of preference attributes */
+  protected int[]                 _pref_list;
+
+  /** the length of preference attributes array */
+  protected int                   _pref_list_length;
+
   /**
    * class constructor, set <code>count</code> to <code>0</code>.
    */
@@ -77,6 +89,30 @@ public abstract class pnodePQ
   public int pnodeCMP(pnode a, pnode b) 
          throws IOException, UnknowAttrType, TupleUtilsException {
     int ans = TupleUtils.CompareTupleWithTuple(fld_type, a.tuple, fld_no, b.tuple, fld_no);
+    return ans;
+  }
+
+  /**
+   * compares two elements based on pref list.
+   * @param a one of the element for comparison
+   * @param b the other element for comparison
+   * @return  <code>0</code> if the two are equal,
+   *          <code>1</code> if <code>a</code> is greater,
+   *         <code>-1</code> if <code>b</code> is greater
+   * @exception IOException from lower layers
+   * @exception UnknowAttrType <code>attrSymbol</code> or
+   *                           <code>attrNull</code> encountered
+   * @exception TupleUtilsException error in tuple compare routines
+   */
+  public int pnodeCMP(pnode a, pnode b,
+                      AttrType[] type1,
+                      AttrType[] type2,
+                      short len_in,
+                      short[] str_sizes,
+                      int[] pref_list,
+                      int pref_list_length)
+          throws IOException, FieldNumberOutOfBoundException {
+    int ans = TupleUtils.CompareTupleWithTuplePref(a.tuple, type1, b.tuple, type2, len_in, str_sizes, pref_list, pref_list_length);
     return ans;
   }
 

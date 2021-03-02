@@ -4,7 +4,6 @@ import java.io.*;
 import java.util.*;
 import java.lang.*;
 
-import driver.GenerateIndexFiles;
 import heap.*;
 import bufmgr.*;
 import diskmgr.*;
