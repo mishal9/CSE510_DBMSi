@@ -131,7 +131,7 @@ class Driver  extends TestDriver implements GlobalConst
 
             COLS = sc.nextInt()+1;
 
-            // creating the sailors relation
+            //  setting attribute types
             AttrType [] Stypes = new AttrType[5];
             Stypes[0] = new AttrType (AttrType.attrReal);
             Stypes[1] = new AttrType (AttrType.attrReal);

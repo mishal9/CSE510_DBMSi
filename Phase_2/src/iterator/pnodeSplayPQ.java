@@ -1,6 +1,8 @@
 
 package iterator;
 import global.*;
+import heap.FieldNumberOutOfBoundException;
+
 import java.io.*;
 
 /**
@@ -47,6 +49,25 @@ public class pnodeSplayPQ extends pnodePQ
     fld_type = fldType;
     sort_order = order;
   }
+
+	/**
+	 * class constructor.
+	 * @param order   the order of sorting (Ascending or Descending)
+	 */
+	public pnodeSplayPQ(TupleOrder order,
+						short len_in,
+						short[] str_sizes,
+						int[] pref_list,
+						int pref_list_length)
+	{
+		root = null;
+		count = 0;
+		_len_in = len_in;
+		_str_sizes = str_sizes;
+		_pref_list = pref_list;
+		_pref_list_length = pref_list_length;
+		sort_order = order;
+	}
 
   /**
    * Inserts an element into the binary tree.
@@ -146,6 +167,106 @@ public class pnodeSplayPQ extends pnodePQ
 	    
     return; 
   }
+
+	/**
+	 * Inserts an element into the binary tree based on pref list.
+	 * @param item the element to be inserted
+	 * @param type the attribute type array
+	 * @exception IOException from lower layers
+	 * @exception UnknowAttrType <code>attrSymbol</code> or
+	 *                           <code>attrNull</code> encountered
+	 * @exception TupleUtilsException error in tuple compare routines
+	 */
+	public void enq(pnode item, AttrType[] type)
+			throws IOException, FieldNumberOutOfBoundException {
+		count ++;
+		pnodeSplayNode newnode = new pnodeSplayNode(item);
+		pnodeSplayNode t = root;
+
+		if (t == null) {
+			root = newnode;
+			return;
+		}
+
+		int comp = pnodeCMP(item, t.item, type, type, _len_in, _str_sizes, _pref_list, _pref_list_length);
+
+		pnodeSplayNode l = pnodeSplayNode.dummy;
+		pnodeSplayNode r = pnodeSplayNode.dummy;
+
+		boolean done = false;
+
+		while (!done) {
+			if ((sort_order.tupleOrder == TupleOrder.Ascending && comp >= 0) || (sort_order.tupleOrder == TupleOrder.Descending && comp <= 0)) {
+				pnodeSplayNode tr = t.rt;
+				if (tr == null) {
+					tr = newnode;
+					comp = 0;
+					done = true;
+				}
+				else comp = pnodeCMP(item, t.item, type, type, _len_in, _str_sizes, _pref_list, _pref_list_length);
+
+				if ((sort_order.tupleOrder == TupleOrder.Ascending && comp <= 0) ||(sort_order.tupleOrder == TupleOrder.Descending && comp >= 0))  {
+					l.rt = t; t.par = l;
+					l = t;
+					t = tr;
+				}
+				else {
+					pnodeSplayNode trr = tr.rt;
+					if (trr == null) {
+						trr = newnode;
+						comp = 0;
+						done = true;
+					}
+					else comp = pnodeCMP(item, t.item, type, type, _len_in, _str_sizes, _pref_list, _pref_list_length);
+
+					if ((t.rt = tr.lt) != null) t.rt.par = t;
+					tr.lt = t; t.par = tr;
+					l.rt = tr; tr.par = l;
+					l = tr;
+					t = trr;
+				}
+			} // end of if(comp >= 0)
+			else {
+				pnodeSplayNode tl = t.lt;
+				if (tl == null) {
+					tl = newnode;
+					comp = 0;
+					done = true;
+				}
+				else comp = pnodeCMP(item, t.item, type, type, _len_in, _str_sizes, _pref_list, _pref_list_length);
+
+				if ((sort_order.tupleOrder == TupleOrder.Ascending && comp >= 0) || (sort_order.tupleOrder == TupleOrder.Descending && comp <= 0)) {
+					r.lt = t; t.par = r;
+					r = t;
+					t = tl;
+				}
+				else {
+					pnodeSplayNode tll = tl.lt;
+					if (tll == null) {
+						tll = newnode;
+						comp = 0;
+						done = true;
+					}
+					else comp = pnodeCMP(item, t.item, type, type, _len_in, _str_sizes, _pref_list, _pref_list_length);
+
+					if ((t.lt = tl.rt) != null) t.lt.par = t;
+					tl.rt = t; t.par = tl;
+					r.lt = tl; tl.par = r;
+					r = tl;
+					t = tll;
+				}
+			} // end of else
+		} // end of while(!done)
+
+		if ((r.lt = t.rt) != null) r.lt.par = r;
+		if ((l.rt = t.lt) != null) l.rt.par = l;
+		if ((t.lt = pnodeSplayNode.dummy.rt) != null) t.lt.par = t;
+		if ((t.rt = pnodeSplayNode.dummy.lt) != null) t.rt.par = t;
+		t.par = null;
+		root = t;
+
+		return;
+	}
   
   /**
    * Removes the minimum (Ascending) or maximum (Descending) element.
