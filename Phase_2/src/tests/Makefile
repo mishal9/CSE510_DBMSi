@@ -62,6 +62,14 @@ SortTest:SortTest.java
 sorttest: SortTest
 	$(JAVA) tests.SortTest
 
+# test sort based on preference attributes
+
+SortPrefTest:SortPrefTest.java
+	$(JAVAC) TestDriver.java SortPrefTest.java
+
+sortpreftest: SortPrefTest
+	$(JAVA) tests.SortPrefTest
+
 # test sortMerge
 
 SMJoin:SM_JoinTest.java

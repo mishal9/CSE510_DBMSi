@@ -54,7 +54,10 @@ public class pnodeSplayPQ extends pnodePQ
 	 * class constructor.
 	 * @param order   the order of sorting (Ascending or Descending)
 	 */
-	public pnodeSplayPQ(TupleOrder order,
+	/*
+	public pnodeSplayPQ(int fldNo,
+						AttrType fldType,
+						TupleOrder order,
 						short len_in,
 						short[] str_sizes,
 						int[] pref_list,
@@ -62,13 +65,15 @@ public class pnodeSplayPQ extends pnodePQ
 	{
 		root = null;
 		count = 0;
+		fld_no   = fldNo;
+		fld_type = fldType;
 		_len_in = len_in;
 		_str_sizes = str_sizes;
 		_pref_list = pref_list;
 		_pref_list_length = pref_list_length;
 		sort_order = order;
 	}
-
+	*/
   /**
    * Inserts an element into the binary tree.
    * @param item the element to be inserted
@@ -89,7 +94,9 @@ public class pnodeSplayPQ extends pnodePQ
     }
     
     int comp = pnodeCMP(item, t.item);
-    
+    System.out.println("1 Simple pnodeCMP called "+comp);
+
+
     pnodeSplayNode l = pnodeSplayNode.dummy;
     pnodeSplayNode r = pnodeSplayNode.dummy;
      
@@ -103,7 +110,10 @@ public class pnodeSplayPQ extends pnodePQ
 	  comp = 0;
 	  done = true;
 	}
-	else comp = pnodeCMP(item, tr.item);
+	else {
+		comp = pnodeCMP(item, tr.item);
+		System.out.println("2 Simple pnodeCMP called "+comp);
+	}
 	
 	if ((sort_order.tupleOrder == TupleOrder.Ascending && comp <= 0) ||(sort_order.tupleOrder == TupleOrder.Descending && comp >= 0))  {
 	  l.rt = t; t.par = l;
@@ -117,7 +127,10 @@ public class pnodeSplayPQ extends pnodePQ
 	    comp = 0;
 	    done = true;
 	  }
-	  else comp = pnodeCMP(item, trr.item);
+	  else {
+		  comp = pnodeCMP(item, trr.item);
+		  System.out.println("3 Simple pnodeCMP called "+comp);
+	  }
 	  
 	  if ((t.rt = tr.lt) != null) t.rt.par = t;
 	  tr.lt = t; t.par = tr;
@@ -133,7 +146,10 @@ public class pnodeSplayPQ extends pnodePQ
 	  comp = 0;
 	  done = true;
 	}
-	else comp = pnodeCMP(item, tl.item);
+	else {
+		comp = pnodeCMP(item, tl.item);
+		System.out.println("4 Simple pnodeCMP called "+comp);
+	}
 	
 	if ((sort_order.tupleOrder == TupleOrder.Ascending && comp >= 0) || (sort_order.tupleOrder == TupleOrder.Descending && comp <= 0)) {
 	  r.lt = t; t.par = r;
@@ -147,7 +163,10 @@ public class pnodeSplayPQ extends pnodePQ
 	    comp = 0;
 	    done = true;
 	  }
-	  else comp = pnodeCMP(item, tll.item);
+	  else {
+	  	comp = pnodeCMP(item, tll.item);
+	  	System.out.println("5 Simple pnodeCMP called "+comp);
+	  }
 	  
 	  if ((t.lt = tl.rt) != null) t.lt.par = t;
 	  tl.rt = t; t.par = tl;
@@ -177,7 +196,12 @@ public class pnodeSplayPQ extends pnodePQ
 	 *                           <code>attrNull</code> encountered
 	 * @exception TupleUtilsException error in tuple compare routines
 	 */
-	public void enq(pnode item, AttrType[] type)
+	public void enq(pnode item,
+					AttrType[] type,
+					short len_in,
+					short[] str_sizes,
+					int[] pref_list,
+					int pref_list_length)
 			throws IOException, FieldNumberOutOfBoundException {
 		count ++;
 		pnodeSplayNode newnode = new pnodeSplayNode(item);
@@ -188,7 +212,8 @@ public class pnodeSplayPQ extends pnodePQ
 			return;
 		}
 
-		int comp = pnodeCMP(item, t.item, type, type, _len_in, _str_sizes, _pref_list, _pref_list_length);
+		int comp = pnodeCMP(item, t.item, type, type, len_in, str_sizes, pref_list, pref_list_length);
+		System.out.println("1 Updated pnodeCMP called "+comp);
 
 		pnodeSplayNode l = pnodeSplayNode.dummy;
 		pnodeSplayNode r = pnodeSplayNode.dummy;
@@ -203,7 +228,10 @@ public class pnodeSplayPQ extends pnodePQ
 					comp = 0;
 					done = true;
 				}
-				else comp = pnodeCMP(item, t.item, type, type, _len_in, _str_sizes, _pref_list, _pref_list_length);
+				else {
+					comp = pnodeCMP(item, t.item, type, type, len_in, str_sizes, pref_list, pref_list_length);
+					System.out.println("2 Updated pnodeCMP called "+comp);
+				}
 
 				if ((sort_order.tupleOrder == TupleOrder.Ascending && comp <= 0) ||(sort_order.tupleOrder == TupleOrder.Descending && comp >= 0))  {
 					l.rt = t; t.par = l;
@@ -217,7 +245,10 @@ public class pnodeSplayPQ extends pnodePQ
 						comp = 0;
 						done = true;
 					}
-					else comp = pnodeCMP(item, t.item, type, type, _len_in, _str_sizes, _pref_list, _pref_list_length);
+					else {
+						comp = pnodeCMP(item, t.item, type, type, len_in, str_sizes, pref_list, pref_list_length);
+						System.out.println("3 Updated pnodeCMP called "+comp);
+					}
 
 					if ((t.rt = tr.lt) != null) t.rt.par = t;
 					tr.lt = t; t.par = tr;
@@ -233,7 +264,10 @@ public class pnodeSplayPQ extends pnodePQ
 					comp = 0;
 					done = true;
 				}
-				else comp = pnodeCMP(item, t.item, type, type, _len_in, _str_sizes, _pref_list, _pref_list_length);
+				else {
+					comp = pnodeCMP(item, t.item, type, type, len_in, str_sizes, pref_list, pref_list_length);
+					System.out.println("4 Updated pnodeCMP called "+comp);
+				}
 
 				if ((sort_order.tupleOrder == TupleOrder.Ascending && comp >= 0) || (sort_order.tupleOrder == TupleOrder.Descending && comp <= 0)) {
 					r.lt = t; t.par = r;
@@ -247,7 +281,10 @@ public class pnodeSplayPQ extends pnodePQ
 						comp = 0;
 						done = true;
 					}
-					else comp = pnodeCMP(item, t.item, type, type, _len_in, _str_sizes, _pref_list, _pref_list_length);
+					else {
+						comp = pnodeCMP(item, t.item, type, type, len_in, str_sizes, pref_list, pref_list_length);
+						System.out.println("5 Updated pnodeCMP called "+comp);
+					}
 
 					if ((t.lt = tl.rt) != null) t.lt.par = t;
 					tl.rt = t; t.par = tl;
