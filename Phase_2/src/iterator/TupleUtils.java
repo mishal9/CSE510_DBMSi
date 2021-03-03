@@ -37,11 +37,14 @@ public class TupleUtils
 											Tuple  t2, int t2_fld_no)
 			throws IOException,
 			UnknowAttrType,
-			TupleUtilsException
-	{
+			TupleUtilsException {
 		int   t1_i,  t2_i;
 		float t1_r,  t2_r;
 		String t1_s, t2_s;
+
+
+
+
 
 		switch (fldType.attrType)
 		{
@@ -60,6 +63,16 @@ public class TupleUtils
 				try {
 					t1_r = t1.getFloFld(t1_fld_no);
 					t2_r = t2.getFloFld(t2_fld_no);
+
+					System.out.println("T1 tuple: ");
+
+					System.out.println(t1.getFloFld(t1_fld_no));
+
+
+					System.out.println("T2 tuple: ");
+
+					System.out.println(t2.getFloFld(t2_fld_no));
+
 				}catch (FieldNumberOutOfBoundException e){
 					throw new TupleUtilsException(e, "FieldNumberOutOfBoundException is caught by TupleUtils.java");
 				}
@@ -136,10 +149,15 @@ public class TupleUtils
 												int[] pref_list,
 												int pref_list_length) throws IOException, FieldNumberOutOfBoundException {
 
-		double t1Sum = 0.0;
-		double t2Sum = 0.0;
+
+		float t1Sum = 0.0f;
+		float t2Sum = 0.0f;
+
+		System.out.println("Pref length: "+pref_list_length);
+
 
 		for(int i=0; i<pref_list_length; i++){
+
 			AttrType fldType1 = type1[pref_list[i]];
 			AttrType fldType2 = type2[pref_list[i]];
 			// add
@@ -149,12 +167,16 @@ public class TupleUtils
 				t1Sum += t1.getFloFld(pref_list[i]);
 			}
 
+
 			if(fldType2.equals(AttrType.attrInteger)){
 				t2Sum += t2.getIntFld(pref_list[i]);
 			}else{
 				t2Sum += t2.getFloFld(pref_list[i]);
 			}
 		}
+
+		System.out.println("T1 final sum "+t1Sum);
+		System.out.println("T2 final sum "+t2Sum);
 
 		return t1Sum == t2Sum ? 0 : t1Sum > t2Sum ? 1 : -1;
 	}
