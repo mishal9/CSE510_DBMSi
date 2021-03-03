@@ -25,18 +25,6 @@ public abstract class pnodePQ
   /** the sorting order (Ascending or Descending) */
   protected TupleOrder            sort_order;
 
-  /** the length of input attributes */
-  protected short                 _len_in;
-
-  /** the length of string type attributes */
-  protected short[]               _str_sizes;
-
-  /** the array of preference attributes */
-  protected int[]                 _pref_list;
-
-  /** the length of preference attributes array */
-  protected int                   _pref_list_length;
-
   /**
    * class constructor, set <code>count</code> to <code>0</code>.
    */
@@ -64,7 +52,13 @@ public abstract class pnodePQ
    * @exception TupleUtilsException error in tuple compare routines
    */
   abstract public void  enq(pnode  item) 
-           throws IOException, UnknowAttrType, TupleUtilsException;      
+           throws IOException, UnknowAttrType, TupleUtilsException;
+
+  abstract public void  enq(pnode  item, AttrType[] arr, short len_in,
+                            short[] str_sizes,
+                            int[] pref_list,
+                            int pref_list_length)
+          throws IOException, UnknowAttrType, TupleUtilsException, FieldNumberOutOfBoundException;
 
   /**
    * removes the minimum (Ascending) or maximum (Descending) element

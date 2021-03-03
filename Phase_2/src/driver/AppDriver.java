@@ -96,7 +96,6 @@ class Driver  extends TestDriver implements GlobalConst
         System.out.println("-------------------------- MENU ------------------");
         System.out.println("\n\n[0]   Read input data");
         System.out.println("[1]   Run Nested Loop skyline");
-
         System.out.println("\n[2]   Run Block Nested Loop skyline");
         System.out.println("[3]   Run Sorted First skyline");
         System.out.println("[4]   Display output data");
