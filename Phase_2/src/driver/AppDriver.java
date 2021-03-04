@@ -125,7 +125,7 @@ class Driver  extends TestDriver implements GlobalConst
         if ( status == OK ) {
 
             // Read data and construct tuples
-            File file = new File("data/subset.txt");
+            File file = new File("../../data/subset.txt");
             Scanner sc = new Scanner(file);
 
             COLS = sc.nextInt()+1;

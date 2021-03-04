@@ -3,9 +3,6 @@ package tests;
 import java.io.*;
 import java.util.*;
 import java.lang.*;
-import heap.*;
-import bufmgr.*;
-import diskmgr.*;
 import global.*;
 import btree.*;
 
@@ -21,12 +18,10 @@ import btree.*;
 class GenerateIndexDriver implements GlobalConst {
 
     public BTreeFile file;
-    public int postfix = 0;
     public int keyType;
 
     protected String dbpath;
     protected String logpath;
-    public int deleteFashion;
 
     public void runTests() {
         Random random = new Random();
@@ -91,50 +86,7 @@ class GenerateIndexDriver implements GlobalConst {
 
     }
 
-    private void menu() {
-        System.out.println("-------------------------- MENU ------------------");
-        System.out.println("\n\n[0]   Naive delete (new file)");
-        System.out.println("[1]   Full delete(Default) (new file)");
-
-        System.out.println("\n[2]   Print the B+ Tree Structure");
-        System.out.println("[3]   Print All Leaf Pages");
-        System.out.println("[4]   Choose a Page to Print");
-
-        System.out.println("\n           ---Integer Key (for choices [6]-[14]) ---");
-        System.out.println("\n[5]   Insert a Record");
-        System.out.println("[6]   Delete a Record");
-        System.out.println("[7]   Test1 (new file): insert n records in order");
-        System.out.println("[8]   Test2 (new file): insert n records in reverse order");
-        System.out.println("[9]   Test3 (new file): insert n records in random order");
-        System.out.println("[10]  Test4 (new file): insert n records in random order");
-        System.out.println("      and delete m records randomly");
-        System.out.println("[11]  Delete some records");
-
-        System.out.println("\n[12]  Initialize a Scan");
-        System.out.println("[13]  Scan the next Record");
-        System.out.println("[14]  Delete the just-scanned record");
-        System.out.println("\n           ---String Key (for choice [15]) ---");
-        System.out.println("\n[15]  Test5 (new file): insert n records in random order  ");
-        System.out.println("        and delete m records randomly.");
-
-        System.out.println("\n[16]  Close the file");
-        System.out.println("[17]  Open which file (input an integer for the file name): ");
-        System.out.println("[18]  Destroy which file (input an integer for the file name): ");
-
-
-        System.out.println("\n[19]  Quit!");
-        System.out.print("Hi, make your choice :");
-    }
-
-
     protected void runAllTests() {
-        PageId pageno = new PageId();
-        int key, n, m, num, choice, lowkeyInt, hikeyInt;
-        KeyClass lowkey, hikey;
-        KeyDataEntry entry;
-        RID rid;
-        choice = 1;
-        deleteFashion = 1; //full delete
 
         try{
             test1();
@@ -153,7 +105,7 @@ class GenerateIndexDriver implements GlobalConst {
             System.out.println(" Combined BTreeIndex creation");
 
             GenerateIndexFiles obj = new GenerateIndexFiles();
-            IndexFile hf = obj.createCombinedBTreeIndex("/Users/mish/Work/ASU/Spring21/CSE510/Phase_2/src/driver/data/subset.txt");
+            IndexFile hf = obj.createCombinedBTreeIndex("../../data/subset.txt");
 
         } catch (Exception e) {
             throw e;
@@ -169,7 +121,7 @@ class GenerateIndexDriver implements GlobalConst {
             System.out.println("Individual BTreeIndex creation");
 
             GenerateIndexFiles obj = new GenerateIndexFiles();
-            IndexFile[] hf = obj.createBTreeIndex("/Users/mish/Work/ASU/Spring21/CSE510/Phase_2/src/driver/data/subset.txt");
+            IndexFile[] hf = obj.createBTreeIndex("../../data/subset.txt");
 
         } catch (Exception e) {
             throw e;
@@ -185,7 +137,7 @@ class GenerateIndexDriver implements GlobalConst {
             System.out.println("CombinedBTreeIndex on all attributes scanning");
 
             GenerateIndexFiles obj = new GenerateIndexFiles();
-            IndexFile hf = obj.createCombinedBTreeIndex("/Users/mish/Work/ASU/Spring21/CSE510/Phase_2/src/driver/data/subset2.txt");
+            IndexFile hf = obj.createCombinedBTreeIndex("../../data/subset.txt");
 
             scan = ((BTreeFile)hf).new_scan(null, null);
 
@@ -209,7 +161,7 @@ class GenerateIndexDriver implements GlobalConst {
             System.out.println("BTreeIndex on individual attributes scanning");
 
             GenerateIndexFiles obj = new GenerateIndexFiles();
-            IndexFile[] hf = obj.createBTreeIndex("/Users/mish/Work/ASU/Spring21/CSE510/Phase_2/src/driver/data/subset2.txt");
+            IndexFile[] hf = obj.createBTreeIndex("../../data/subset.txt");
 
             BTFileScan[] scans = new BTFileScan[hf.length];
             for(int i=0;i<hf.length;i++){
@@ -227,10 +179,6 @@ class GenerateIndexDriver implements GlobalConst {
             throw e;
         }
     }
-
-    void test5(int n, int m)
-            throws Exception {}
-
 
 }
 
