@@ -82,6 +82,8 @@ public class SortFirstSky implements GlobalConst {
         window = new Tuple[_n_pages];
 
         System.out.println("----------   SORT FIRST SKY INIT VARS   -------------");
+        System.out.println("Attributes: "+Arrays.toString(_in));
+        System.out.println("Attributes length: "+_len_in);
         System.out.println("Relation name: "+_relationName);
         System.out.println("Preferences list: "+ Arrays.toString(_pref_list));
         System.out.println("Preferences list length: "+_pref_list_length);
