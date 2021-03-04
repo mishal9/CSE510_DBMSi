@@ -3,13 +3,12 @@ package tests;
 import java.io.*;
 import java.util.*;
 import java.lang.*;
-
-import driver.GenerateIndexFiles;
 import heap.*;
 import bufmgr.*;
 import diskmgr.*;
 import global.*;
 import btree.*;
+
 
 /**
  * Note that in JAVA, methods can't be overridden to be more private.
@@ -35,7 +34,7 @@ class GenerateIndexDriver implements GlobalConst {
         logpath = "BTREE" + random.nextInt() + ".minibase-log";
 
 
-        SystemDefs sysdef = new SystemDefs(dbpath, 5000, 5000, "Clock");
+        SystemDefs sysdef = new SystemDefs(dbpath, 200, NUMBUF, "Clock");
         System.out.println("\n" + "Running " + " tests...." + "\n");
 
         keyType = AttrType.attrInteger;
@@ -154,7 +153,7 @@ class GenerateIndexDriver implements GlobalConst {
             System.out.println(" Combined BTreeIndex creation");
 
             GenerateIndexFiles obj = new GenerateIndexFiles();
-            IndexFile hf = obj.createCombinedBTreeIndex("driver/data/subset.txt");
+            IndexFile hf = obj.createCombinedBTreeIndex("/Users/mish/Work/ASU/Spring21/CSE510/Phase_2/src/driver/data/subset.txt");
 
         } catch (Exception e) {
             throw e;
@@ -167,10 +166,10 @@ class GenerateIndexDriver implements GlobalConst {
     void test2()
             throws Exception {
         try {
-            System.out.println(" BTreeIndex creation");
+            System.out.println("Individual BTreeIndex creation");
 
             GenerateIndexFiles obj = new GenerateIndexFiles();
-            IndexFile[] hf = obj.createBTreeIndex("driver/data/subset.txt");
+            IndexFile[] hf = obj.createBTreeIndex("/Users/mish/Work/ASU/Spring21/CSE510/Phase_2/src/driver/data/subset.txt");
 
         } catch (Exception e) {
             throw e;
@@ -183,10 +182,10 @@ class GenerateIndexDriver implements GlobalConst {
         try {
             BTFileScan scan;
             KeyDataEntry entry;
-            System.out.println("CombinedBTreeIndex scanning");
+            System.out.println("CombinedBTreeIndex on all attributes scanning");
 
             GenerateIndexFiles obj = new GenerateIndexFiles();
-            IndexFile hf = obj.createCombinedBTreeIndex("driver/data/subset2.txt");
+            IndexFile hf = obj.createCombinedBTreeIndex("/Users/mish/Work/ASU/Spring21/CSE510/Phase_2/src/driver/data/subset2.txt");
 
             scan = ((BTreeFile)hf).new_scan(null, null);
 
@@ -207,10 +206,10 @@ class GenerateIndexDriver implements GlobalConst {
             throws Exception {
         try {
             KeyDataEntry entry;
-            System.out.println("BTreeIndex scanning");
+            System.out.println("BTreeIndex on individual attributes scanning");
 
             GenerateIndexFiles obj = new GenerateIndexFiles();
-            IndexFile[] hf = obj.createBTreeIndex("driver/data/subset2.txt");
+            IndexFile[] hf = obj.createBTreeIndex("/Users/mish/Work/ASU/Spring21/CSE510/Phase_2/src/driver/data/subset2.txt");
 
             BTFileScan[] scans = new BTFileScan[hf.length];
             for(int i=0;i<hf.length;i++){
