@@ -273,18 +273,6 @@ class GetStuff {
         return choice;
     }
 
-    public static String getLine () {
-        BufferedReader in = new BufferedReader (new InputStreamReader(System.in));
-        int choice = -1;
-
-        try{
-            return in.readLine();
-        }
-        catch (IOException e) {
-            return "";
-        }
-    }
-
     public static void getReturn () {
 
         BufferedReader in = new BufferedReader (new InputStreamReader(System.in));
