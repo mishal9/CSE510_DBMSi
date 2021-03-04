@@ -3,6 +3,10 @@ package tests;
 import java.io.*;
 import java.util.*;
 import java.lang.*;
+import heap.*;
+import bufmgr.*;
+import diskmgr.*;
+
 import global.*;
 import btree.*;
 import index.IndexException;
@@ -11,7 +15,6 @@ import index.UnknownIndexTypeException;
 import iterator.FldSpec;
 import iterator.RelSpec;
 import iterator.UnknownKeyTypeException;
-
 
 /**
  * Note that in JAVA, methods can't be overridden to be more private.
@@ -123,7 +126,7 @@ class GenerateIndexDriver implements GlobalConst {
     void test2()
             throws Exception {
         try {
-            System.out.println("Individual BTreeIndex creation");
+            System.out.println(" BTreeIndex creation");
 
             GenerateIndexFiles obj = new GenerateIndexFiles();
             IndexFile[] hf = obj.createBTreeIndex("../../data/subset.txt");
@@ -139,7 +142,7 @@ class GenerateIndexDriver implements GlobalConst {
         try {
             BTFileScan scan;
             KeyDataEntry entry;
-            System.out.println("CombinedBTreeIndex on all attributes scanning");
+            System.out.println("CombinedBTreeIndex scanning");
 
             GenerateIndexFiles obj = new GenerateIndexFiles();
             IndexFile indexFile = obj.createCombinedBTreeIndex("driver/data/subset2.txt");
@@ -188,7 +191,7 @@ class GenerateIndexDriver implements GlobalConst {
             throws Exception {
         try {
             KeyDataEntry entry;
-            System.out.println("BTreeIndex on individual attributes scanning");
+            System.out.println("BTreeIndex scanning");
 
             GenerateIndexFiles obj = new GenerateIndexFiles();
             IndexFile[] hf = obj.createBTreeIndex("../../data/subset.txt");
