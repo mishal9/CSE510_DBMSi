@@ -146,15 +146,66 @@ public class Tuple implements GlobalConst {
         return tuple_length;
     }
 
-    /**
-     * get the length of a tuple, call this method if you did
-     * call setHdr () before
-     *
-     * @return size of this tuple in bytes
-     */
-    public short size() {
-        return ((short) (fldOffset[fldCnt] - tuple_offset));
-    }
+   /**
+    * setHdr will set the header of this tuple.   
+    *
+    * @param	numFlds	  number of fields
+    * @param	types	  contains the types that will be in this tuple
+    * @param	strSizes      contains the sizes of the string
+    *				
+    * @exception IOException I/O errors
+    * @exception InvalidTypeException Invalid tupe type
+    * @exception InvalidTupleSizeException Tuple size too big
+    *
+    */
+
+public void setHdr (short numFlds,  AttrType types[], short strSizes[])
+ throws IOException, InvalidTypeException, InvalidTupleSizeException		
+{
+  if((numFlds +2)*2 > max_size)
+    throw new InvalidTupleSizeException (null, "TUPLE: TUPLE_TOOBIG_ERROR");
+  
+  fldCnt = numFlds;
+  Convert.setShortValue(numFlds, tuple_offset, data);
+  fldOffset = new short[numFlds+1];
+  int pos = tuple_offset+2;  // start position for fldOffset[]
+  
+  //sizeof short =2  +2: array siaze = numFlds +1 (0 - numFilds) and
+  //another 1 for fldCnt
+  fldOffset[0] = (short) ((numFlds +2) * 2 + tuple_offset);   
+   
+  Convert.setShortValue(fldOffset[0], pos, data);
+  pos +=2;
+  short strCount =0;
+  short incr;
+  int i;
+
+  for (i=1; i<numFlds; i++)
+  {
+    switch(types[i-1].attrType) {
+    
+   case AttrType.attrInteger:
+     incr = 4;
+     break;
+
+   case AttrType.attrReal:
+     incr =4;
+     break;
+
+   case AttrType.attrString:
+     incr = (short) (strSizes[strCount] +2);  //strlen in bytes = strlen +2
+     strCount++;
+     break;       
+ 
+   default:
+    throw new InvalidTypeException (null, "TUPLE: TUPLE_TYPE_ERROR");
+   }
+  fldOffset[i]  = (short) (fldOffset[i-1] + incr);
+  Convert.setShortValue(fldOffset[i], pos, data);
+  pos +=2;
+ 
+}
+ switch(types[numFlds -1].attrType) {
 
     /**
      * get the offset of a tuple
