@@ -108,32 +108,46 @@ public class GenerateIndexFiles{
         return file;
     }
 
-    public IndexFile[] createBTreeIndex (String filePath) throws IOException, AddFileEntryException, GetFileEntryException, ConstructPageException, HashEntryNotFoundException, IteratorException, InvalidFrameNumberException, PageUnpinnedException, ReplacerException, NodeNotMatchException, UnpinPageException, LeafInsertRecException, IndexSearchException, InsertException, PinPageException, ConvertException, DeleteRecException, KeyNotMatchException, LeafDeleteException, KeyTooLongException, IndexInsertRecException {
+    public IndexFile[] createBTreeIndex (String filePath) throws IOException, AddFileEntryException, GetFileEntryException, ConstructPageException, HashEntryNotFoundException, IteratorException, InvalidFrameNumberException, PageUnpinnedException, ReplacerException, NodeNotMatchException, UnpinPageException, LeafInsertRecException, IndexSearchException, InsertException, PinPageException, ConvertException, DeleteRecException, KeyNotMatchException, LeafDeleteException, KeyTooLongException, IndexInsertRecException, HFDiskMgrException, HFBufMgrException, HFException, InvalidTupleSizeException, InvalidTypeException, FieldNumberOutOfBoundException, SpaceNotAvailableException, InvalidSlotNumberException {
         double[][] records = readFile(filePath);
-        int ROW = records.length;
-        int COLS = records[ROW-1].length;
+        int ROWS = records.length;
+        int COLS = records[ROWS-1].length;
 
         int keyType = AttrType.attrString;
         int keySize = 1 + (13 * 1);
+        String filename = "AAA"+prefix++;
 
         IndexFile[] indices = new IndexFile[COLS];
+        Heapfile heapfile = new Heapfile(filename);
+        AttrType [] Stypes = new AttrType[COLS];
+        for(int i=0;i<COLS;i++){Stypes[i] = new AttrType (AttrType.attrReal);}
+        Tuple t = new Tuple();
+        short [] Ssizes = null;
+        t.setHdr((short) COLS,Stypes, Ssizes);
+        int size = t.size();
+        t = new Tuple(size);
+        t.setHdr((short) COLS, Stypes, Ssizes);
 
-        for(int i=0;i<COLS;i++) {
-            String filename = "AAA"+prefix++;
-            indices[i] = new BTreeFile(filename, keyType, keySize, 1);
-            BTreeFile.traceFilename("TRACE");
+        for(int j=0;j<COLS;j++) {
+            filename = "AAA" + prefix++;
+            indices[j] = new BTreeFile(filename, keyType, keySize, 1);
+        }
 
-            KeyClass key;
-            RID rid = new RID();
-            PageId pageno = new PageId();
-            String skey;
-            for (double[] value : records) {
-                skey = create_key(new double[]{value[i]});
+        KeyClass key;
+        RID rid = new RID();
+        PageId pageno = new PageId();
+        String skey;
+        double[] value = null;
+        for(int i=0;i<ROWS;i++) {
+            value = records[i];
+            for (int k = 0; k < value.length; k++) {
+                t.setFloFld(k + 1, (float) value[k]);
+            }
+            rid = heapfile.insertRecord(t.returnTupleByteArray());
+            for (int j = 0; j < COLS; j++) {
+                skey = create_key(new double[]{value[j]});
                 key = new StringKey(skey);
-                pageno.pid = id;
-                rid = new RID(pageno, id);
-                id++;
-                indices[i].insert(key, rid);
+                indices[j].insert(key, rid);
             }
         }
         return indices;

@@ -138,10 +138,10 @@ class GenerateIndexDriver implements GlobalConst {
         deleteFashion = 1; //full delete
 
         try{
-//            test1();
-//            test2();
+            test1();
+            test2();
             test3();
-//            test4();
+            test4();
         } catch (Exception e){
             e.printStackTrace();
         }
@@ -196,10 +196,10 @@ class GenerateIndexDriver implements GlobalConst {
             RID rid;
             entry = scan.get_next();
             while (entry != null) {
-                System.out.println("SCAN RESULT: " + entry.key + " > " + entry.data);
+//                System.out.println("SCAN RESULT: " + entry.key + " > " + entry.data);
                 entry = scan.get_next();
             }
-            System.out.println("AT THE END OF SCAN!");
+//            System.out.println("AT THE END OF SCAN!");
 
 //      Have to add code to SCAN the heap file using the BTree Index
 //            FldSpec[] projlist = new FldSpec[3];
@@ -246,10 +246,10 @@ class GenerateIndexDriver implements GlobalConst {
             for(BTFileScan scan: scans) {
                 entry = scan.get_next();
                 while (entry != null) {
-                    System.out.println("SCAN RESULT: " + entry.key + " " + entry.data);
+                    // System.out.println("SCAN RESULT: " + entry.key + " " + entry.data);
                     entry = scan.get_next();
                 }
-                System.out.println("AT THE END OF SCAN!");
+                // System.out.println("AT THE END OF SCAN!");
             }
         } catch (Exception e) {
             throw e;
