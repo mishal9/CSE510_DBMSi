@@ -46,6 +46,14 @@ IndexTest:IndexTest.java
 indextest: IndexTest
 	$(JAVA) tests.IndexTest
 
+# test btree index
+
+GenerateIndexTest:GenerateIndexTest.java
+	$(JAVAC) TestDriver.java GenerateIndexTest.java
+
+btreeindextest: GenerateIndexTest
+	$(JAVA) tests.GenerateIndexTest
+
 # test join
 
 JoinTest:JoinTest.java
