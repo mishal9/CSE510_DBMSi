@@ -47,7 +47,6 @@ class SortFirstSkyDriver extends TestDriver
     private static short REC_LEN3 = 160;
     private static short REC_LEN4 = 160;
     private static short REC_LEN5 = 160;
-    private static int   SORTPGNUM = 12;
 
     TupleOrder[] order = new TupleOrder[2];
 
@@ -212,7 +211,7 @@ class SortFirstSkyDriver extends TestDriver
         // Sort "test1sortFirstSky.in"
         Sort sort = null;
         try {
-            sort = new Sort(attrType, (short) 5, attrSize, fscan, order[1], new int[]{1,2}, 2, SORTPGNUM);
+            sort = new Sort(attrType, (short) 5, attrSize, fscan, order[1], new int[]{1,2}, 2, NUMBUF);
         }
         catch (Exception e) {
             status = FAIL;
@@ -391,7 +390,7 @@ class SortFirstSkyDriver extends TestDriver
         // Sort "test1sortFirstSky.in"
         Sort sort = null;
         try {
-            sort = new Sort(attrType, (short) 5, attrSize, fscan, order[1], new int[]{1,2}, 2, SORTPGNUM);
+            sort = new Sort(attrType, (short) 5, attrSize, fscan, order[1], new int[]{1,2}, 2, NUMBUF);
         }
         catch (Exception e) {
             status = FAIL;
@@ -406,7 +405,7 @@ class SortFirstSkyDriver extends TestDriver
                                                         relation,
                                                         new int[]{1,2},
                                                        2,
-                                                        SORTPGNUM);
+                                                        NUMBUF);
         } catch (IOException e) {
             e.printStackTrace();
         } catch (HFException e) {
