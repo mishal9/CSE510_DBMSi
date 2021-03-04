@@ -113,7 +113,7 @@ class GenerateIndexDriver implements GlobalConst {
             System.out.println(" Combined BTreeIndex creation");
 
             GenerateIndexFiles obj = new GenerateIndexFiles();
-            IndexFile hf = obj.createCombinedBTreeIndex("../../data/subset.txt");
+            IndexFile hf = obj.createCombinedBTreeIndex("../data/subset2.txt");
 
         } catch (Exception e) {
             throw e;
@@ -129,7 +129,7 @@ class GenerateIndexDriver implements GlobalConst {
             System.out.println(" BTreeIndex creation");
 
             GenerateIndexFiles obj = new GenerateIndexFiles();
-            IndexFile[] hf = obj.createBTreeIndex("../../data/subset.txt");
+            IndexFile[] hf = obj.createBTreeIndex("../data/subset2.txt");
 
         } catch (Exception e) {
             throw e;
@@ -145,7 +145,7 @@ class GenerateIndexDriver implements GlobalConst {
             System.out.println("CombinedBTreeIndex scanning");
 
             GenerateIndexFiles obj = new GenerateIndexFiles();
-            IndexFile indexFile = obj.createCombinedBTreeIndex("driver/data/subset2.txt");
+            IndexFile indexFile = obj.createCombinedBTreeIndex("../data/subset2.txt");
             System.out.println("Index created! ");
             scan = ((BTreeFile) indexFile).new_scan(null, null);
             Heapfile hf = new Heapfile("heap_" + "AAA" + obj.prefix);
@@ -194,8 +194,7 @@ class GenerateIndexDriver implements GlobalConst {
             System.out.println("BTreeIndex scanning");
 
             GenerateIndexFiles obj = new GenerateIndexFiles();
-            IndexFile[] hf = obj.createBTreeIndex("../../data/subset.txt");
-
+            IndexFile[] hf = obj.createBTreeIndex("../data/subset2.txt");
             BTFileScan[] scans = new BTFileScan[hf.length];
             for(int i=0;i<hf.length;i++){
                 scans[i] = ((BTreeFile)hf[i]).new_scan(null, null);

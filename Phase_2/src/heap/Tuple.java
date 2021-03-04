@@ -345,8 +345,8 @@ public class Tuple implements GlobalConst{
     * setHdr will set the header of this tuple.   
     *
     * @param  numFlds   number of fields
-    * @param  types   contains the types that will be in this tuple
-    * @param  strSizes      contains the sizes of the string
+    * @param  types[]   contains the types that will be in this tuple
+    * @param  strSizes[]      contains the sizes of the string 
     *       
     * @exception IOException I/O errors
     * @exception InvalidTypeException Invalid tupe type
