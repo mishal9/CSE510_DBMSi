@@ -110,7 +110,7 @@ public class Sort extends Iterator implements GlobalConst
 	cur_node.tuple = temp_tuple; // no copy needed
 	try {
 	    if(_pref_list_length != 0) {
-	        System.out.println("Calling update");
+	        
             Q.enq(cur_node, _in, n_cols, str_lens, _pref_list, _pref_list_length);
         }
 	    else {
@@ -208,7 +208,7 @@ public class Sort extends Iterator implements GlobalConst
       cur_node = new pnode();
       cur_node.tuple = new Tuple(tuple); // tuple copy needed --  Bingjie 4/29/98
         if(_pref_list_length != 0) {
-            System.out.println("Calling update");
+            
             pcurr_Q.enq(cur_node, _in, n_cols, str_lens, _pref_list, _pref_list_length);
         }
         else {
@@ -232,7 +232,7 @@ public class Sort extends Iterator implements GlobalConst
 	// doesn't fit in current run, put into the other queue
 	try {
         if(_pref_list_length != 0) {
-            System.out.println("Calling update");
+            
             pother_Q.enq(cur_node, _in, n_cols, str_lens, _pref_list, _pref_list_length);
         }
         else {
@@ -335,7 +335,7 @@ public class Sort extends Iterator implements GlobalConst
 
 	  try {
           if(_pref_list_length != 0) {
-              System.out.println("Calling update");
+              
               pcurr_Q.enq(cur_node, _in, n_cols, str_lens, _pref_list, _pref_list_length);
           }
           else {
@@ -471,7 +471,7 @@ public class Sort extends Iterator implements GlobalConst
 	cur_node.tuple = new_tuple;  // no copy needed -- I think Bingjie 4/22/98
 	try {
 	    if(_pref_list_length != 0) {
-            System.out.println("Calling update");
+            
             Q.enq(cur_node, _in, n_cols, str_lens, _pref_list, _pref_list_length);
         }
 	    else {

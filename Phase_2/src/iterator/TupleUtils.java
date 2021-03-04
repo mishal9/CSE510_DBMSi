@@ -63,16 +63,6 @@ public class TupleUtils
 				try {
 					t1_r = t1.getFloFld(t1_fld_no);
 					t2_r = t2.getFloFld(t2_fld_no);
-
-					System.out.println("T1 tuple: ");
-
-					System.out.println(t1.getFloFld(t1_fld_no));
-
-
-					System.out.println("T2 tuple: ");
-
-					System.out.println(t2.getFloFld(t2_fld_no));
-
 				}catch (FieldNumberOutOfBoundException e){
 					throw new TupleUtilsException(e, "FieldNumberOutOfBoundException is caught by TupleUtils.java");
 				}
@@ -153,8 +143,6 @@ public class TupleUtils
 		float t1Sum = 0.0f;
 		float t2Sum = 0.0f;
 
-		System.out.println("Pref length: "+pref_list_length);
-
 
 		for(int i=0; i<pref_list_length; i++){
 
@@ -174,9 +162,6 @@ public class TupleUtils
 				t2Sum += t2.getFloFld(pref_list[i]);
 			}
 		}
-
-		System.out.println("T1 final sum "+t1Sum);
-		System.out.println("T2 final sum "+t2Sum);
 
 		return t1Sum == t2Sum ? 0 : t1Sum > t2Sum ? 1 : -1;
 	}
