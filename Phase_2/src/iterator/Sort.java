@@ -728,7 +728,7 @@ public class Sort extends Iterator implements GlobalConst
         _pref_list = pref_list;
         _pref_list_length = pref_list_length;
 
-        System.out.println("Setting pref list in SORT constructor: "+_pref_list_length);
+        System.out.println(": "+_pref_list_length);
 
         n_strs = 0;
         for (int i=0; i<len_in; i++) {

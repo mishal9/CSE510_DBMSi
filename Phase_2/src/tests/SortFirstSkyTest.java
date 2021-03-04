@@ -7,8 +7,11 @@ import diskmgr.*;
 import heap.*;
 import iterator.*;
 import index.*;
+import skylines.SortFirstSky;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
 
 
@@ -37,6 +40,7 @@ class SortFirstSkyDriver extends TestDriver
             {0.324f, 0.257f, 0.609f, 0.529f, 0.349f}
     };
 
+
     private static int   NUM_RECORDS = data1.length;
     private static short REC_LEN1 = 160;
     private static short REC_LEN2 = 160;
@@ -53,7 +57,7 @@ class SortFirstSkyDriver extends TestDriver
         order[1] = new TupleOrder(TupleOrder.Descending);
     }
 
-    public boolean runTests ()  {
+    public boolean runTests () throws HFDiskMgrException, HFException, HFBufMgrException, IOException {
 
         System.out.println ("\n" + "Running " + testName() + " tests...." + "\n");
 
@@ -231,6 +235,7 @@ class SortFirstSkyDriver extends TestDriver
         boolean flag = true;
 
         while (t != null) {
+
             if (count >= NUM_RECORDS) {
                 System.err.println("Test1 -- OOPS! too many records");
                 status = FAIL;
@@ -292,36 +297,42 @@ class SortFirstSkyDriver extends TestDriver
     }
 
 
-    protected boolean test2()
-    {
+    protected boolean test2()  {
         System.out.println("------------------------ TEST 2 --------------------------");
 
         boolean status = OK;
-        /*
-        AttrType[] attrType = new AttrType[1];
-        attrType[0] = new AttrType(AttrType.attrString);
-        short[] attrSize = new short[1];
+
+        AttrType[] attrType = new AttrType[5];
+        attrType[0] = new AttrType(AttrType.attrReal);
+        attrType[1] = new AttrType(AttrType.attrReal);
+        attrType[2] = new AttrType(AttrType.attrReal);
+        attrType[3] = new AttrType(AttrType.attrReal);
+        attrType[4] = new AttrType(AttrType.attrReal);
+
+        short[] attrSize = new short[5];
         attrSize[0] = REC_LEN1;
-        TupleOrder[] order = new TupleOrder[2];
-        order[0] = new TupleOrder(TupleOrder.Ascending);
-        order[1] = new TupleOrder(TupleOrder.Descending);
+        attrSize[1] = REC_LEN2;
+        attrSize[2] = REC_LEN3;
+        attrSize[3] = REC_LEN4;
+        attrSize[4] = REC_LEN5;
 
         // create a tuple of appropriate size
         Tuple t = new Tuple();
         try {
-            t.setHdr((short) 1, attrType, attrSize);
+            t.setHdr((short) 5, attrType, attrSize);
         }
         catch (Exception e) {
             status = FAIL;
             e.printStackTrace();
         }
+
         int size = t.size();
 
-        // Create unsorted data file "test2.in"
+        // Create unsorted data file "test1sortFirstSky.in"
         RID             rid;
         Heapfile        f = null;
         try {
-            f = new Heapfile("test2.in");
+            f = new Heapfile("test1sortFirstSky.in");
         }
         catch (Exception e) {
             status = FAIL;
@@ -330,7 +341,7 @@ class SortFirstSkyDriver extends TestDriver
 
         t = new Tuple(size);
         try {
-            t.setHdr((short) 1, attrType, attrSize);
+            t.setHdr((short) 5, attrType, attrSize);
         }
         catch (Exception e) {
             status = FAIL;
@@ -339,7 +350,8 @@ class SortFirstSkyDriver extends TestDriver
 
         for (int i=0; i<NUM_RECORDS; i++) {
             try {
-                t.setStrFld(1, data1[i]);
+                for(int j=0; j<5; j++)
+                    t.setFloFld(j+1, data1[i][j]);
             }
             catch (Exception e) {
                 status = FAIL;
@@ -356,94 +368,57 @@ class SortFirstSkyDriver extends TestDriver
         }
 
         // create an iterator by open a file scan
-        FldSpec[] projlist = new FldSpec[1];
+        FldSpec[] projlist = new FldSpec[5];
         RelSpec rel = new RelSpec(RelSpec.outer);
         projlist[0] = new FldSpec(rel, 1);
+        projlist[1] = new FldSpec(rel, 2);
+        projlist[2] = new FldSpec(rel, 3);
+        projlist[3] = new FldSpec(rel, 4);
+        projlist[4] = new FldSpec(rel, 5);
 
         FileScan fscan = null;
 
+        String relation = "test1sortFirstSky.in";
+
         try {
-            fscan = new FileScan("test2.in", attrType, attrSize, (short) 1, 1, projlist, null);
+            fscan = new FileScan(relation, attrType, attrSize, (short) 5, 5, projlist, null);
         }
         catch (Exception e) {
             status = FAIL;
             e.printStackTrace();
         }
 
-        // Sort "test2.in"
+        // Sort "test1sortFirstSky.in"
         Sort sort = null;
         try {
-            sort = new Sort(attrType, (short) 1, attrSize, fscan, 1, order[1], REC_LEN1, SORTPGNUM);
+            sort = new Sort(attrType, (short) 5, attrSize, fscan, order[1], new int[]{1,2}, 2, SORTPGNUM);
         }
         catch (Exception e) {
             status = FAIL;
             e.printStackTrace();
         }
-
-
-        int count = 0;
-        t = null;
-        String outval = null;
 
         try {
-            t = sort.get_next();
-        }
-        catch (Exception e) {
-            status = FAIL;
+            SortFirstSky sortFirstSky = new SortFirstSky(attrType,
+                                                        (short) 5,
+                                                        attrSize,
+                                                        sort,
+                                                        relation,
+                                                        new int[]{1,2},
+                                                       2,
+                                                        SORTPGNUM);
+        } catch (IOException e) {
             e.printStackTrace();
-        }
-
-        boolean flag = true;
-
-        while (t != null) {
-            if (count >= NUM_RECORDS) {
-                System.err.println("Test2 -- OOPS! too many records");
-                status = FAIL;
-                flag = false;
-                break;
-            }
-
-            try {
-                outval = t.getStrFld(1);
-            }
-            catch (Exception e) {
-                status = FAIL;
-                e.printStackTrace();
-            }
-
-            if (outval.compareTo(data2[NUM_RECORDS - count - 1]) != 0) {
-                System.err.println("Test2 -- OOPS! test2.out not sorted");
-                status = FAIL;
-            }
-            count++;
-
-            try {
-                t = sort.get_next();
-            }
-            catch (Exception e) {
-                status = FAIL;
-                e.printStackTrace();
-            }
-        }
-        if (count < NUM_RECORDS) {
-            System.err.println("Test2 -- OOPS! too few records");
-            status = FAIL;
-        }
-        else if (flag && status) {
-            System.err.println("Test2 -- Sorting OK");
-        }
-
-        // clean up
-        try {
-            sort.close();
-        }
-        catch (Exception e) {
-            status = FAIL;
+        } catch (HFException e) {
             e.printStackTrace();
+        } catch (HFBufMgrException e) {
+            e.printStackTrace();
+        } catch (HFDiskMgrException e) {
+            e.printStackTrace();
+        } finally {
+            status = OK;
         }
 
-        System.err.println("------------------- TEST 2 completed ---------------------\n");
-        */
         return status;
     }
 
@@ -456,8 +431,7 @@ class SortFirstSkyDriver extends TestDriver
 
 public class SortFirstSkyTest
 {
-    public static void main(String argv[])
-    {
+    public static void main(String argv[]) throws IOException, HFException, HFBufMgrException, HFDiskMgrException {
         boolean sortstatus;
 
         SortFirstSkyDriver driver = new SortFirstSkyDriver();
