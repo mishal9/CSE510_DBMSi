@@ -3,8 +3,12 @@ package tests;
 import java.io.*;
 import java.util.*;
 import java.lang.*;
+import heap.*;
 import global.*;
 import btree.*;
+import index.IndexScan;
+import iterator.FldSpec;
+import iterator.RelSpec;
 
 
 /**
@@ -87,7 +91,6 @@ class GenerateIndexDriver implements GlobalConst {
     }
 
     protected void runAllTests() {
-
         try{
             test1();
             test2();
@@ -105,7 +108,7 @@ class GenerateIndexDriver implements GlobalConst {
             System.out.println(" Combined BTreeIndex creation");
 
             GenerateIndexFiles obj = new GenerateIndexFiles();
-            IndexFile hf = obj.createCombinedBTreeIndex("../../data/subset.txt");
+            IndexFile hf = obj.createCombinedBTreeIndex("../../data/subset2.txt");
 
         } catch (Exception e) {
             throw e;
@@ -118,10 +121,10 @@ class GenerateIndexDriver implements GlobalConst {
     void test2()
             throws Exception {
         try {
-            System.out.println("Individual BTreeIndex creation");
+            System.out.println(" BTreeIndex creation");
 
             GenerateIndexFiles obj = new GenerateIndexFiles();
-            IndexFile[] hf = obj.createBTreeIndex("../../data/subset.txt");
+            IndexFile[] hf = obj.createBTreeIndex("../../data/subset2.txt");
 
         } catch (Exception e) {
             throw e;
@@ -134,22 +137,52 @@ class GenerateIndexDriver implements GlobalConst {
         try {
             BTFileScan scan;
             KeyDataEntry entry;
-            System.out.println("CombinedBTreeIndex on all attributes scanning");
+            System.out.println("CombinedBTreeIndex scanning");
 
             GenerateIndexFiles obj = new GenerateIndexFiles();
-            IndexFile hf = obj.createCombinedBTreeIndex("../../data/subset.txt");
-
-            scan = ((BTreeFile)hf).new_scan(null, null);
-
+            IndexFile indexFile = obj.createCombinedBTreeIndex("../../data/subset2.txt");
+            System.out.println("Index created! ");
+            scan = ((BTreeFile) indexFile).new_scan(null, null);
+            Heapfile hf = new Heapfile("heap_" + "AAA" + obj.prefix);
+            Scan heap_scan = new Scan(hf);
+            RID rid;
             entry = scan.get_next();
-            while(entry!=null) {
-                System.out.println("SCAN RESULT: " + entry.key + " " + entry.data);
+            while (entry != null) {
+                System.out.println("SCAN RESULT: " + entry.key + " > " + entry.data);
                 entry = scan.get_next();
             }
             System.out.println("AT THE END OF SCAN!");
 
-        } catch (Exception e) {
-            throw e;
+//      Have to add code to SCAN the heap file using the BTree Index
+            
+            /*
+            TODO: To be fixed
+            FldSpec[] projlist = new FldSpec[3];
+            RelSpec rel = new RelSpec(RelSpec.outer);
+            projlist[0] = new FldSpec(rel, 1);
+            projlist[1] = new FldSpec(rel, 2);
+            projlist[1] = new FldSpec(rel, 3);
+            int COLS = 3;
+            AttrType[] Stypes = new AttrType[COLS];
+            for (int i = 0; i < COLS; i++) {
+                Stypes[i] = new AttrType(AttrType.attrReal);
+            }
+
+            IndexScan iscan = new IndexScan(new IndexType(IndexType.B_Index), "AAA" + (obj.prefix - 1), "BTreeIndex", Stypes, null, 3, 2, projlist, null, 3, true);
+            int count = 0;
+            Tuple t = null;
+            String outval = null;
+            t = iscan.get_next();
+            boolean flag = true;
+
+            while (t != null) {
+                t = iscan.get_next();
+                System.out.println(t.noOfFlds());
+            }
+             */
+
+        } catch (Exception e){
+            e.printStackTrace();
         }
     }
 
@@ -158,11 +191,10 @@ class GenerateIndexDriver implements GlobalConst {
             throws Exception {
         try {
             KeyDataEntry entry;
-            System.out.println("BTreeIndex on individual attributes scanning");
+            System.out.println("BTreeIndex scanning");
 
             GenerateIndexFiles obj = new GenerateIndexFiles();
-            IndexFile[] hf = obj.createBTreeIndex("../../data/subset.txt");
-
+            IndexFile[] hf = obj.createBTreeIndex("../../data/subset2.txt");
             BTFileScan[] scans = new BTFileScan[hf.length];
             for(int i=0;i<hf.length;i++){
                 scans[i] = ((BTreeFile)hf[i]).new_scan(null, null);
