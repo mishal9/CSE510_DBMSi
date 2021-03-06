@@ -38,6 +38,7 @@ db:
 	make -C index
 	make -C iterator
 	make -C driver
+	make -C skylines
 	
 doc:
 	$(JAVADOC) $(DOCFILES)
