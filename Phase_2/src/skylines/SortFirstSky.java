@@ -6,7 +6,10 @@ import heap.*;
 import iterator.*;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 import static tests.TestDriver.FAIL;
 import static tests.TestDriver.OK;
@@ -17,12 +20,12 @@ public class SortFirstSky implements GlobalConst {
     private static String _relationName;
     private static int[] _pref_list;
     private static int _pref_list_length;
-    private Iterator _fscan;
-    private Sort _sort;
+    private Scan _fscan;
+    private SortPref _sort;
     private static AttrType[] _in;
     private static int _len_in;
+    private static Heapfile _input;
     private static short[] _str_sizes;
-    private static Tuple[] window;
     private static Heapfile temp;
     boolean status = OK;
     private static short REC_LEN1 = 160;
@@ -30,6 +33,9 @@ public class SortFirstSky implements GlobalConst {
     private static short REC_LEN3 = 160;
     private static short REC_LEN4 = 160;
     private static short REC_LEN5 = 160;
+    private static AttrType[] _attrType = new AttrType[6];
+    private static short[] _attrSize = new short[6];
+    private static FldSpec[] _projlist;
 
     public SortFirstSky(AttrType[] in1, int len_in1, short[] t1_str_sizes,
                         Iterator am1, java.lang.String
@@ -39,47 +45,38 @@ public class SortFirstSky implements GlobalConst {
         _in = in1;
         _len_in = len_in1;
         _str_sizes = t1_str_sizes;
-        _sort = (Sort) am1;
+        _sort = (SortPref) am1;
         _fscan = null;
 
-        AttrType[] attrType = new AttrType[5];
-        attrType[0] = new AttrType(AttrType.attrReal);
-        attrType[1] = new AttrType(AttrType.attrReal);
-        attrType[2] = new AttrType(AttrType.attrReal);
-        attrType[3] = new AttrType(AttrType.attrReal);
-        attrType[4] = new AttrType(AttrType.attrReal);
+        _attrType[0] = new AttrType(AttrType.attrReal);
+        _attrType[1] = new AttrType(AttrType.attrReal);
+        _attrType[2] = new AttrType(AttrType.attrReal);
+        _attrType[3] = new AttrType(AttrType.attrReal);
+        _attrType[4] = new AttrType(AttrType.attrReal);
+        _attrType[5] = new AttrType(AttrType.attrReal);
 
-        short[] attrSize = new short[5];
-        attrSize[0] = REC_LEN1;
-        attrSize[1] = REC_LEN2;
-        attrSize[2] = REC_LEN3;
-        attrSize[3] = REC_LEN4;
-        attrSize[4] = REC_LEN5;
+        _attrSize[0] = REC_LEN1;
+        _attrSize[1] = REC_LEN2;
+        _attrSize[2] = REC_LEN3;
+        _attrSize[3] = REC_LEN4;
+        _attrSize[4] = REC_LEN5;
+        _attrSize[5] = REC_LEN5;
 
         // create an iterator by open a file scan
-        FldSpec[] projlist = new FldSpec[5];
+        _projlist = new FldSpec[6];
         RelSpec rel = new RelSpec(RelSpec.outer);
-        projlist[0] = new FldSpec(rel, 1);
-        projlist[1] = new FldSpec(rel, 2);
-        projlist[2] = new FldSpec(rel, 3);
-        projlist[3] = new FldSpec(rel, 4);
-        projlist[4] = new FldSpec(rel, 5);
-
-        try {
-            // this file will already be sorted
-            _fscan = new FileScan("test1sortFirstSky.in", attrType, attrSize, (short) 5, 5, projlist, null);
-        }
-        catch (Exception e) {
-            status = FAIL;
-            e.printStackTrace();
-        }
+        _projlist[0] = new FldSpec(rel, 1);
+        _projlist[1] = new FldSpec(rel, 2);
+        _projlist[2] = new FldSpec(rel, 3);
+        _projlist[3] = new FldSpec(rel, 4);
+        _projlist[4] = new FldSpec(rel, 5);
+        _projlist[5] = new FldSpec(rel, 6);
 
         _relationName = relationName;
         _pref_list = pref_list;
         _pref_list_length = pref_list_length;
         _n_pages = n_pages;
         temp = new Heapfile("sortFirstSkyTemp.in");
-        window = new Tuple[_n_pages];
 
         System.out.println("----------   SORT FIRST SKY INIT VARS   -------------");
         System.out.println("Attributes: "+Arrays.toString(_in));
@@ -88,13 +85,13 @@ public class SortFirstSky implements GlobalConst {
         System.out.println("Preferences list: "+ Arrays.toString(_pref_list));
         System.out.println("Preferences list length: "+_pref_list_length);
         System.out.println("Number of buffer pages: "+_n_pages);
-        System.out.println("Window: "+window.length);
         System.out.println("-----------------------------------------------------");
 
-        computeSkylines(_fscan, _sort);
+        if ( status == OK )
+            computeSkylines(_relationName, _sort);
     }
 
-    public void computeSkylines(Iterator _fscan, Sort _sort){
+    public void computeSkylines(String file, SortPref _sort){
 
         /*
         SORT FIRST SKY:
@@ -116,7 +113,104 @@ public class SortFirstSky implements GlobalConst {
 	        dominates memory_tuple -> discard memory_tuple
          */
 
+        // create a tuple of appropriate size
+        Tuple t = new Tuple();
 
+        try {
+            // check if there's atleast one tuple
+            t = _sort.get_next();
+        }
+        catch (Exception e) {
+            status = FAIL;
+            e.printStackTrace();
+        }
+
+        int count = 0;
+
+        List<List<Float>> window = new ArrayList<>();
+
+        while (t != null && count < _n_pages) {
+
+            List<Float> floatList = new LinkedList<>();
+
+            try {
+                floatList.add(t.getFloFld(1));
+                floatList.add(t.getFloFld(2));
+                floatList.add(t.getFloFld(3));
+                floatList.add(t.getFloFld(4));
+                floatList.add(t.getFloFld(5));
+            }
+            catch (Exception e) {
+                status = FAIL;
+                e.printStackTrace();
+            }
+
+            window.add(floatList);
+
+            count++;
+
+            try {
+                t = _sort.get_next();
+            }
+            catch (Exception e) {
+                status = FAIL;
+                e.printStackTrace();
+            }
+        }
+
+        for(int i=0; i<window.size(); i++){
+            System.out.println(window.get(i));
+        }
+
+        FileScan fscan = null;
+
+        try {
+            fscan = new FileScan(file, _attrType, _attrSize, (short) 6, 6, _projlist, null);
+        }
+        catch (Exception e) {
+            status = FAIL;
+            e.printStackTrace();
+        }
+
+        try {
+            t = fscan.get_next();
+        }
+        catch (Exception e) {
+            status = FAIL;
+            e.printStackTrace();
+        }
+
+        while (t != null) {
+
+            List<Float> floatList = new LinkedList<>();
+
+            try {
+                floatList.add(t.getFloFld(1));
+                floatList.add(t.getFloFld(2));
+                floatList.add(t.getFloFld(3));
+                floatList.add(t.getFloFld(4));
+                floatList.add(t.getFloFld(5));
+
+                if(window.contains(floatList)){
+                    System.out.println("Record already (delete) from heap"+floatList);
+                }else{
+                    System.out.println("Keep in heap"+floatList);
+                }
+
+            }
+            catch (Exception e) {
+                status = FAIL;
+                e.printStackTrace();
+            }
+
+            try {
+                t = fscan.get_next();
+            }
+            catch (Exception e) {
+                status = FAIL;
+                e.printStackTrace();
+            }
+        }
 
         return;
     }

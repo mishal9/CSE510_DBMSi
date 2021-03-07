@@ -97,37 +97,41 @@ public class TupleUtils
 								short len_in,
 								short[] str_sizes,
 								int[] pref_list,
-								int pref_list_length) throws IOException, FieldNumberOutOfBoundException {
+								int pref_list_length) throws IOException, TupleUtilsException, UnknowAttrType {
+		int   t1_i,  t2_i;
 		float t1_r,  t2_r;
-		int t1Cnt = 0;
-		int t2Cnt = 0;
+		//String t1_s, t2_s;
 
-		for(int i=0; i<pref_list_length; i++){
-			AttrType fldType1 = type1[pref_list[i]];
-			AttrType fldType2 = type2[pref_list[i]];
-			// compare
-			if(fldType1.equals(AttrType.attrInteger)){
-				t1_r = t1.getIntFld(pref_list[i]);
-			}else{
-				t1_r = t1.getFloFld(pref_list[i]);
-			}
 
-			if(fldType2.equals(AttrType.attrInteger)){
-				t2_r = t2.getIntFld(pref_list[i]);
-			}else{
-				t2_r = t2.getFloFld(pref_list[i]);
-			}
+		for(int i=0;i<pref_list_length;i++){
 
-			if(t1_r < t2_r){
-				// t2 dominates t1
-				t2Cnt++;
-			}else{
-				// t1 dominates t2
-				t1Cnt++;
+			switch (type1[pref_list[i]-1].attrType) {
+				case AttrType.attrInteger:
+					try {
+						t1_i = t1.getIntFld(pref_list[i]);
+						t2_i = t2.getIntFld(pref_list[i]);
+					}catch (FieldNumberOutOfBoundException e){
+						throw new TupleUtilsException(e, "FieldNumberOutOfBoundException is caught by TupleUtils.java");
+					}
+					if (t1_i <  t2_i) return 0;
+
+				case AttrType.attrReal:
+					try {
+						t1_r = t1.getFloFld(pref_list[i]);
+						t2_r = t2.getFloFld(pref_list[i]);
+					}catch (FieldNumberOutOfBoundException e){
+						throw new TupleUtilsException(e, "FieldNumberOutOfBoundException is caught by TupleUtils.java");
+					}
+					if (t1_r <  t2_r) return 0;
+
+				default:
+					// don't know how to handle attrSymbol, attrNull
+					//System.err.println("error in sort.java");
+					throw new UnknowAttrType("Sort.java: don't know how to handle attrSymbol, attrNull");
 			}
 		}
 
-		return t1Cnt == pref_list.length ? 1 : 0; //(1,0)
+		return 1;
 	}
 
 	public static int CompareTupleWithTuplePref(Tuple t1,
@@ -143,27 +147,36 @@ public class TupleUtils
 		float t1Sum = 0.0f;
 		float t2Sum = 0.0f;
 
-
 		for(int i=0; i<pref_list_length; i++){
-
-			AttrType fldType1 = type1[pref_list[i]];
-			AttrType fldType2 = type2[pref_list[i]];
+			AttrType fldType1 = type1[pref_list[i]-1];
+			AttrType fldType2 = type2[pref_list[i]-1];
 			// add
 			if(fldType1.equals(AttrType.attrInteger)){
 				t1Sum += t1.getIntFld(pref_list[i]);
 			}else{
-				t1Sum += t1.getFloFld(pref_list[i]);
+				t1Sum = Float.sum(t1Sum, t1.getFloFld(pref_list[i]));
 			}
-
 
 			if(fldType2.equals(AttrType.attrInteger)){
 				t2Sum += t2.getIntFld(pref_list[i]);
 			}else{
-				t2Sum += t2.getFloFld(pref_list[i]);
+				t2Sum = Float.sum(t2Sum, t2.getFloFld(pref_list[i]));
+			}
+
+		}
+
+		if(Float.compare(t1Sum, t2Sum) == 0)
+			return 0;
+		else {
+			if(Float.compare(t1Sum, t2Sum) < 0){
+				// t1 < t2
+				return -1;
+			}else{
+				// t1 > t2
+				return 1;
 			}
 		}
 
-		return t1Sum == t2Sum ? 0 : t1Sum > t2Sum ? 1 : -1;
 	}
 
 	/**

@@ -167,7 +167,7 @@ public class pnodeSplayPQ extends pnodePQ
 	 *                           <code>attrNull</code> encountered
 	 * @exception TupleUtilsException error in tuple compare routines
 	 */
-	public void enq(pnode item,
+	public void enqPref(pnode item,
 					AttrType[] type,
 					short len_in,
 					short[] str_sizes,

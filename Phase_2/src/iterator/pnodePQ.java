@@ -54,7 +54,7 @@ public abstract class pnodePQ
   abstract public void  enq(pnode  item) 
            throws IOException, UnknowAttrType, TupleUtilsException;
 
-  abstract public void  enq(pnode  item, AttrType[] arr, short len_in,
+  abstract public void  enqPref(pnode  item, AttrType[] arr, short len_in,
                             short[] str_sizes,
                             int[] pref_list,
                             int pref_list_length)
