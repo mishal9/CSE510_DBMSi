@@ -28,11 +28,11 @@ public class SortFirstSky implements GlobalConst {
     private static short[] _str_sizes;
     private static Heapfile temp;
     boolean status = OK;
-    private static short REC_LEN1 = 160;
-    private static short REC_LEN2 = 160;
-    private static short REC_LEN3 = 160;
-    private static short REC_LEN4 = 160;
-    private static short REC_LEN5 = 160;
+    private static short REC_LEN1 = 32;
+    private static short REC_LEN2 = 32;
+    private static short REC_LEN3 = 32;
+    private static short REC_LEN4 = 32;
+    private static short REC_LEN5 = 32;
     private static AttrType[] _attrType = new AttrType[6];
     private static short[] _attrSize = new short[6];
     private static FldSpec[] _projlist;
@@ -180,9 +180,13 @@ public class SortFirstSky implements GlobalConst {
             e.printStackTrace();
         }
 
+        int heap_objects = 0;
+
         while (t != null) {
 
             List<Float> floatList = new LinkedList<>();
+
+
 
             try {
                 floatList.add(t.getFloFld(1));
@@ -191,10 +195,11 @@ public class SortFirstSky implements GlobalConst {
                 floatList.add(t.getFloFld(4));
                 floatList.add(t.getFloFld(5));
 
-                if(window.contains(floatList)){
-                    System.out.println("Record already (delete) from heap"+floatList);
-                }else{
-                    System.out.println("Keep in heap"+floatList);
+                if(!window.contains(floatList)){
+                    System.out.println("Native heap objects "+floatList);
+                    heap_objects++;
+                } else{
+                    System.out.println("Window object "+floatList);
                 }
 
             }
@@ -211,6 +216,8 @@ public class SortFirstSky implements GlobalConst {
                 e.printStackTrace();
             }
         }
+
+        System.out.println("heap objects "+heap_objects);
 
         return;
     }

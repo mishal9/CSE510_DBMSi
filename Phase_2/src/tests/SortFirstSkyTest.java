@@ -7,6 +7,7 @@ import iterator.*;
 import skylines.SortFirstSky;
 
 import java.util.Arrays;
+import java.util.Scanner;
 
 
 class SortFirstSkyDriver extends TestDriver
@@ -45,8 +46,8 @@ class SortFirstSkyDriver extends TestDriver
     private static short REC_LEN3 = 160;
     private static short REC_LEN4 = 160;
     private static short REC_LEN5 = 160;
-    private static int   SORTPGNUM = 6;
-
+    private static int   SORTPGNUM = 150;
+    private static int BUFF_SIZE = 10;
 
     TupleOrder[] order = new TupleOrder[2];
 
@@ -59,8 +60,8 @@ class SortFirstSkyDriver extends TestDriver
     public boolean runTests () throws HFDiskMgrException, HFException, HFBufMgrException, IOException {
 
         System.out.println ("\n" + "Running " + testName() + " tests...." + "\n");
-
-        SystemDefs sysdef = new SystemDefs( dbpath, 300, NUMBUF, "Clock" );
+        // We will define the bufpoolsize and num_pgs params ; whereas BUFF_SIZE determined by user input
+        SystemDefs sysdef = new SystemDefs( dbpath, 300, 300, "Clock" );
 
         // Kill anything that might be hanging around
         String newdbpath;
@@ -306,7 +307,13 @@ class SortFirstSkyDriver extends TestDriver
 
         boolean status = OK;
 
-        AttrType[] attrType = new AttrType[6];
+        // Read data and construct tuples
+        File file = new File("../../data/subset3.txt");
+        Scanner sc = new Scanner(file);
+
+        int COLS = sc.nextInt()+1;
+
+        AttrType[] attrType = new AttrType[COLS];
         attrType[0] = new AttrType(AttrType.attrReal);
         attrType[1] = new AttrType(AttrType.attrReal);
         attrType[2] = new AttrType(AttrType.attrReal);
@@ -314,7 +321,7 @@ class SortFirstSkyDriver extends TestDriver
         attrType[4] = new AttrType(AttrType.attrReal);
         attrType[5] = new AttrType(AttrType.attrReal);
 
-        short[] attrSize = new short[6];
+        short[] attrSize = new short[COLS];
         attrSize[0] = REC_LEN1;
         attrSize[1] = REC_LEN2;
         attrSize[2] = REC_LEN3;
@@ -322,11 +329,13 @@ class SortFirstSkyDriver extends TestDriver
         attrSize[4] = REC_LEN5;
         attrSize[5] = REC_LEN5;
 
+        String hfileName = "test2sortPref.in";
+
 
         // create a tuple of appropriate size
         Tuple t = new Tuple();
         try {
-            t.setHdr((short) 6, attrType, attrSize);
+            t.setHdr((short) COLS, attrType, attrSize);
         }
         catch (Exception e) {
             status = FAIL;
@@ -336,10 +345,10 @@ class SortFirstSkyDriver extends TestDriver
         int size = t.size();
 
         // Create unsorted data file "test1.in"
-        RID             rid;
+        RID             rid = null;
         Heapfile        f = null;
         try {
-            f = new Heapfile("test2sortPref.in");
+            f = new Heapfile(hfileName);
         }
         catch (Exception e) {
             status = FAIL;
@@ -348,21 +357,30 @@ class SortFirstSkyDriver extends TestDriver
 
         t = new Tuple(size);
         try {
-            t.setHdr((short) 6, attrType, attrSize);
+            t.setHdr((short) COLS, attrType, attrSize);
         }
         catch (Exception e) {
             status = FAIL;
             e.printStackTrace();
         }
 
-        for (int i=0; i<NUM_RECORDS; i++) {
-            try {
-                for(int j=0; j<5; j++)
-                    t.setFloFld(j+1, data1[i][j]);
-            }
-            catch (Exception e) {
-                status = FAIL;
-                e.printStackTrace();
+        while (sc.hasNextLine()) {
+            // create a tuple of appropriate size
+
+            double[] doubleArray = Arrays.stream(Arrays.stream(sc.nextLine().trim()
+                    .split("\\s+"))
+                    .filter(s -> !s.isEmpty())
+                    .toArray(String[]::new))
+                    .mapToDouble(Double::parseDouble)
+                    .toArray();
+
+            for(int i=0; i<doubleArray.length; i++) {
+                try {
+                    t.setFloFld(i+1, (float) doubleArray[i]);
+                } catch (Exception e) {
+                    status = FAIL;
+                    e.printStackTrace();
+                }
             }
 
             try {
@@ -372,10 +390,12 @@ class SortFirstSkyDriver extends TestDriver
                 status = FAIL;
                 e.printStackTrace();
             }
+
+            System.out.println("RID: "+rid);
         }
 
         // create an iterator by open a file scan
-        FldSpec[] projlist = new FldSpec[6];
+        FldSpec[] projlist = new FldSpec[COLS];
         RelSpec rel = new RelSpec(RelSpec.outer);
         projlist[0] = new FldSpec(rel, 1);
         projlist[1] = new FldSpec(rel, 2);
@@ -387,7 +407,7 @@ class SortFirstSkyDriver extends TestDriver
         FileScan fscan = null;
 
         try {
-            fscan = new FileScan("test2sortPref.in", attrType, attrSize, (short) 6, 6, projlist, null);
+            fscan = new FileScan(hfileName, attrType, attrSize, (short) COLS, COLS, projlist, null);
         }
         catch (Exception e) {
             status = FAIL;
@@ -397,7 +417,7 @@ class SortFirstSkyDriver extends TestDriver
         // Sort "test1sortPref.in"
         SortPref sort = null;
         try {
-            sort = new SortPref(attrType, (short) 6, attrSize, fscan, order[1], new int[]{1}, 1, SORTPGNUM);
+            sort = new SortPref(attrType, (short) COLS, attrSize, fscan, order[1], new int[]{1}, 1, SORTPGNUM);
         }
         catch (Exception e) {
             status = FAIL;
@@ -406,13 +426,13 @@ class SortFirstSkyDriver extends TestDriver
 
         try {
             SortFirstSky sortFirstSky = new SortFirstSky(attrType,
-                                                        (short) 6,
+                                                        (short) COLS,
                                                         attrSize,
                                                         sort,
-                                           "test2sortPref.in",
+                                                        hfileName,
                                                         new int[]{1},
                                                        1,
-                                                        SORTPGNUM);
+                    BUFF_SIZE);
         } catch (IOException e) {
             e.printStackTrace();
         } catch (HFException e) {
