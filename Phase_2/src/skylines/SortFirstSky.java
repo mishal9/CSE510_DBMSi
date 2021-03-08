@@ -168,6 +168,8 @@ public class SortFirstSky implements GlobalConst {
             e.printStackTrace();
         }
 
+        int dominates = 0;
+
         while (t != null) {
             boolean isDominatedBy = false;
             System.out.println("=======");
@@ -182,23 +184,25 @@ public class SortFirstSky implements GlobalConst {
                 */
 
                 for(int i=0; i<_window.length; i++){
-                    if(TupleUtils.Dominates(htuple, _attrType, _window[i], _attrType, _len_in, _str_sizes, _pref_list, _pref_list_length)){
-                        // 2. If tuple in heap file dominates any one in main memory - replace the tuple with the one in main memory
-                        System.out.println("Heap tuple");
-                        htuple.print(_attrType);
-                        System.out.println("Dominates ");
-                        _window[i].print(_attrType);
-                        System.out.println(" ");
-                    }else{
-                        // 1. If tuple in heap file is dominated by at least one in main memory - simply discard it from heap
-                        isDominatedBy = true;
-                        System.out.println("Heap tuple");
-                        htuple.print(_attrType);
-                        System.out.println("Dominated by ");
-                        _window[i].print(_attrType);
-                        System.out.println(" ");
-                        break;
-                    }
+                        if (TupleUtils.Dominates(htuple, _attrType, _window[i], _attrType, _len_in, _str_sizes, _pref_list, _pref_list_length)) {
+                            // 2. If tuple in heap file dominates any one in main memory - replace the tuple with the one in main memory
+                            System.out.println("Heap tuple");
+                            htuple.print(_attrType);
+                            System.out.println("Dominates ");
+                            _window[i].print(_attrType);
+                            System.out.println(" ");
+                            _window[i] = htuple;
+                            dominates++;
+                        } else {
+                            // 1. If tuple in heap file is dominated by at least one in main memory - simply discard it from heap
+                            isDominatedBy = true;
+                            System.out.println("Heap tuple");
+                            htuple.print(_attrType);
+                            System.out.println("Dominated by ");
+                            _window[i].print(_attrType);
+                            System.out.println(" ");
+                            break;
+                        }
                 }
 
                 if(!isDominatedBy){
@@ -224,6 +228,16 @@ public class SortFirstSky implements GlobalConst {
                 e.printStackTrace();
             }
         }
+
+        System.out.println("Dominates "+dominates);
+
+        System.out.println("Window objects ");
+
+        for(int i=0; i<_window.length; i++){
+            _window[i].print(_attrType);
+        }
+
+        // drop indexes print here
 
         return;
     }

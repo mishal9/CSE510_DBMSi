@@ -20,12 +20,13 @@ class Driver  extends TestDriver implements GlobalConst
     protected String dbpath;
     protected String logpath;
 
-    private static int   NUM_RECORDS = 0;
-    private static int   PGNUM = 12;
-    private static int   COLS = 1;
     private static RID   rid;
     private static Heapfile  f = null;
     private boolean status = OK;
+    private static String _fileName;
+    private static int[] _pref_list;
+    private static int _n_pages;
+    private static int COLS;
 
     public Driver(){
         super("main");
@@ -33,7 +34,6 @@ class Driver  extends TestDriver implements GlobalConst
 
     public boolean runTests () {
         System.out.println ("\n" + "Running " + testName() + " tests...." + "\n");
-
         dbpath = "/tmp/main"+System.getProperty("user.name")+".minibase-db";
         logpath = "/tmp/main"+System.getProperty("user.name")+".minibase-log";
         // Each page can handle at most 25 tuples on original data => 7308 / 25 = 292
@@ -94,21 +94,29 @@ class Driver  extends TestDriver implements GlobalConst
 
     private void menu() {
         System.out.println("-------------------------- MENU ------------------");
-        System.out.println("\n\n[0]   Read input data");
-        System.out.println("[1]   Run Nested Loop skyline");
-        System.out.println("\n[2]   Run Block Nested Loop skyline");
-        System.out.println("[3]   Run Sorted First skyline");
-        System.out.println("[4]   Display output data");
-
-        System.out.println("\n[5]  Quit!");
+        System.out.println("\n\n[102]   Read input data 2");
+        System.out.println("\n\n[103]   Read input data 3");
+        System.out.println("\n\n[104]   Set pref = [1]");
+        System.out.println("\n\n[105]   Set pref = [1,3]");
+        System.out.println("\n\n[106]   Set pref = [1,3,5]");
+        System.out.println("\n\n[107]   Set pref = [1,2,3,4,5]");
+        System.out.println("\n\n[108]   Set n_page = 5");
+        System.out.println("\n\n[109]   Set n_page = 10");
+        System.out.println("\n\n[110]   Set n_page = <your_wish>");
+        System.out.println("[1]  Run Nested Loop skyline on data with parameters ");
+        System.out.println("[2]  Run Block Nested Loop on data with parameters ");
+        System.out.println("[3]  Run Sort First Sky on data with parameters ");
+        System.out.println("[4]  Run Btree Sky on data with parameters ");
+        System.out.println("[5]  Run Btree Sort Sky on data with parameters ");
+        System.out.println("\n[0]  Quit!");
         System.out.print("Hi, make your choice :");
     }
     
-    private void readDataIntoHeap() throws IOException, InvalidTupleSizeException, InvalidTypeException {
+    private void readDataIntoHeap(String fileName) throws IOException, InvalidTupleSizeException, InvalidTypeException {
 
         // Create the heap file object
         try {
-            f = new Heapfile("file_1");
+            f = new Heapfile("hFile");
         }
         catch (Exception e) {
             status = FAIL;
@@ -125,10 +133,10 @@ class Driver  extends TestDriver implements GlobalConst
         if ( status == OK ) {
 
             // Read data and construct tuples
-            File file = new File("../../data/subset.txt");
+            File file = new File("../../data/"+fileName+".txt");
             Scanner sc = new Scanner(file);
 
-            COLS = sc.nextInt()+1;
+            COLS = sc.nextInt();
 
             //  setting attribute types
             AttrType [] Stypes = new AttrType[5];
@@ -174,9 +182,9 @@ class Driver  extends TestDriver implements GlobalConst
                         .mapToDouble(Double::parseDouble)
                         .toArray();
 
-                for(int i=1; i<doubleArray.length; i++) {
+                for(int i=0; i<doubleArray.length; i++) {
                     try {
-                        t.setFloFld(i, (float) doubleArray[i]);
+                        t.setFloFld(i+1, (float) doubleArray[i]);
                     } catch (Exception e) {
                         status = FAIL;
                         e.printStackTrace();
@@ -201,35 +209,75 @@ class Driver  extends TestDriver implements GlobalConst
     }
 
     protected boolean runAllTests (){
-        int choice=1;
+        int choice=100;
 
-        while(choice!=5) {
+        while(choice!=0) {
             menu();
 
             try{
                 choice= GetStuff.getChoice();
 
                 switch(choice) {
-                    case 0:
-                        readDataIntoHeap();
+
+                    case 102:
+                        readDataIntoHeap("data2");
                         break;
+
+                    case 103:
+                        readDataIntoHeap("data3");
+                        break;
+
+                    case 104:
+                        _pref_list = new int[]{1};
+                        break;
+
+                    case 105:
+                        _pref_list = new int[]{1,3};
+                        break;
+
+                    case 106:
+                        _pref_list = new int[]{1,3,5};
+                        break;
+
+                    case 107:
+                        _pref_list = new int[]{1,2,3,4,5};
+                        break;
+
+                    case 108:
+                        _n_pages = 5;
+                        break;
+
+                    case 109:
+                        _n_pages = 10;
+                        break;
+
+                    case 110:
+                        _n_pages = GetStuff.getChoice();
+                        if(_n_pages<0)
+                            break;
+                        break;
+
                     case 1:
-
+                        // call nested loop sky
                         break;
+
                     case 2:
+                        // call block nested loop sky
                         break;
-                    case 3:
-                        break;
-                    case 4:
-                        System.out.println("Please input the page number: ");
-                        /*
-                        num= GetStuff.getChoice();
-                        if(num<0) break;
-                        BT.printPage(new PageId(num), keyType);
-                         */
-                        break;
-                    case 5:
 
+                    case 3:
+                        // call sort first sky
+                        break;
+
+                    case 4:
+                        // call btree sky
+                        break;
+
+                    case 5:
+                        // call btree sort sky
+                        break;
+
+                    case 0:
                         break;
                 }
 

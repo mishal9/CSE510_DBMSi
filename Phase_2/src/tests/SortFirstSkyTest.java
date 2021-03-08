@@ -46,7 +46,7 @@ class SortFirstSkyDriver extends TestDriver
     private static short REC_LEN3 = 160;
     private static short REC_LEN4 = 160;
     private static short REC_LEN5 = 160;
-    private static int   SORTPGNUM = 150;
+    private static int   SORTPGNUM = 1500;
     private static int BUFF_SIZE = 10;
 
     TupleOrder[] order = new TupleOrder[2];
@@ -61,7 +61,7 @@ class SortFirstSkyDriver extends TestDriver
 
         System.out.println ("\n" + "Running " + testName() + " tests...." + "\n");
         // We will define the bufpoolsize and num_pgs params ; whereas BUFF_SIZE determined by user input
-        SystemDefs sysdef = new SystemDefs( dbpath, 3000, 3000, "Clock" );
+        SystemDefs sysdef = new SystemDefs( dbpath, 8000, 3000, "Clock" );
 
         // Kill anything that might be hanging around
         String newdbpath;
@@ -301,7 +301,7 @@ class SortFirstSkyDriver extends TestDriver
         boolean status = OK;
 
         // Read data and construct tuples
-        File file = new File("../../data/subset3.txt");
+        File file = new File("../../data/data2.txt");
         Scanner sc = new Scanner(file);
 
         int COLS = sc.nextInt();
@@ -406,7 +406,7 @@ class SortFirstSkyDriver extends TestDriver
         // Sort "test1sortPref.in"
         SortPref sort = null;
         try {
-            sort = new SortPref(attrType, (short) COLS, attrSize, fscan, order[1], new int[]{1}, 1, SORTPGNUM);
+            sort = new SortPref(attrType, (short) COLS, attrSize, fscan, order[1], new int[]{1,2}, 2, SORTPGNUM);
         }
         catch (Exception e) {
             status = FAIL;
@@ -419,8 +419,8 @@ class SortFirstSkyDriver extends TestDriver
                                                         attrSize,
                                                         sort,
                                                         hfileName,
-                                                        new int[]{1},
-                                                       1,
+                                                        new int[]{1,2},
+                                                       2,
                     BUFF_SIZE);
         } catch (IOException e) {
             e.printStackTrace();
@@ -432,6 +432,14 @@ class SortFirstSkyDriver extends TestDriver
             e.printStackTrace();
         } finally {
             status = OK;
+            // clean up
+            try {
+                sort.close();
+            }
+            catch (Exception e) {
+                status = FAIL;
+                e.printStackTrace();
+            }
         }
 
         return status;
