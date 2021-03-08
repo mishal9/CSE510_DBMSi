@@ -173,7 +173,7 @@ public class pnodeSplayPQ extends pnodePQ
 					short[] str_sizes,
 					int[] pref_list,
 					int pref_list_length)
-			throws IOException, FieldNumberOutOfBoundException {
+			throws IOException, FieldNumberOutOfBoundException, UnknowAttrType, TupleUtilsException {
 		count ++;
 		pnodeSplayNode newnode = new pnodeSplayNode(item);
 		pnodeSplayNode t = root;

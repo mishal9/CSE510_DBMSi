@@ -522,7 +522,21 @@ public void setHdr (short numFlds,  AttrType types[], short strSizes[])
 
  }
 
-  /**
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        Tuple other = (Tuple) obj;
+        if (data != other.data)
+            return false;
+        return true;
+    }
+
+    /**
    * private method
    * Padding must be used when storing different types.
    * 

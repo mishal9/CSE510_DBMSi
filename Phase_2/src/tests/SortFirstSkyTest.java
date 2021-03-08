@@ -61,7 +61,7 @@ class SortFirstSkyDriver extends TestDriver
 
         System.out.println ("\n" + "Running " + testName() + " tests...." + "\n");
         // We will define the bufpoolsize and num_pgs params ; whereas BUFF_SIZE determined by user input
-        SystemDefs sysdef = new SystemDefs( dbpath, 300, 300, "Clock" );
+        SystemDefs sysdef = new SystemDefs( dbpath, 3000, 3000, "Clock" );
 
         // Kill anything that might be hanging around
         String newdbpath;
@@ -213,7 +213,7 @@ class SortFirstSkyDriver extends TestDriver
         // Sort "test1sortPref.in"
         SortPref sort = null;
         try {
-            sort = new SortPref(attrType, (short) 5, attrSize, fscan, order[1], new int[]{1,5}, 2, SORTPGNUM);
+            sort = new SortPref(attrType, (short) 5, attrSize, fscan, order[1], new int[]{1,2}, 2, SORTPGNUM);
         }
         catch (Exception e) {
             status = FAIL;
@@ -250,16 +250,13 @@ class SortFirstSkyDriver extends TestDriver
                 outval[2] = t.getFloFld(3);
                 outval[3] = t.getFloFld(4);
                 outval[4] = t.getFloFld(5);
-
-                System.out.println("Got row: ");
-                System.out.println(outval[0]+" "+outval[1]+" "+outval[2]+" "+outval[3]+" "+outval[4]+" ");
             }
             catch (Exception e) {
                 status = FAIL;
                 e.printStackTrace();
             }
 
-            if (!Arrays.equals(outval, data1[count])) {
+            if (!Arrays.equals(outval, data2[count])) {
                 System.err.println("outval = " + outval[0] + "\tdata2[count] = " + data1[count][0]);
 
                 System.err.println("Test1 -- OOPS! test1.out not sorted");
@@ -385,7 +382,6 @@ class SortFirstSkyDriver extends TestDriver
                 e.printStackTrace();
             }
 
-            System.out.println("RID: "+rid);
         }
 
         // create an iterator by open a file scan
