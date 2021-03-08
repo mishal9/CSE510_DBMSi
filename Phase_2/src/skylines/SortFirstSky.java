@@ -182,7 +182,7 @@ public class SortFirstSky implements GlobalConst {
                 */
 
                 for(int i=0; i<_window.length; i++){
-                    if(TupleUtils.Dominates(htuple, _attrType, _window[i], _attrType, _len_in, _str_sizes, _pref_list, _pref_list_length) == 1){
+                    if(TupleUtils.Dominates(htuple, _attrType, _window[i], _attrType, _len_in, _str_sizes, _pref_list, _pref_list_length)){
                         // 2. If tuple in heap file dominates any one in main memory - replace the tuple with the one in main memory
                         System.out.println("Heap tuple");
                         htuple.print(_attrType);

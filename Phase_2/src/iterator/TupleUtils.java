@@ -87,7 +87,7 @@ public class TupleUtils
 	}
 
 
-	public static int Dominates(Tuple t1,
+	public static boolean Dominates(Tuple t1,
 								AttrType[] type1,
 								Tuple t2,
 								AttrType[] type2,
@@ -95,31 +95,11 @@ public class TupleUtils
 								short[] str_sizes,
 								int[] pref_list,
 								int pref_list_length) throws IOException, TupleUtilsException, UnknowAttrType, FieldNumberOutOfBoundException {
-		int   t1_i,  t2_i;
-		float t1_r = 0,  t2_r = 0;
-		//String t1_s, t2_s;
-
-		for(int i=0;i<pref_list_length;i++){
-			AttrType fldType1 = type1[pref_list[i]-1];
-			AttrType fldType2 = type2[pref_list[i]-1];
-			// add
-			if(fldType1.equals(AttrType.attrInteger)){
-				t1_i = t1.getIntFld(pref_list[i]);
-			}else{
-				t1_r = t1.getFloFld(pref_list[i]);
-			}
-
-			if(fldType2.equals(AttrType.attrInteger)){
-				t2_i = t2.getIntFld(pref_list[i]);
-			}else{
-				t2_r = t2.getFloFld(pref_list[i]);
-			}
-
-			if (t1_r <=  t2_r)
-				return 0;
+		for (int i = 0; i < pref_list_length; i++) {
+			if (CompareTupleWithTuple(type1[i], t1, pref_list[i], t2, pref_list[i]) != 1)
+				return false;
 		}
-
-		return 1;
+		return true;
 	}
 
 	public static int CompareTupleWithTuplePref(Tuple t1,
