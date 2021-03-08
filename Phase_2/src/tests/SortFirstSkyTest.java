@@ -125,28 +125,25 @@ class SortFirstSkyDriver extends TestDriver
 
         boolean status = OK;
 
-        AttrType[] attrType = new AttrType[6];
+        AttrType[] attrType = new AttrType[5];
         attrType[0] = new AttrType(AttrType.attrReal);
         attrType[1] = new AttrType(AttrType.attrReal);
         attrType[2] = new AttrType(AttrType.attrReal);
         attrType[3] = new AttrType(AttrType.attrReal);
         attrType[4] = new AttrType(AttrType.attrReal);
-        attrType[5] = new AttrType(AttrType.attrReal);
 
-        short[] attrSize = new short[6];
+        short[] attrSize = new short[5];
         attrSize[0] = REC_LEN1;
         attrSize[1] = REC_LEN2;
         attrSize[2] = REC_LEN3;
         attrSize[3] = REC_LEN4;
         attrSize[4] = REC_LEN5;
-        attrSize[5] = REC_LEN5;
-
 
 
         // create a tuple of appropriate size
         Tuple t = new Tuple();
         try {
-            t.setHdr((short) 6, attrType, attrSize);
+            t.setHdr((short) 5, attrType, attrSize);
         }
         catch (Exception e) {
             status = FAIL;
@@ -168,7 +165,7 @@ class SortFirstSkyDriver extends TestDriver
 
         t = new Tuple(size);
         try {
-            t.setHdr((short) 6, attrType, attrSize);
+            t.setHdr((short) 5, attrType, attrSize);
         }
         catch (Exception e) {
             status = FAIL;
@@ -195,19 +192,18 @@ class SortFirstSkyDriver extends TestDriver
         }
 
         // create an iterator by open a file scan
-        FldSpec[] projlist = new FldSpec[6];
+        FldSpec[] projlist = new FldSpec[5];
         RelSpec rel = new RelSpec(RelSpec.outer);
         projlist[0] = new FldSpec(rel, 1);
         projlist[1] = new FldSpec(rel, 2);
         projlist[2] = new FldSpec(rel, 3);
         projlist[3] = new FldSpec(rel, 4);
         projlist[4] = new FldSpec(rel, 5);
-        projlist[5] = new FldSpec(rel, 6);
 
         FileScan fscan = null;
 
         try {
-            fscan = new FileScan("test1sortPref.in", attrType, attrSize, (short) 6, 6, projlist, null);
+            fscan = new FileScan("test1sortPref.in", attrType, attrSize, (short) 5, 5, projlist, null);
         }
         catch (Exception e) {
             status = FAIL;
@@ -217,7 +213,7 @@ class SortFirstSkyDriver extends TestDriver
         // Sort "test1sortPref.in"
         SortPref sort = null;
         try {
-            sort = new SortPref(attrType, (short) 6, attrSize, fscan, order[1], new int[]{1,5}, 2, SORTPGNUM);
+            sort = new SortPref(attrType, (short) 5, attrSize, fscan, order[1], new int[]{1,5}, 2, SORTPGNUM);
         }
         catch (Exception e) {
             status = FAIL;
@@ -311,7 +307,7 @@ class SortFirstSkyDriver extends TestDriver
         File file = new File("../../data/subset3.txt");
         Scanner sc = new Scanner(file);
 
-        int COLS = sc.nextInt()+1;
+        int COLS = sc.nextInt();
 
         AttrType[] attrType = new AttrType[COLS];
         attrType[0] = new AttrType(AttrType.attrReal);
@@ -319,7 +315,6 @@ class SortFirstSkyDriver extends TestDriver
         attrType[2] = new AttrType(AttrType.attrReal);
         attrType[3] = new AttrType(AttrType.attrReal);
         attrType[4] = new AttrType(AttrType.attrReal);
-        attrType[5] = new AttrType(AttrType.attrReal);
 
         short[] attrSize = new short[COLS];
         attrSize[0] = REC_LEN1;
@@ -327,7 +322,6 @@ class SortFirstSkyDriver extends TestDriver
         attrSize[2] = REC_LEN3;
         attrSize[3] = REC_LEN4;
         attrSize[4] = REC_LEN5;
-        attrSize[5] = REC_LEN5;
 
         String hfileName = "test2sortPref.in";
 
@@ -402,7 +396,6 @@ class SortFirstSkyDriver extends TestDriver
         projlist[2] = new FldSpec(rel, 3);
         projlist[3] = new FldSpec(rel, 4);
         projlist[4] = new FldSpec(rel, 5);
-        projlist[5] = new FldSpec(rel, 6);
 
         FileScan fscan = null;
 

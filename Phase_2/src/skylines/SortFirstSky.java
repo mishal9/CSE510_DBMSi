@@ -36,6 +36,7 @@ public class SortFirstSky implements GlobalConst {
     private static AttrType[] _attrType = new AttrType[6];
     private static short[] _attrSize = new short[6];
     private static FldSpec[] _projlist;
+    private static Tuple[] _window;
 
     public SortFirstSky(AttrType[] in1, int len_in1, short[] t1_str_sizes,
                         Iterator am1, java.lang.String
@@ -53,7 +54,7 @@ public class SortFirstSky implements GlobalConst {
         _attrType[2] = new AttrType(AttrType.attrReal);
         _attrType[3] = new AttrType(AttrType.attrReal);
         _attrType[4] = new AttrType(AttrType.attrReal);
-        _attrType[5] = new AttrType(AttrType.attrReal);
+        //_attrType[5] = new AttrType(AttrType.attrReal);
 
         _attrSize[0] = REC_LEN1;
         _attrSize[1] = REC_LEN2;
@@ -76,6 +77,8 @@ public class SortFirstSky implements GlobalConst {
         _pref_list = pref_list;
         _pref_list_length = pref_list_length;
         _n_pages = n_pages;
+        _window = new Tuple[_n_pages];
+
         temp = new Heapfile("sortFirstSkyTemp.in");
 
         System.out.println("----------   SORT FIRST SKY INIT VARS   -------------");
@@ -88,10 +91,10 @@ public class SortFirstSky implements GlobalConst {
         System.out.println("-----------------------------------------------------");
 
         if ( status == OK )
-            computeSkylines(_relationName, _sort);
+            computeSkylines(_relationName, _sort, temp);
     }
 
-    public void computeSkylines(String file, SortPref _sort){
+    public void computeSkylines(String file, SortPref _sort, Heapfile tmp) throws IOException {
 
         /*
         SORT FIRST SKY:
@@ -127,25 +130,9 @@ public class SortFirstSky implements GlobalConst {
 
         int count = 0;
 
-        List<List<Float>> window = new ArrayList<>();
-
         while (t != null && count < _n_pages) {
-
-            List<Float> floatList = new LinkedList<>();
-
-            try {
-                floatList.add(t.getFloFld(1));
-                floatList.add(t.getFloFld(2));
-                floatList.add(t.getFloFld(3));
-                floatList.add(t.getFloFld(4));
-                floatList.add(t.getFloFld(5));
-            }
-            catch (Exception e) {
-                status = FAIL;
-                e.printStackTrace();
-            }
-
-            window.add(floatList);
+            Tuple temp = new Tuple(t);
+            _window[count] = temp;
 
             count++;
 
@@ -158,10 +145,12 @@ public class SortFirstSky implements GlobalConst {
             }
         }
 
-        for(int i=0; i<window.size(); i++){
-            System.out.println(window.get(i));
+        for(int i=0; i<_window.length; i++){
+            Tuple tx = _window[i];
+            tx.print(_attrType);
         }
 
+        /*
         FileScan fscan = null;
 
         try {
@@ -185,8 +174,6 @@ public class SortFirstSky implements GlobalConst {
         while (t != null) {
 
             List<Float> floatList = new LinkedList<>();
-
-
 
             try {
                 floatList.add(t.getFloFld(1));
@@ -217,7 +204,9 @@ public class SortFirstSky implements GlobalConst {
             }
         }
 
+
         System.out.println("heap objects "+heap_objects);
+        */
 
         return;
     }
