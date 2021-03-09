@@ -2,42 +2,41 @@ package tests;
 
 import java.io.*;
 import global.*;
-import bufmgr.*;
-import diskmgr.*;
 import heap.*;
 import iterator.*;
-import index.*;
 import skylines.SortFirstSky;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
+import java.util.Scanner;
 
 
 class SortFirstSkyDriver extends TestDriver
         implements GlobalConst {
 
     private static float[][] data1 = {
-            {0.825f, 0.823f, 0.453f, 0.122f, 0.356f},
-            {0.855f, 0.316f, 0.782f, 0.478f, 0.758f},
-            {0.011f, 0.268f, 0.348f, 0.646f, 0.161f},
-            {0.896f, 0.572f, 0.281f, 0.592f, 0.166f},
-            {0.852f, 0.194f, 0.613f, 0.846f, 0.846f},
-            {0.110f, 0.758f, 0.221f, 0.234f, 0.169f},
-            {0.259f, 0.550f, 0.837f, 0.138f, 0.960f},
-            {0.821f, 0.814f, 0.104f, 0.106f, 0.475f},
-            {0.192f, 0.975f, 0.761f, 0.157f, 0.899f},
-            {0.627f, 0.043f, 0.133f, 0.690f, 0.272f},
-            {0.626f, 0.095f, 0.048f, 0.173f, 0.181f},
-            {0.086f, 0.366f, 0.073f, 0.169f, 0.791f},
-            {0.955f, 0.379f, 0.100f ,0.170f, 0.297f},
-            {0.287f, 0.298f, 0.602f, 0.381f, 0.262f},
-            {0.397f, 0.472f, 0.163f, 0.626f, 0.745f},
-            {0.540f, 0.443f, 0.621f, 0.804f, 0.149f},
-            {0.801f, 0.804f, 0.761f, 0.441f, 0.352f},
-            {0.797f, 0.139f, 0.808f, 0.493f, 0.244f},
-            {0.324f, 0.257f, 0.609f, 0.529f, 0.349f}
+            {0.825f, 0.823f, 0.453f, 0.122f, 0.356f},   // 1.648
+            {0.855f, 0.316f, 0.782f, 0.478f, 0.758f},   // 1.171
+            {0.011f, 0.268f, 0.348f, 0.646f, 0.161f},   // 0.279
+            {0.896f, 0.572f, 0.281f, 0.592f, 0.166f},   // 1.468
+            {0.852f, 0.194f, 0.613f, 0.846f, 0.846f},   // 1.046
+            {0.110f, 0.758f, 0.221f, 0.234f, 0.169f},   // 0.868
+            {0.259f, 0.550f, 0.837f, 0.138f, 0.960f},   // 0.809
+            {0.821f, 0.814f, 0.104f, 0.106f, 0.475f},   // 1.635
+            {0.192f, 0.975f, 0.761f, 0.157f, 0.899f},   // 1.167
+            {0.627f, 0.043f, 0.133f, 0.690f, 0.272f}    // 0.67
+    };
+
+    private static float[][] data2 = {
+            {0.825f, 0.823f, 0.453f, 0.122f, 0.356f},   // 1.648
+            {0.821f, 0.814f, 0.104f, 0.106f, 0.475f},   // 1.635
+            {0.896f, 0.572f, 0.281f, 0.592f, 0.166f},   // 1.468
+            {0.855f, 0.316f, 0.782f, 0.478f, 0.758f},   // 1.171
+            {0.192f, 0.975f, 0.761f, 0.157f, 0.899f},   // 1.167
+            {0.852f, 0.194f, 0.613f, 0.846f, 0.846f},   // 1.046
+            {0.110f, 0.758f, 0.221f, 0.234f, 0.169f},   // 0.868
+            {0.259f, 0.550f, 0.837f, 0.138f, 0.960f},   // 0.809
+            {0.627f, 0.043f, 0.133f, 0.690f, 0.272f},   // 0.67
+            {0.011f, 0.268f, 0.348f, 0.646f, 0.161f}    // 0.279
     };
 
 
@@ -47,6 +46,8 @@ class SortFirstSkyDriver extends TestDriver
     private static short REC_LEN3 = 160;
     private static short REC_LEN4 = 160;
     private static short REC_LEN5 = 160;
+    private static int   SORTPGNUM = 1500;
+    private static int BUFF_SIZE = 10;
 
     TupleOrder[] order = new TupleOrder[2];
 
@@ -59,8 +60,8 @@ class SortFirstSkyDriver extends TestDriver
     public boolean runTests () throws HFDiskMgrException, HFException, HFBufMgrException, IOException {
 
         System.out.println ("\n" + "Running " + testName() + " tests...." + "\n");
-
-        SystemDefs sysdef = new SystemDefs( dbpath, 300, NUMBUF, "Clock" );
+        // We will define the bufpoolsize and num_pgs params ; whereas BUFF_SIZE determined by user input
+        SystemDefs sysdef = new SystemDefs( dbpath, 8000, 3000, "Clock" );
 
         // Kill anything that might be hanging around
         String newdbpath;
@@ -138,6 +139,7 @@ class SortFirstSkyDriver extends TestDriver
         attrSize[3] = REC_LEN4;
         attrSize[4] = REC_LEN5;
 
+
         // create a tuple of appropriate size
         Tuple t = new Tuple();
         try {
@@ -150,11 +152,11 @@ class SortFirstSkyDriver extends TestDriver
 
         int size = t.size();
 
-        // Create unsorted data file "test1sortFirstSky.in"
+        // Create unsorted data file "test1.in"
         RID             rid;
         Heapfile        f = null;
         try {
-            f = new Heapfile("test1sortFirstSky.in");
+            f = new Heapfile("test1sortPref.in");
         }
         catch (Exception e) {
             status = FAIL;
@@ -201,17 +203,17 @@ class SortFirstSkyDriver extends TestDriver
         FileScan fscan = null;
 
         try {
-            fscan = new FileScan("test1sortFirstSky.in", attrType, attrSize, (short) 5, 5, projlist, null);
+            fscan = new FileScan("test1sortPref.in", attrType, attrSize, (short) 5, 5, projlist, null);
         }
         catch (Exception e) {
             status = FAIL;
             e.printStackTrace();
         }
 
-        // Sort "test1sortFirstSky.in"
-        Sort sort = null;
+        // Sort "test1sortPref.in"
+        SortPref sort = null;
         try {
-            sort = new Sort(attrType, (short) 5, attrSize, fscan, order[1], new int[]{1,2}, 2, NUMBUF);
+            sort = new SortPref(attrType, (short) 5, attrSize, fscan, order[1], new int[]{1,2}, 2, SORTPGNUM);
         }
         catch (Exception e) {
             status = FAIL;
@@ -248,16 +250,13 @@ class SortFirstSkyDriver extends TestDriver
                 outval[2] = t.getFloFld(3);
                 outval[3] = t.getFloFld(4);
                 outval[4] = t.getFloFld(5);
-
-                System.out.println("Got row: ");
-                System.out.println(outval[0]+" "+outval[1]+" "+outval[2]+" "+outval[3]+" "+outval[4]+" ");
             }
             catch (Exception e) {
                 status = FAIL;
                 e.printStackTrace();
             }
 
-            if (!Arrays.equals(outval, data1[count])) {
+            if (!Arrays.equals(outval, data2[count])) {
                 System.err.println("outval = " + outval[0] + "\tdata2[count] = " + data1[count][0]);
 
                 System.err.println("Test1 -- OOPS! test1.out not sorted");
@@ -296,29 +295,34 @@ class SortFirstSkyDriver extends TestDriver
     }
 
 
-    protected boolean test2()  {
+    protected boolean test2() throws IOException {
         System.out.println("------------------------ TEST 2 --------------------------");
 
         boolean status = OK;
 
-        AttrType[] attrType = new AttrType[5];
-        attrType[0] = new AttrType(AttrType.attrReal);
-        attrType[1] = new AttrType(AttrType.attrReal);
-        attrType[2] = new AttrType(AttrType.attrReal);
-        attrType[3] = new AttrType(AttrType.attrReal);
-        attrType[4] = new AttrType(AttrType.attrReal);
+        // Read data and construct tuples
+        File file = new File("../../data/subset3.txt");
+        Scanner sc = new Scanner(file);
 
-        short[] attrSize = new short[5];
-        attrSize[0] = REC_LEN1;
-        attrSize[1] = REC_LEN2;
-        attrSize[2] = REC_LEN3;
-        attrSize[3] = REC_LEN4;
-        attrSize[4] = REC_LEN5;
+        int COLS = sc.nextInt();
+
+        AttrType[] attrType = new AttrType[COLS];
+        for(int i=0; i<attrType.length; i++){
+            attrType[i] = new AttrType(AttrType.attrReal);
+        }
+
+
+        short[] attrSize = new short[COLS];
+        for(int i=0; i<attrSize.length; i++){
+            attrSize[i] = REC_LEN1;
+        }
+
+        String hfileName = "test2sortPref.in";
 
         // create a tuple of appropriate size
         Tuple t = new Tuple();
         try {
-            t.setHdr((short) 5, attrType, attrSize);
+            t.setHdr((short) COLS, attrType, attrSize);
         }
         catch (Exception e) {
             status = FAIL;
@@ -327,11 +331,11 @@ class SortFirstSkyDriver extends TestDriver
 
         int size = t.size();
 
-        // Create unsorted data file "test1sortFirstSky.in"
-        RID             rid;
+        // Create unsorted data file "test1.in"
+        RID             rid = null;
         Heapfile        f = null;
         try {
-            f = new Heapfile("test1sortFirstSky.in");
+            f = new Heapfile(hfileName);
         }
         catch (Exception e) {
             status = FAIL;
@@ -340,21 +344,30 @@ class SortFirstSkyDriver extends TestDriver
 
         t = new Tuple(size);
         try {
-            t.setHdr((short) 5, attrType, attrSize);
+            t.setHdr((short) COLS, attrType, attrSize);
         }
         catch (Exception e) {
             status = FAIL;
             e.printStackTrace();
         }
 
-        for (int i=0; i<NUM_RECORDS; i++) {
-            try {
-                for(int j=0; j<5; j++)
-                    t.setFloFld(j+1, data1[i][j]);
-            }
-            catch (Exception e) {
-                status = FAIL;
-                e.printStackTrace();
+        while (sc.hasNextLine()) {
+            // create a tuple of appropriate size
+
+            double[] doubleArray = Arrays.stream(Arrays.stream(sc.nextLine().trim()
+                    .split("\\s+"))
+                    .filter(s -> !s.isEmpty())
+                    .toArray(String[]::new))
+                    .mapToDouble(Double::parseDouble)
+                    .toArray();
+
+            for(int i=0; i<doubleArray.length; i++) {
+                try {
+                    t.setFloFld(i+1, (float) doubleArray[i]);
+                } catch (Exception e) {
+                    status = FAIL;
+                    e.printStackTrace();
+                }
             }
 
             try {
@@ -364,33 +377,26 @@ class SortFirstSkyDriver extends TestDriver
                 status = FAIL;
                 e.printStackTrace();
             }
+
         }
 
         // create an iterator by open a file scan
-        FldSpec[] projlist = new FldSpec[5];
+        FldSpec[] projlist = new FldSpec[COLS];
         RelSpec rel = new RelSpec(RelSpec.outer);
+        for(int i=0; i<attrSize.length; i++){
+            projlist[i] = new FldSpec(rel, i+1);;
+        }
+        /*
         projlist[0] = new FldSpec(rel, 1);
         projlist[1] = new FldSpec(rel, 2);
         projlist[2] = new FldSpec(rel, 3);
         projlist[3] = new FldSpec(rel, 4);
         projlist[4] = new FldSpec(rel, 5);
-
+        */
         FileScan fscan = null;
 
-        String relation = "test1sortFirstSky.in";
-
         try {
-            fscan = new FileScan(relation, attrType, attrSize, (short) 5, 5, projlist, null);
-        }
-        catch (Exception e) {
-            status = FAIL;
-            e.printStackTrace();
-        }
-
-        // Sort "test1sortFirstSky.in"
-        Sort sort = null;
-        try {
-            sort = new Sort(attrType, (short) 5, attrSize, fscan, order[1], new int[]{1,2}, 2, NUMBUF);
+            fscan = new FileScan(hfileName, attrType, attrSize, (short) COLS, COLS, projlist, null);
         }
         catch (Exception e) {
             status = FAIL;
@@ -399,13 +405,13 @@ class SortFirstSkyDriver extends TestDriver
 
         try {
             SortFirstSky sortFirstSky = new SortFirstSky(attrType,
-                                                        (short) 5,
+                                                        (short) COLS,
                                                         attrSize,
-                                                        sort,
-                                                        relation,
+                                                        fscan,
+                                                        hfileName,
                                                         new int[]{1,2},
                                                        2,
-                                                        NUMBUF);
+                    BUFF_SIZE);
         } catch (IOException e) {
             e.printStackTrace();
         } catch (HFException e) {
@@ -416,6 +422,14 @@ class SortFirstSkyDriver extends TestDriver
             e.printStackTrace();
         } finally {
             status = OK;
+            // clean up
+            try {
+                fscan.close();
+            }
+            catch (Exception e) {
+                status = FAIL;
+                e.printStackTrace();
+            }
         }
 
         return status;

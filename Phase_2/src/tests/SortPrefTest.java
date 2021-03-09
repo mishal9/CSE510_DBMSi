@@ -2,42 +2,106 @@ package tests;
 
 import java.io.*;
 import global.*;
-import bufmgr.*;
-import diskmgr.*;
 import heap.*;
 import iterator.*;
-import index.*;
 
 import java.util.Arrays;
-import java.util.Random;
 
 
 class SORTPrefDriver extends TestDriver
         implements GlobalConst {
 
-    private static float[][] data1 = {
-            {0.825f,   0.823f,    0.453f,    0.122f,    0.356f}, // -> 1.648
-            {0.855f,   0.316f,    0.782f,    0.478f,    0.758f}, // -> 1.171
-            {0.011f,   0.268f,    0.348f,    0.646f,    0.161f}, // -> 0.279
-            {0.896f,   0.572f,    0.281f,    0.592f,    0.166f}, // -> 1.468
-            {0.852f,   0.194f,    0.613f,    0.846f,    0.846f}  // -> 1.046
-    };
     // [0,1]
-    private static float[][] data2 = {
-            {0.011f,   0.268f,    0.348f,    0.646f,    0.161f}, // -> 0.279
-            {0.852f,   0.194f,    0.613f,    0.846f,    0.846f}, // -> 1.046
-            {0.855f,   0.316f,    0.782f,    0.478f,    0.758f}, // -> 1.171
-            {0.896f,   0.572f,    0.281f,    0.592f,    0.166f}, // -> 1.468
-            {0.825f,   0.823f,    0.453f,    0.122f,    0.356f}, // -> 1.648
+
+    private static float[][] data1 = {
+            {0.825f, 0.823f, 0.453f, 0.122f, 0.356f},   // 1.648
+            {0.855f, 0.316f, 0.782f, 0.478f, 0.758f},   // 1.171
+            {0.011f, 0.268f, 0.348f, 0.646f, 0.161f},   // 0.279
+            {0.896f, 0.572f, 0.281f, 0.592f, 0.166f},   // 1.468
+            {0.852f, 0.194f, 0.613f, 0.846f, 0.846f},   // 1.046
+            {0.110f, 0.758f, 0.221f, 0.234f, 0.169f},   // 0.868
+            {0.259f, 0.550f, 0.837f, 0.138f, 0.960f},   // 0.809
+            {0.821f, 0.814f, 0.104f, 0.106f, 0.475f},   // 1.635
+            {0.192f, 0.975f, 0.761f, 0.157f, 0.899f},   // 1.167
+            {0.627f, 0.043f, 0.133f, 0.690f, 0.272f}    // 0.67
     };
 
+    private static float[][] data2 = {
+            {0.011f, 0.268f, 0.348f, 0.646f, 0.161f},   // 0.279
+            {0.627f, 0.043f, 0.133f, 0.690f, 0.272f},   // 0.67
+            {0.259f, 0.550f, 0.837f, 0.138f, 0.960f},   // 0.809
+            {0.110f, 0.758f, 0.221f, 0.234f, 0.169f},   // 0.868
+            {0.852f, 0.194f, 0.613f, 0.846f, 0.846f},   // 1.046
+            {0.192f, 0.975f, 0.761f, 0.157f, 0.899f},   // 1.167
+            {0.855f, 0.316f, 0.782f, 0.478f, 0.758f},   // 1.171
+            {0.896f, 0.572f, 0.281f, 0.592f, 0.166f},   // 1.468
+            {0.821f, 0.814f, 0.104f, 0.106f, 0.475f},   // 1.635
+            {0.825f, 0.823f, 0.453f, 0.122f, 0.356f},   // 1.648
+    };
+
+    private static float[][] data3 = {
+            {0.825f, 0.823f, 0.453f, 0.122f, 0.356f},   // 1.648
+            {0.821f, 0.814f, 0.104f, 0.106f, 0.475f},   // 1.635
+            {0.896f, 0.572f, 0.281f, 0.592f, 0.166f},   // 1.468
+            {0.855f, 0.316f, 0.782f, 0.478f, 0.758f},   // 1.171
+            {0.192f, 0.975f, 0.761f, 0.157f, 0.899f},   // 1.167
+            {0.852f, 0.194f, 0.613f, 0.846f, 0.846f},   // 1.046
+            {0.110f, 0.758f, 0.221f, 0.234f, 0.169f},   // 0.868
+            {0.259f, 0.550f, 0.837f, 0.138f, 0.960f},   // 0.809
+            {0.627f, 0.043f, 0.133f, 0.690f, 0.272f},   // 0.67
+            {0.011f, 0.268f, 0.348f, 0.646f, 0.161f}    // 0.279
+    };
+
+    // [0,1,2]
+
+    private static float[][] data4 = {
+            {0.825f, 0.823f, 0.453f, 0.122f, 0.356f},   // 2.101
+            {0.855f, 0.316f, 0.782f, 0.478f, 0.758f},   // 1.953
+            {0.011f, 0.268f, 0.348f, 0.646f, 0.161f},   // 0.627
+            {0.896f, 0.572f, 0.281f, 0.592f, 0.166f},   // 1.749
+            {0.852f, 0.194f, 0.613f, 0.846f, 0.846f},   // 1.659
+            {0.110f, 0.758f, 0.221f, 0.234f, 0.169f},   // 1.089
+            {0.259f, 0.550f, 0.837f, 0.138f, 0.960f},   // 1.646
+            {0.821f, 0.814f, 0.104f, 0.106f, 0.475f},   // 1.739
+            {0.192f, 0.975f, 0.761f, 0.157f, 0.899f},   // 1.928
+            {0.627f, 0.043f, 0.133f, 0.690f, 0.272f}    // 0.803
+    };
+
+    private static float[][] data5 = {
+            {0.011f, 0.268f, 0.348f, 0.646f, 0.161f},   // 0.627
+            {0.627f, 0.043f, 0.133f, 0.690f, 0.272f},   // 0.803
+            {0.110f, 0.758f, 0.221f, 0.234f, 0.169f},   // 1.089
+            {0.259f, 0.550f, 0.837f, 0.138f, 0.960f},   // 1.646
+            {0.852f, 0.194f, 0.613f, 0.846f, 0.846f},   // 1.659
+            {0.821f, 0.814f, 0.104f, 0.106f, 0.475f},   // 1.739
+            {0.896f, 0.572f, 0.281f, 0.592f, 0.166f},   // 1.749
+            {0.192f, 0.975f, 0.761f, 0.157f, 0.899f},   // 1.928
+            {0.855f, 0.316f, 0.782f, 0.478f, 0.758f},   // 1.953
+            {0.825f, 0.823f, 0.453f, 0.122f, 0.356f},   // 2.101
+    };
+
+    private static float[][] data6 = {
+            {0.825f, 0.823f, 0.453f, 0.122f, 0.356f},   // 2.101
+            {0.855f, 0.316f, 0.782f, 0.478f, 0.758f},   // 1.953
+            {0.192f, 0.975f, 0.761f, 0.157f, 0.899f},   // 1.928
+            {0.896f, 0.572f, 0.281f, 0.592f, 0.166f},   // 1.749
+            {0.821f, 0.814f, 0.104f, 0.106f, 0.475f},   // 1.739
+            {0.852f, 0.194f, 0.613f, 0.846f, 0.846f},   // 1.659
+            {0.259f, 0.550f, 0.837f, 0.138f, 0.960f},   // 1.646
+            {0.110f, 0.758f, 0.221f, 0.234f, 0.169f},   // 1.089
+            {0.627f, 0.043f, 0.133f, 0.690f, 0.272f},   // 0.803
+            {0.011f, 0.268f, 0.348f, 0.646f, 0.161f}    // 0.627
+    };
+
+
+
     private static int   NUM_RECORDS = data2.length;
-    private static short REC_LEN1 = 160;
-    private static short REC_LEN2 = 160;
-    private static short REC_LEN3 = 160;
-    private static short REC_LEN4 = 160;
-    private static short REC_LEN5 = 160;
-    private static int   SORTPGNUM = 12;
+    private static short REC_LEN1 = 32;
+    private static short REC_LEN2 = 32;
+    private static short REC_LEN3 = 32;
+    private static short REC_LEN4 = 32;
+    private static short REC_LEN5 = 32;
+    private static int   SORTPGNUM = 20;
 
     TupleOrder[] order = new TupleOrder[2];
 
@@ -47,11 +111,11 @@ class SORTPrefDriver extends TestDriver
         order[1] = new TupleOrder(TupleOrder.Descending);
     }
 
-    public boolean runTests ()  {
+    public boolean runTests () throws HFDiskMgrException, HFException, HFBufMgrException, IOException {
 
         System.out.println ("\n" + "Running " + testName() + " tests...." + "\n");
 
-        SystemDefs sysdef = new SystemDefs( dbpath, 300, NUMBUF, "Clock" );
+        SystemDefs sysdef = new SystemDefs( dbpath, 3000, 100, "Clock" );
 
         // Kill anything that might be hanging around
         String newdbpath;
@@ -202,9 +266,9 @@ class SORTPrefDriver extends TestDriver
         }
 
         // Sort "test1sortPref.in"
-        Sort sort = null;
+        SortPref sort = null;
         try {
-            sort = new Sort(attrType, (short) 5, attrSize, fscan, order[0], new int[]{1,2}, 2, SORTPGNUM);
+            sort = new SortPref(attrType, (short) 5, attrSize, fscan, order[0], new int[]{1,2}, 2, SORTPGNUM);
         }
         catch (Exception e) {
             status = FAIL;
@@ -241,8 +305,7 @@ class SORTPrefDriver extends TestDriver
                 outval[3] = t.getFloFld(4);
                 outval[4] = t.getFloFld(5);
 
-                System.out.println("Got row: ");
-                System.out.println(outval[0]+" "+outval[1]+" "+outval[2]+" "+outval[3]+" "+outval[4]+" ");
+                System.out.println("Got row: "+outval[0]+" "+outval[1]+" "+outval[2]+" "+outval[3]+" "+outval[4]+" ");
             }
             catch (Exception e) {
                 status = FAIL;
@@ -293,31 +356,40 @@ class SORTPrefDriver extends TestDriver
         System.out.println("------------------------ TEST 2 --------------------------");
 
         boolean status = OK;
-        /*
-        AttrType[] attrType = new AttrType[1];
-        attrType[0] = new AttrType(AttrType.attrString);
-        short[] attrSize = new short[1];
+
+        AttrType[] attrType = new AttrType[5];
+        attrType[0] = new AttrType(AttrType.attrReal);
+        attrType[1] = new AttrType(AttrType.attrReal);
+        attrType[2] = new AttrType(AttrType.attrReal);
+        attrType[3] = new AttrType(AttrType.attrReal);
+        attrType[4] = new AttrType(AttrType.attrReal);
+
+        short[] attrSize = new short[5];
         attrSize[0] = REC_LEN1;
-        TupleOrder[] order = new TupleOrder[2];
-        order[0] = new TupleOrder(TupleOrder.Ascending);
-        order[1] = new TupleOrder(TupleOrder.Descending);
+        attrSize[1] = REC_LEN2;
+        attrSize[2] = REC_LEN3;
+        attrSize[3] = REC_LEN4;
+        attrSize[4] = REC_LEN5;
+
+
 
         // create a tuple of appropriate size
         Tuple t = new Tuple();
         try {
-            t.setHdr((short) 1, attrType, attrSize);
+            t.setHdr((short) 5, attrType, attrSize);
         }
         catch (Exception e) {
             status = FAIL;
             e.printStackTrace();
         }
+
         int size = t.size();
 
-        // Create unsorted data file "test2.in"
+        // Create unsorted data file "test1.in"
         RID             rid;
         Heapfile        f = null;
         try {
-            f = new Heapfile("test2.in");
+            f = new Heapfile("test2sortPref.in");
         }
         catch (Exception e) {
             status = FAIL;
@@ -326,7 +398,7 @@ class SORTPrefDriver extends TestDriver
 
         t = new Tuple(size);
         try {
-            t.setHdr((short) 1, attrType, attrSize);
+            t.setHdr((short) 5, attrType, attrSize);
         }
         catch (Exception e) {
             status = FAIL;
@@ -335,7 +407,8 @@ class SORTPrefDriver extends TestDriver
 
         for (int i=0; i<NUM_RECORDS; i++) {
             try {
-                t.setStrFld(1, data1[i]);
+                for(int j=0; j<5; j++)
+                    t.setFloFld(j+1, data1[i][j]);
             }
             catch (Exception e) {
                 status = FAIL;
@@ -352,24 +425,28 @@ class SORTPrefDriver extends TestDriver
         }
 
         // create an iterator by open a file scan
-        FldSpec[] projlist = new FldSpec[1];
+        FldSpec[] projlist = new FldSpec[5];
         RelSpec rel = new RelSpec(RelSpec.outer);
         projlist[0] = new FldSpec(rel, 1);
+        projlist[1] = new FldSpec(rel, 2);
+        projlist[2] = new FldSpec(rel, 3);
+        projlist[3] = new FldSpec(rel, 4);
+        projlist[4] = new FldSpec(rel, 5);
 
         FileScan fscan = null;
 
         try {
-            fscan = new FileScan("test2.in", attrType, attrSize, (short) 1, 1, projlist, null);
+            fscan = new FileScan("test2sortPref.in", attrType, attrSize, (short) 5, 5, projlist, null);
         }
         catch (Exception e) {
             status = FAIL;
             e.printStackTrace();
         }
 
-        // Sort "test2.in"
-        Sort sort = null;
+        // Sort "test1sortPref.in"
+        SortPref sort = null;
         try {
-            sort = new Sort(attrType, (short) 1, attrSize, fscan, 1, order[1], REC_LEN1, SORTPGNUM);
+            sort = new SortPref(attrType, (short) 5, attrSize, fscan, order[1], new int[]{1,2}, 2, SORTPGNUM);
         }
         catch (Exception e) {
             status = FAIL;
@@ -379,7 +456,7 @@ class SORTPrefDriver extends TestDriver
 
         int count = 0;
         t = null;
-        String outval = null;
+        float[] outval = new float[5];
 
         try {
             t = sort.get_next();
@@ -400,14 +477,22 @@ class SORTPrefDriver extends TestDriver
             }
 
             try {
-                outval = t.getStrFld(1);
+                outval[0] = t.getFloFld(1);
+                outval[1] = t.getFloFld(2);
+                outval[2] = t.getFloFld(3);
+                outval[3] = t.getFloFld(4);
+                outval[4] = t.getFloFld(5);
+
+                System.out.println("Got row: "+outval[0]+" "+outval[1]+" "+outval[2]+" "+outval[3]+" "+outval[4]+" ");
             }
             catch (Exception e) {
                 status = FAIL;
                 e.printStackTrace();
             }
 
-            if (outval.compareTo(data2[NUM_RECORDS - count - 1]) != 0) {
+            if (!Arrays.equals(outval, data3[count])) {
+                System.err.println("outval = " + outval[0] + "\tdata3[count] = " + data3[count][0]);
+
                 System.err.println("Test2 -- OOPS! test2.out not sorted");
                 status = FAIL;
             }
@@ -439,7 +524,361 @@ class SORTPrefDriver extends TestDriver
         }
 
         System.err.println("------------------- TEST 2 completed ---------------------\n");
-        */
+
+
+        return status;
+    }
+
+    protected boolean test3()
+    {
+        System.out.println("------------------------ TEST 3 --------------------------");
+
+        boolean status = OK;
+
+        AttrType[] attrType = new AttrType[5];
+        attrType[0] = new AttrType(AttrType.attrReal);
+        attrType[1] = new AttrType(AttrType.attrReal);
+        attrType[2] = new AttrType(AttrType.attrReal);
+        attrType[3] = new AttrType(AttrType.attrReal);
+        attrType[4] = new AttrType(AttrType.attrReal);
+
+        short[] attrSize = new short[5];
+        attrSize[0] = REC_LEN1;
+        attrSize[1] = REC_LEN2;
+        attrSize[2] = REC_LEN3;
+        attrSize[3] = REC_LEN4;
+        attrSize[4] = REC_LEN5;
+
+
+
+        // create a tuple of appropriate size
+        Tuple t = new Tuple();
+        try {
+            t.setHdr((short) 5, attrType, attrSize);
+        }
+        catch (Exception e) {
+            status = FAIL;
+            e.printStackTrace();
+        }
+
+        int size = t.size();
+
+        // Create unsorted data file "test1.in"
+        RID             rid;
+        Heapfile        f = null;
+        try {
+            f = new Heapfile("test3sortPref.in");
+        }
+        catch (Exception e) {
+            status = FAIL;
+            e.printStackTrace();
+        }
+
+        t = new Tuple(size);
+        try {
+            t.setHdr((short) 5, attrType, attrSize);
+        }
+        catch (Exception e) {
+            status = FAIL;
+            e.printStackTrace();
+        }
+
+        for (int i=0; i<NUM_RECORDS; i++) {
+            try {
+                for(int j=0; j<5; j++)
+                    t.setFloFld(j+1, data4[i][j]);
+            }
+            catch (Exception e) {
+                status = FAIL;
+                e.printStackTrace();
+            }
+
+            try {
+                rid = f.insertRecord(t.returnTupleByteArray());
+            }
+            catch (Exception e) {
+                status = FAIL;
+                e.printStackTrace();
+            }
+        }
+
+        // create an iterator by open a file scan
+        FldSpec[] projlist = new FldSpec[5];
+        RelSpec rel = new RelSpec(RelSpec.outer);
+        projlist[0] = new FldSpec(rel, 1);
+        projlist[1] = new FldSpec(rel, 2);
+        projlist[2] = new FldSpec(rel, 3);
+        projlist[3] = new FldSpec(rel, 4);
+        projlist[4] = new FldSpec(rel, 5);
+
+        FileScan fscan = null;
+
+        try {
+            fscan = new FileScan("test3sortPref.in", attrType, attrSize, (short) 5, 5, projlist, null);
+        }
+        catch (Exception e) {
+            status = FAIL;
+            e.printStackTrace();
+        }
+
+        // Sort "test1sortPref.in"
+        SortPref sort = null;
+        try {
+            sort = new SortPref(attrType, (short) 5, attrSize, fscan, order[0], new int[]{1,2,3}, 3, SORTPGNUM);
+        }
+        catch (Exception e) {
+            status = FAIL;
+            e.printStackTrace();
+        }
+
+        int count = 0;
+        t = null;
+        float[] outval = new float[5];
+
+        try {
+            t = sort.get_next();
+        }
+        catch (Exception e) {
+            status = FAIL;
+            e.printStackTrace();
+        }
+
+        boolean flag = true;
+
+        while (t != null) {
+            if (count >= NUM_RECORDS) {
+                System.err.println("Test3 -- OOPS! too many records");
+                status = FAIL;
+                flag = false;
+                break;
+            }
+
+            try {
+                outval[0] = t.getFloFld(1);
+                outval[1] = t.getFloFld(2);
+                outval[2] = t.getFloFld(3);
+                outval[3] = t.getFloFld(4);
+                outval[4] = t.getFloFld(5);
+
+                System.out.println("Got row: "+outval[0]+" "+outval[1]+" "+outval[2]+" "+outval[3]+" "+outval[4]+" ");
+            }
+            catch (Exception e) {
+                status = FAIL;
+                e.printStackTrace();
+            }
+
+            if (!Arrays.equals(outval, data5[count])) {
+                System.err.println("outval = " + outval[0] + "\tdata5[count] = " + data5[count][0]);
+
+                System.err.println("Test3 -- OOPS! test3.out not sorted");
+                status = FAIL;
+            }
+            count++;
+
+            try {
+                t = sort.get_next();
+            }
+            catch (Exception e) {
+                status = FAIL;
+                e.printStackTrace();
+            }
+        }
+        if (count < NUM_RECORDS) {
+            System.err.println("Test3 -- OOPS! too few records");
+            status = FAIL;
+        }
+        else if (flag && status) {
+            System.err.println("Test3 -- Sorting OK");
+        }
+
+        // clean up
+        try {
+            sort.close();
+        }
+        catch (Exception e) {
+            status = FAIL;
+            e.printStackTrace();
+        }
+
+        System.err.println("------------------- TEST 3 completed ---------------------\n");
+
+        return status;
+    }
+
+    protected boolean test4()
+    {
+        System.out.println("------------------------ TEST 4 --------------------------");
+
+        boolean status = OK;
+
+        AttrType[] attrType = new AttrType[5];
+        attrType[0] = new AttrType(AttrType.attrReal);
+        attrType[1] = new AttrType(AttrType.attrReal);
+        attrType[2] = new AttrType(AttrType.attrReal);
+        attrType[3] = new AttrType(AttrType.attrReal);
+        attrType[4] = new AttrType(AttrType.attrReal);
+
+        short[] attrSize = new short[5];
+        attrSize[0] = REC_LEN1;
+        attrSize[1] = REC_LEN2;
+        attrSize[2] = REC_LEN3;
+        attrSize[3] = REC_LEN4;
+        attrSize[4] = REC_LEN5;
+
+
+
+        // create a tuple of appropriate size
+        Tuple t = new Tuple();
+        try {
+            t.setHdr((short) 5, attrType, attrSize);
+        }
+        catch (Exception e) {
+            status = FAIL;
+            e.printStackTrace();
+        }
+
+        int size = t.size();
+
+        // Create unsorted data file "test1.in"
+        RID             rid;
+        Heapfile        f = null;
+        try {
+            f = new Heapfile("test4sortPref.in");
+        }
+        catch (Exception e) {
+            status = FAIL;
+            e.printStackTrace();
+        }
+
+        t = new Tuple(size);
+        try {
+            t.setHdr((short) 5, attrType, attrSize);
+        }
+        catch (Exception e) {
+            status = FAIL;
+            e.printStackTrace();
+        }
+
+        for (int i=0; i<NUM_RECORDS; i++) {
+            try {
+                for(int j=0; j<5; j++)
+                    t.setFloFld(j+1, data4[i][j]);
+            }
+            catch (Exception e) {
+                status = FAIL;
+                e.printStackTrace();
+            }
+
+            try {
+                rid = f.insertRecord(t.returnTupleByteArray());
+            }
+            catch (Exception e) {
+                status = FAIL;
+                e.printStackTrace();
+            }
+        }
+
+        // create an iterator by open a file scan
+        FldSpec[] projlist = new FldSpec[5];
+        RelSpec rel = new RelSpec(RelSpec.outer);
+        projlist[0] = new FldSpec(rel, 1);
+        projlist[1] = new FldSpec(rel, 2);
+        projlist[2] = new FldSpec(rel, 3);
+        projlist[3] = new FldSpec(rel, 4);
+        projlist[4] = new FldSpec(rel, 5);
+
+        FileScan fscan = null;
+
+        try {
+            fscan = new FileScan("test4sortPref.in", attrType, attrSize, (short) 5, 5, projlist, null);
+        }
+        catch (Exception e) {
+            status = FAIL;
+            e.printStackTrace();
+        }
+
+        // Sort "test1sortPref.in"
+        SortPref sort = null;
+        try {
+            sort = new SortPref(attrType, (short) 5, attrSize, fscan, order[1], new int[]{1,2,3}, 3, SORTPGNUM);
+        }
+        catch (Exception e) {
+            status = FAIL;
+            e.printStackTrace();
+        }
+
+
+        int count = 0;
+        t = null;
+        float[] outval = new float[5];
+
+        try {
+            t = sort.get_next();
+        }
+        catch (Exception e) {
+            status = FAIL;
+            e.printStackTrace();
+        }
+
+        boolean flag = true;
+
+        while (t != null) {
+            if (count >= NUM_RECORDS) {
+                System.err.println("Test4 -- OOPS! too many records");
+                status = FAIL;
+                flag = false;
+                break;
+            }
+
+            try {
+                outval[0] = t.getFloFld(1);
+                outval[1] = t.getFloFld(2);
+                outval[2] = t.getFloFld(3);
+                outval[3] = t.getFloFld(4);
+                outval[4] = t.getFloFld(5);
+
+                System.out.println("Got row: "+outval[0]+" "+outval[1]+" "+outval[2]+" "+outval[3]+" "+outval[4]+" ");
+            }
+            catch (Exception e) {
+                status = FAIL;
+                e.printStackTrace();
+            }
+
+            if (!Arrays.equals(outval, data6[count])) {
+                System.err.println("outval = " + outval[0] + "\tdata6[count] = " + data6[count][0]);
+
+                System.err.println("Test4 -- OOPS! test4.out not sorted");
+                status = FAIL;
+            }
+            count++;
+
+            try {
+                t = sort.get_next();
+            }
+            catch (Exception e) {
+                status = FAIL;
+                e.printStackTrace();
+            }
+        }
+        if (count < NUM_RECORDS) {
+            System.err.println("Test4 -- OOPS! too few records");
+            status = FAIL;
+        }
+        else if (flag && status) {
+            System.err.println("Test4 -- Sorting OK");
+        }
+
+        // clean up
+        try {
+            sort.close();
+        }
+        catch (Exception e) {
+            status = FAIL;
+            e.printStackTrace();
+        }
+
+        System.err.println("------------------- TEST 4 completed ---------------------\n");
+
         return status;
     }
 
@@ -452,8 +891,7 @@ class SORTPrefDriver extends TestDriver
 
 public class SortPrefTest
 {
-    public static void main(String argv[])
-    {
+    public static void main(String argv[]) throws IOException, HFException, HFBufMgrException, HFDiskMgrException {
         boolean sortstatus;
 
         SORTPrefDriver sortt = new SORTPrefDriver();

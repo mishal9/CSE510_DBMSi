@@ -154,7 +154,7 @@ class GenerateIndexDriver implements GlobalConst {
             System.out.println("AT THE END OF SCAN!");
 
 //      Have to add code to SCAN the heap file using the BTree Index
-            
+
             /*
             TODO: To be fixed
             FldSpec[] projlist = new FldSpec[3];

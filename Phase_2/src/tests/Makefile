@@ -94,6 +94,14 @@ SortFirstSkyTest:SortFirstSkyTest.java
 sortfirstskytest: SortFirstSkyTest
 	$(JAVA) tests.SortFirstSkyTest
 
+# test nested loop sky
+
+NestedLoopSkyTest:NestedLoopSkyTest.java
+	$(JAVAC) TestDriver.java NestedLoopSkyTest.java
+
+nestedloopskytest: NestedLoopSkyTest
+	$(JAVA) tests.NestedLoopSkyTest
+
 
 
 

@@ -104,7 +104,6 @@ public class DB implements GlobalConst {
     
     set_bits(pageId, 1+num_map_pages, 1);
 
-    PCounter.initialize();
   }
   
   /** Close DB file.
