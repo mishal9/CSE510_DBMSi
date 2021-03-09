@@ -3,25 +3,24 @@ package driver;
 
 import java.io.*;
 import java.util.*;
-import java.lang.*;
+
+import btree.BTreeSky;
+import btree.IndexFile;
 
 import diskmgr.PCounter;
 import heap.*;
 import global.*;
 import iterator.FileScan;
 import iterator.FldSpec;
+import iterator.Iterator;
 import iterator.RelSpec;
 import skylines.SortFirstSky;
 import tests.TestDriver;
 
-/** Note that in JAVA, methods can't be overridden to be more private.
- Therefore, the declaration of all private functions are now declared
- protected as opposed to the private type in C++.
- */
 
 //watching point: RID rid, some of them may not have to be newed.
 
-class Driver  extends TestDriver implements GlobalConst
+class Driver extends TestDriver implements GlobalConst
 {
     protected String dbpath;
     protected String logpath;
@@ -40,6 +39,7 @@ class Driver  extends TestDriver implements GlobalConst
     private static FldSpec[] projlist;
     private static RelSpec rel = new RelSpec(RelSpec.outer);
 
+    private static boolean individualBTreeIndexesCreated;
 
     public Driver(){
         super("main");
@@ -47,8 +47,8 @@ class Driver  extends TestDriver implements GlobalConst
 
     public boolean runTests () {
         System.out.println ("\n" + "Running " + testName() + " tests...." + "\n");
-        dbpath = "/tmp/main"+System.getProperty("user.name")+".minibase-db";
-        logpath = "/tmp/main"+System.getProperty("user.name")+".minibase-log";
+        dbpath = "MINIBASE.minibase-db";
+		logpath = "MINIBASE.minibase-log";
         // Each page can handle at most 25 tuples on original data => 7308 / 25 = 292
         SystemDefs sysdef = new SystemDefs(dbpath,10000, 3000,"Clock");
 
@@ -125,31 +125,28 @@ class Driver  extends TestDriver implements GlobalConst
         System.out.print("Hi, make your choice :");
     }
     
-    private void readDataIntoHeap(String fileName) throws IOException, InvalidTupleSizeException, InvalidTypeException {
+    private void readDataIntoHeap(String fileName) throws IOException, InvalidTupleSizeException, InvalidTypeException, InvalidSlotNumberException, HFDiskMgrException, HFBufMgrException, HFException {
 
         // Create the heap file object
         try {
             f = new Heapfile(hFile);
         }
-        catch (Exception e) {
-            status = FAIL;
-            System.err.println ("*** Could not create heap file\n");
-            e.printStackTrace();
-        }
-
-        if ( status == OK && SystemDefs.JavabaseBM.getNumUnpinnedBuffers()
-                != SystemDefs.JavabaseBM.getNumBuffers() ) {
-            System.err.println ("*** The heap file has left pages pinned\n");
-            status = FAIL;
-        }
+		catch (HFException | HFBufMgrException | HFDiskMgrException | IOException e) {
+			status = FAIL;
+			System.err.println("*** Could not create heap file\n");
+			e.printStackTrace();
+			throw e;
+		}
+       
 
         if ( status == OK ) {
 
             // Read data and construct tuples
-            File file = new File("../../data/"+"subset3"+".txt");
+            File file = new File(fileName);
             Scanner sc = new Scanner(file);
 
             COLS = sc.nextInt();
+            sc.nextLine(); // skipping the whole first line from the file as that has only 5 in it
 
             attrType = new AttrType[COLS];
             attrSize = new short[COLS];
@@ -200,7 +197,7 @@ class Driver  extends TestDriver implements GlobalConst
                         .toArray(String[]::new))
                         .mapToDouble(Double::parseDouble)
                         .toArray();
-
+                
                 for(int i=0; i<doubleArray.length; i++) {
                     try {
                         t.setFloFld(i+1, (float) doubleArray[i]);
@@ -220,15 +217,8 @@ class Driver  extends TestDriver implements GlobalConst
 
                 System.out.println("RID: "+rid);
             }
-            try {
-                System.out.println("record count "+f.getRecCnt());
-            } catch (InvalidSlotNumberException e) {
-                e.printStackTrace();
-            } catch (HFDiskMgrException e) {
-                e.printStackTrace();
-            } catch (HFBufMgrException e) {
-                e.printStackTrace();
-            }
+            System.out.println("record count "+f.getRecCnt());
+            sc.close();
         }
     }
 
@@ -236,9 +226,9 @@ class Driver  extends TestDriver implements GlobalConst
         return "Main Driver";
     }
 
-    protected boolean runAllTests (){
+	protected boolean runAllTests (){
         int choice=100;
-
+               
         while(choice!=0) {
             menu();
 
@@ -249,10 +239,14 @@ class Driver  extends TestDriver implements GlobalConst
 
                     case 102:
                         readDataIntoHeap("data2");
+                        BtreeGeneratorUtil.generateAllBtreesForHeapfile(hFile, f, attrType, attrSize);
+                        individualBTreeIndexesCreated = true;
                         break;
 
                     case 103:
                         readDataIntoHeap("data3");
+                        BtreeGeneratorUtil.generateAllBtreesForHeapfile(hFile, f, attrType, attrSize);
+                        individualBTreeIndexesCreated = true;
                         break;
 
                     case 104:
@@ -355,10 +349,7 @@ class Driver  extends TestDriver implements GlobalConst
 
                     case 4:
                         // call btree sky
-                        System.out.println("Will run b tree sky with params: ");
-                        System.out.println("N pages: "+_n_pages);
-                        System.out.println("Pref list: "+Arrays.toString(_pref_list));
-                        System.out.println("Pref list length: "+_pref_list.length);
+                    	runBtreeSky();
                         break;
 
                     case 5:
@@ -386,6 +377,45 @@ class Driver  extends TestDriver implements GlobalConst
         }
         return true;
     }
+
+	private void runBtreeSky() throws Exception {
+		System.out.println("Will run b tree sky with params: ");
+		System.out.println("N pages: " + _n_pages);
+		System.out.println("Pref list: " + Arrays.toString(_pref_list));
+		System.out.println("Pref list length: " + _pref_list.length);
+		
+		if (individualBTreeIndexesCreated == false) {
+			BtreeGeneratorUtil.generateAllBtreesForHeapfile(hFile, f, attrType, attrSize);
+			individualBTreeIndexesCreated = true;
+		}
+		
+		int len_in1 = 4;
+		int amt_of_mem = 100; // TODO what should this be?
+		Iterator am1 = null;
+		String relationName = hFile;
+		//get only the btree indexes specified by the the pref_list array
+		IndexFile[] index_file_list = BtreeGeneratorUtil.getBtreeSubset(_pref_list);
+
+		BTreeSky btreesky = new BTreeSky(attrType, len_in1, attrSize, amt_of_mem, am1, relationName, _pref_list,
+				_pref_list.length, index_file_list, _n_pages);
+
+		Tuple skyEle = btreesky.get_next(); // first sky element
+		System.out.print("First Sky element is: ");
+		skyEle.print(attrType);
+
+		while (skyEle != null) { // TODO check this after integration with BNL skyline
+			skyEle = btreesky.get_next(); // subsequent sky elements
+			if (skyEle == null) {
+				System.out.println("No more sky elements");
+				break;
+			}
+			System.out.print("Sky element is: ");
+			skyEle.print(attrType);
+		}
+
+		btreesky.close();
+		System.out.println("End of runBtreeSky");
+	}
 }
 
 

@@ -33,7 +33,7 @@ public class BTreeSky extends Iterator implements GlobalConst {
 	private int[] pref_list;
 	private int pref_length_list;
 	private int n_pages;
-
+	public boolean debug = false;
 
 	private Tuple firstSkyLineElement;
 	//private BlockNestedLoopSkyline blockNestedLoopSkyline;
@@ -41,16 +41,16 @@ public class BTreeSky extends Iterator implements GlobalConst {
 
 
 	/**
-	 * @param in1
-	 * @param len_in1
-	 * @param t1_str_sizes
+	 * @param in1 types of attributes in the relation
+	 * @param len_in1 number of attributes in the relation
+	 * @param t1_str_sizes list of string lengths for this attributes that are string type
 	 * @param amt_of_mem
-	 * @param am1
-	 * @param relationName used to open indexscans
-	 * @param pref_list
+	 * @param am1 access method for the left iterator (may be left empty if not needed)
+	 * @param relationName  heapfile filename, used to open scans
+	 * @param pref_list array containing indexes of the preference attributes
 	 * @param pref_length_list length of the preference list
-	 * @param index_file_list
-	 * @param n_pages
+	 * @param index_file_list array of btree index files
+	 * @param n_pages number of buffer frames available for the operation
 	 * @throws Exception 
 	 */
 	public BTreeSky(AttrType[] in1, int len_in1, short[] t1_str_sizes, int amt_of_mem, Iterator am1,
@@ -103,40 +103,52 @@ public class BTreeSky extends Iterator implements GlobalConst {
 
 				// check in all other btree if this key has been found before
 				RID rid = ((LeafData) scannedVal.data).getData();
-				System.out.println("tree: " + i + " scannedVal: " + scannedVal.key + " RID: " + rid);
-				System.out.println(i + " : " + setArr[i]);
-
+				if(debug) {
+					System.out.println("tree: " + i + " scannedVal: " + scannedVal.key + " RID: " + rid);
+					System.out.println(i + " : " + setArr[i]);
+				}
 				// check in other indexes
 				int foundCount=0;
 				for (int otherid = 0; otherid < numberOfBtreeIndexes; otherid++) {
 					if (otherid != i) {
-						System.out.println("checking " + setArr[otherid] + " for " + rid);
+						if(debug) {
+							System.out.println("checking " + setArr[otherid] + " for " + rid);
+						}
 						if (setArr[otherid].getIndex(rid) >= 0) {
-							System.out.println("rid found in other index" + rid);
-							setArr[otherid].printToConsole();
+							if(debug) {
+								System.out.println("rid found in other index" + rid);
+								setArr[otherid].printToConsole();
+							}
+							
 							foundCount++;
 						}
 					}
 				}
-				if(foundCount == (numberOfBtreeIndexes -1)) {
-					stopBtreeSkyLoop = true; //stop the btree skyline loop
+				if (foundCount == (numberOfBtreeIndexes - 1)) {
+					stopBtreeSkyLoop = true; // stop the btree skyline loop
 					firstSkyLineElementRID = rid;
-					System.out.println("firstSkyLineElement: "+firstSkyLineElementRID);
+					if (debug) {
+						System.out.println("firstSkyLineElement: " + firstSkyLineElementRID);
+					}
 
 					break;
 				}
 
 				setArr[i].add(rid);
-				System.out.println("oooo");
+				if (debug) {
+					System.out.println("oooo");
+				}
 			}
-			System.out.println("---");
+			if (debug) {
+				System.out.println("---");
+			}
 		} //end of btreeskyline main loop, now do block nested
 
 		//open main relation data file
 		Heapfile originalDataHeapFile = new Heapfile(relationName);
 		firstSkyLineElement = getEmptyTuple();
 		firstSkyLineElement.tupleCopy(originalDataHeapFile.getRecord(firstSkyLineElementRID));
-		
+
 		//create heapfile with all elements of the all the arrays of the indexes
 
 		//create a heapfile which will store the pruned data
@@ -147,8 +159,10 @@ public class BTreeSky extends Iterator implements GlobalConst {
 
 		for (int i = 0; i < numberOfBtreeIndexes; i++) {
 			DiskBackedArray curArray = setArr[i];
-			System.out.print("----- pruning for array: "+i +" ----------- " );
-			curArray.printToConsole();
+			if(debug) {
+				System.out.print("----- pruning for array: "+i +" ----------- " );
+				curArray.printToConsole();
+			}
 			RID temp= new RID();
 			Scan scan =curArray.getHeapfile().openScan();
 			Tuple tup;
@@ -162,7 +176,9 @@ public class BTreeSky extends Iterator implements GlobalConst {
 				RID scannedRID = DiskBackedArray.getRIDFromByteArr(tup.returnTupleByteArray());
 
 				if(scannedRID.equals(firstSkyLineElementRID)) {
-					System.out.println("not inserting any more to pruned file as skyline element hit");
+					if(debug) {
+						System.out.println("not inserting any more to pruned file as skyline element hit");
+					}
 					break;
 				}
 
@@ -171,22 +187,28 @@ public class BTreeSky extends Iterator implements GlobalConst {
 
 					prunedDataFile.insertRecord(mainFileTuple.getTupleByteArray() );
 					insertCheckerList.add(scannedRID);
-					System.out.println("inserted record to pruned data file");
+					if(debug) {
+						System.out.println("inserted record to pruned data file");
+					}
 				} else {
-					System.out.println("not inserting record as already present in pruned file");
+					if(debug) {
+						System.out.println("not inserting record as already present in pruned file");
+					}
 				}
 
 			}
-			System.out.println("");
+			if(debug) {
+				System.out.println("");
+			}
 
 
 
 			scan.closescan();
 
 		}
-
-		System.out.println("prunedDataFile count --> "+prunedDataFile.getRecCnt());
-
+		if(debug) {
+			System.out.println("prunedDataFile count --> "+prunedDataFile.getRecCnt());
+		}
 		//run block nested loop skyline on the pruned data now
 
 		//TODO
