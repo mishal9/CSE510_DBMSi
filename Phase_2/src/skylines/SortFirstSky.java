@@ -118,6 +118,18 @@ public class SortFirstSky implements GlobalConst {
 
         if ( status == OK )
             computeSkylines(_relationName, _sort, temp);
+
+        close();
+    }
+
+    public void close(){
+        try {
+            _sort.close();
+        } catch (SortException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public void computeSkylines(String file, SortPref sort, Heapfile tmp) throws IOException {
@@ -268,10 +280,7 @@ public class SortFirstSky implements GlobalConst {
                 _window[i].print(_attrType);
         }
 
-        // drop indexes print here
-
-        System.out.println("Reads "+ PCounter.rcounter);
-        System.out.println("Writes "+ PCounter.wcounter);
+        close();    // free up resources
 
         return;
     }

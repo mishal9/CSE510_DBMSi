@@ -50,7 +50,7 @@ class Driver  extends TestDriver implements GlobalConst
         dbpath = "/tmp/main"+System.getProperty("user.name")+".minibase-db";
         logpath = "/tmp/main"+System.getProperty("user.name")+".minibase-log";
         // Each page can handle at most 25 tuples on original data => 7308 / 25 = 292
-        SystemDefs sysdef = new SystemDefs(dbpath,3000, 3000,"Clock");
+        SystemDefs sysdef = new SystemDefs(dbpath,10000, 3000,"Clock");
 
         // Kill anything that might be hanging around
         String newdbpath;
@@ -433,14 +433,16 @@ public class AppDriver implements  GlobalConst{
         try{
             Driver driver = new Driver();
             driver.runTests();
+
+            System.out.println("Read statistics "+PCounter.rcounter);
+            System.out.println("Write statistics "+PCounter.wcounter);
         }
         catch (Exception e) {
             System.err.println ("Error encountered during running main driver:\n");
             e.printStackTrace();
             Runtime.getRuntime().exit(1);
         }finally {
-            System.out.println("Read statistics "+PCounter.rcounter);
-            System.out.println("Write statistics "+PCounter.wcounter);
+
         }
     }
 
