@@ -301,7 +301,7 @@ class SortFirstSkyDriver extends TestDriver
         boolean status = OK;
 
         // Read data and construct tuples
-        File file = new File("../../data/subset2.txt");
+        File file = new File("../../data/subset3.txt");
         Scanner sc = new Scanner(file);
 
         int COLS = sc.nextInt();

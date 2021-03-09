@@ -18,7 +18,7 @@ import java.io.IOException;
  * to clean up.
  */
 public class SortPref extends Iterator implements GlobalConst {
-    private static final int ARBIT_RUNS = 10;
+    private static final int ARBIT_RUNS = 100;
 
     private AttrType[] _in;
     private short n_cols;
@@ -256,7 +256,7 @@ public class SortPref extends Iterator implements GlobalConst {
                 try {
                     temp_files[run_num] = new Heapfile(null);
                 } catch (Exception e) {
-                    throw new SortException(e, "Sort.java: create Heapfile failed");
+                    throw new Exception("Sort.java: create Heapfile failed",e);
                 }
 
                 // need io_bufs.java

@@ -1,5 +1,6 @@
 package skylines;
 
+import diskmgr.PCounter;
 import global.AttrType;
 import global.GlobalConst;
 import global.TupleOrder;
@@ -97,7 +98,7 @@ public class SortFirstSky implements GlobalConst {
 
         // Sort "test1sortPref.in"
         try {
-            _sort = new SortPref(_attrType, (short) _len_in, _attrSize, _fscan,  new TupleOrder(TupleOrder.Descending), _pref_list, _pref_list_length, 500);
+            _sort = new SortPref(_attrType, (short) _len_in, _attrSize, _fscan,  new TupleOrder(TupleOrder.Descending), _pref_list, _pref_list_length, 2000);
         }
         catch (Exception e) {
             status = FAIL;
@@ -268,6 +269,9 @@ public class SortFirstSky implements GlobalConst {
         }
 
         // drop indexes print here
+
+        System.out.println("Reads "+ PCounter.rcounter);
+        System.out.println("Writes "+ PCounter.wcounter);
 
         return;
     }
