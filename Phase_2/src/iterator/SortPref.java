@@ -176,7 +176,7 @@ public class SortPref extends Iterator implements GlobalConst {
             } catch (UnknowAttrType e) {
                 throw new SortException(e, "Sort.java: UnknowAttrType caught from MAX_VAL()");
             } catch (Exception e) {
-                throw new SortException(e, "MIN_VAL failed");
+                throw new SortException(e, "MAX_VAL failed");
             }
         }
 
@@ -277,7 +277,7 @@ public class SortPref extends Iterator implements GlobalConst {
                     } catch (UnknowAttrType e) {
                         throw new SortException(e, "Sort.java: UnknowAttrType caught from MAX_VAL()");
                     } catch (Exception e) {
-                        throw new SortException(e, "MIN_VAL failed");
+                        throw new SortException(e, "MAX_VAL failed");
                     }
                 }
 

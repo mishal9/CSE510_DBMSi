@@ -1,18 +1,15 @@
 package iterator;
 
 import bufmgr.PageNotReadException;
-import diskmgr.PCounter;
 import global.AttrType;
 import global.GlobalConst;
 import global.RID;
 import global.TupleOrder;
 import heap.*;
 import index.IndexException;
-import iterator.*;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.LinkedHashSet;
 
 import static tests.TestDriver.FAIL;
 import static tests.TestDriver.OK;
