@@ -91,7 +91,7 @@ public class BTreeSky extends Iterator implements GlobalConst {
 		}
 		RID firstSkyLineElementRID = null;
 		boolean stopBtreeSkyLoop =false;
-		for (int skyLoopCtr = 0; skyLoopCtr <= 5 && stopBtreeSkyLoop  == false; skyLoopCtr++) {
+		for (int skyLoopCtr = 0; /*skyLoopCtr <= 5 &&*/ stopBtreeSkyLoop  == false; skyLoopCtr++) {
 
 			// loop over full index scans for each btree
 			for (int i = 0; i < numberOfBtreeIndexes; i++) {
