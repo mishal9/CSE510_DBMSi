@@ -95,17 +95,17 @@ public class GenerateIndexFiles{
 
         file = new BTreeFile(filename, keyType, keySize, 1);
 
-        AttrType [] Stypes = new AttrType[COLS];
-        for(int i=0;i<COLS;i++){Stypes[i] = new AttrType (AttrType.attrReal);}
+        AttrType [] Stypes = new AttrType[pref_list_length];
+        for(int i=0;i<pref_list_length;i++){Stypes[i] = new AttrType (AttrType.attrReal);}
         Tuple t = new Tuple();
         short [] Ssizes = null;
 
-        t.setHdr((short) COLS,Stypes, Ssizes);
+        t.setHdr((short) pref_list_length,Stypes, Ssizes);
         int size = t.size();
         
 
         t = new Tuple(size);
-        t.setHdr((short) COLS, Stypes, Ssizes);
+        t.setHdr((short) pref_list_length, Stypes, Ssizes);
 
         RID rid;
         

@@ -158,11 +158,7 @@ class GenerateIndexDriver implements GlobalConst {
             entry = scan.get_next();
             
             Tuple t = new Tuple();
-            short [] Ssizes = new short[pref_list_length];
-            
-            Ssizes[0] = 128;
-            Ssizes[1] = 128;
-            Ssizes[2] = 128;
+            short [] Ssizes = null;
             
             AttrType [] Stypes = new AttrType[pref_list_length];
             for(int i=0;i<pref_list_length;i++){Stypes[i] = new AttrType (AttrType.attrReal);}
@@ -177,9 +173,8 @@ class GenerateIndexDriver implements GlobalConst {
             	RID rid1 = ((LeafData) entry.data).getData();
             	
             	t.tupleCopy(hf.getRecord(rid1));
+            	t.print(Stypes); 
             	
-//            	System.out.println("^^" + t.getFloFld(1));
-            	            	                
                 System.out.println("SCAN RESULT: " + entry.key + " > " + entry.data);
                 entry = scan.get_next();
 
