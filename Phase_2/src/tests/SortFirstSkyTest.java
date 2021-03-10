@@ -351,6 +351,8 @@ class SortFirstSkyDriver extends TestDriver
             e.printStackTrace();
         }
 
+        int t_size = t.size();
+
         while (sc.hasNextLine()) {
             // create a tuple of appropriate size
 
@@ -408,6 +410,7 @@ class SortFirstSkyDriver extends TestDriver
                                                         (short) COLS,
                                                         attrSize,
                                                         fscan,
+                                                        (short) t_size,
                                                         hfileName,
                                                         new int[]{1,2},
                                                        2,

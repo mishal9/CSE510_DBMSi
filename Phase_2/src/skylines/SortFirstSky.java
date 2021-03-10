@@ -1,10 +1,12 @@
 package skylines;
 
+import bufmgr.PageNotReadException;
 import diskmgr.PCounter;
 import global.AttrType;
 import global.GlobalConst;
 import global.TupleOrder;
 import heap.*;
+import index.IndexException;
 import iterator.*;
 
 import java.io.IOException;
@@ -14,7 +16,7 @@ import java.util.LinkedHashSet;
 import static tests.TestDriver.FAIL;
 import static tests.TestDriver.OK;
 
-public class SortFirstSky implements GlobalConst {
+public class SortFirstSky extends Iterator implements GlobalConst {
 
     private static int _n_pages;
     private static String _relationName;
@@ -38,9 +40,10 @@ public class SortFirstSky implements GlobalConst {
     private static FldSpec[] _projlist;
     //private static LinkedHashSet<Tuple> _window;
     private static Tuple[] _window;
+    private static short _tuple_size;
 
     public SortFirstSky(AttrType[] in1, int len_in1, short[] t1_str_sizes,
-                        Iterator am1, java.lang.String
+                        Iterator am1, short tuple_size, java.lang.String
                                 relationName, int[] pref_list, int pref_list_length,
                         int n_pages) throws IOException, HFException, HFBufMgrException, HFDiskMgrException {
 
@@ -49,6 +52,7 @@ public class SortFirstSky implements GlobalConst {
         _str_sizes = t1_str_sizes;
         //_sort = (SortPref) am1;
         _fscan = (FileScan) am1;
+        _tuple_size = tuple_size;
 
         _attrType = new AttrType[_len_in];
         _attrSize = new short[_len_in];
@@ -92,9 +96,9 @@ public class SortFirstSky implements GlobalConst {
         _relationName = relationName;
         _pref_list = pref_list;
         _pref_list_length = pref_list_length;
-        _n_pages = n_pages;
+        _n_pages = n_pages-1; // (let one out for spare in case of temp heap)
         // _window = new LinkedHashSet<Tuple>(_n_pages);
-        _window = new Tuple[_n_pages];
+        _window = new Tuple[(MINIBASE_PAGESIZE / _tuple_size) * _n_pages];
 
         // Sort "test1sortPref.in"
         try {
@@ -113,7 +117,8 @@ public class SortFirstSky implements GlobalConst {
         System.out.println("Relation name: "+_relationName);
         System.out.println("Preferences list: "+ Arrays.toString(_pref_list));
         System.out.println("Preferences list length: "+_pref_list_length);
-        System.out.println("Number of buffer pages: "+_n_pages);
+        System.out.println("Size of each tuple: "+_tuple_size);
+        System.out.println("Length of the buffer: "+_window.length);
         System.out.println("-----------------------------------------------------");
 
         if ( status == OK )
@@ -122,14 +127,13 @@ public class SortFirstSky implements GlobalConst {
         close();
     }
 
+    @Override
+    public Tuple get_next() throws IOException, JoinsException, IndexException, InvalidTupleSizeException, InvalidTypeException, PageNotReadException, TupleUtilsException, PredEvalException, SortException, LowMemException, UnknowAttrType, UnknownKeyTypeException, Exception {
+        return null;
+    }
+
     public void close(){
-        try {
-            _sort.close();
-        } catch (SortException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        _fscan.close();
     }
 
     public void computeSkylines(String file, SortPref sort, Heapfile tmp) throws IOException {
@@ -168,7 +172,7 @@ public class SortFirstSky implements GlobalConst {
 
         int count = 0;
 
-        while (t != null && count < _n_pages) {
+        while (t != null && count < _window.length) {
             Tuple temp = new Tuple(t);
             _window[count] = temp;
             // _window.add(temp);
@@ -192,6 +196,7 @@ public class SortFirstSky implements GlobalConst {
                 _window[i].print(_attrType);
         }
 
+        /*
         FileScan fscan = null;
 
         try {
@@ -209,6 +214,8 @@ public class SortFirstSky implements GlobalConst {
             status = FAIL;
             e.printStackTrace();
         }
+
+         */
 
         int dominates = 0;
 
@@ -263,7 +270,7 @@ public class SortFirstSky implements GlobalConst {
             }
 
             try {
-                t = fscan.get_next();
+                t = sort.get_next();
             }
             catch (Exception e) {
                 status = FAIL;
@@ -279,8 +286,6 @@ public class SortFirstSky implements GlobalConst {
             if(_window[i] != null)
                 _window[i].print(_attrType);
         }
-
-        close();    // free up resources
 
         return;
     }

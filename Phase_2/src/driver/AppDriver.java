@@ -39,7 +39,7 @@ class Driver  extends TestDriver implements GlobalConst
     // create an iterator by open a file scan
     private static FldSpec[] projlist;
     private static RelSpec rel = new RelSpec(RelSpec.outer);
-
+    private static int _t_size;
 
     public Driver(){
         super("main");
@@ -50,7 +50,7 @@ class Driver  extends TestDriver implements GlobalConst
         dbpath = "/tmp/main"+System.getProperty("user.name")+".minibase-db";
         logpath = "/tmp/main"+System.getProperty("user.name")+".minibase-log";
         // Each page can handle at most 25 tuples on original data => 7308 / 25 = 292
-        SystemDefs sysdef = new SystemDefs(dbpath,10000, 3000,"Clock");
+        SystemDefs sysdef = new SystemDefs(dbpath,8000, 3000,"Clock");
 
         // Kill anything that might be hanging around
         String newdbpath;
@@ -179,6 +179,7 @@ class Driver  extends TestDriver implements GlobalConst
             }
 
             int size = t.size();
+            _t_size = t.size();
             System.out.println("Size: "+size);
 
             t = new Tuple(size);
@@ -322,11 +323,13 @@ class Driver  extends TestDriver implements GlobalConst
                             e.printStackTrace();
                         }
 
+                        SortFirstSky sortFirstSky = null;
                         try {
-                            SortFirstSky sortFirstSky = new SortFirstSky(attrType,
+                            sortFirstSky = new SortFirstSky(attrType,
                                                             (short) COLS,
                                                             attrSize,
                                                             fscan,
+                                                            (short)_t_size,
                                                             hFile,
                                                             _pref_list,
                                                             _pref_list.length,
@@ -343,7 +346,7 @@ class Driver  extends TestDriver implements GlobalConst
                             status = OK;
                             // clean up
                             try {
-                                fscan.close();
+                                sortFirstSky.close();
                             }
                             catch (Exception e) {
                                 status = FAIL;
