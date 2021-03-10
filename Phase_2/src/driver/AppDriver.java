@@ -5,13 +5,12 @@ import java.io.*;
 import java.util.*;
 import java.lang.*;
 
+import bufmgr.PageNotReadException;
 import diskmgr.PCounter;
 import heap.*;
 import global.*;
-import iterator.FileScan;
-import iterator.FldSpec;
-import iterator.RelSpec;
-import skylines.SortFirstSky;
+import index.IndexException;
+import iterator.*;
 import tests.TestDriver;
 
 /** Note that in JAVA, methods can't be overridden to be more private.
@@ -33,7 +32,7 @@ class Driver  extends TestDriver implements GlobalConst
     private static int[] _pref_list;
     private static int _n_pages;
     private static int COLS;
-    private static final String hFile = "hFile100.in";
+    private static final String hFile = "hFile.in";
     private static AttrType[] attrType;
     private short[] attrSize;
     // create an iterator by open a file scan
@@ -334,13 +333,36 @@ class Driver  extends TestDriver implements GlobalConst
                                                             _pref_list,
                                                             _pref_list.length,
                                                             _n_pages);
+                            while(sortFirstSky.get_next() != null) {
+                                System.out.println("Skyline object: ");
+                                sortFirstSky.get_next().print(attrType);
+                            }
+
                         } catch (IOException e) {
                             e.printStackTrace();
-                        } catch (HFException e) {
+                        } catch (IndexException e) {
                             e.printStackTrace();
-                        } catch (HFBufMgrException e) {
+                        } catch (PredEvalException e) {
                             e.printStackTrace();
-                        } catch (HFDiskMgrException e) {
+                        } catch (UnknowAttrType unknowAttrType) {
+                            unknowAttrType.printStackTrace();
+                        } catch (JoinsException e) {
+                            e.printStackTrace();
+                        } catch (InvalidTupleSizeException e) {
+                            e.printStackTrace();
+                        } catch (PageNotReadException e) {
+                            e.printStackTrace();
+                        } catch (UnknownKeyTypeException e) {
+                            e.printStackTrace();
+                        } catch (LowMemException e) {
+                            e.printStackTrace();
+                        } catch (InvalidTypeException e) {
+                            e.printStackTrace();
+                        } catch (SortException e) {
+                            e.printStackTrace();
+                        } catch (TupleUtilsException e) {
+                            e.printStackTrace();
+                        } catch (Exception e) {
                             e.printStackTrace();
                         } finally {
                             status = OK;

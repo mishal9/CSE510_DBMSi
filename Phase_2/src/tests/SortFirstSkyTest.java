@@ -1,8 +1,11 @@
 package tests;
 
 import java.io.*;
+
+import bufmgr.PageNotReadException;
 import global.*;
 import heap.*;
+import index.IndexException;
 import iterator.*;
 import skylines.SortFirstSky;
 
@@ -388,13 +391,7 @@ class SortFirstSkyDriver extends TestDriver
         for(int i=0; i<attrSize.length; i++){
             projlist[i] = new FldSpec(rel, i+1);;
         }
-        /*
-        projlist[0] = new FldSpec(rel, 1);
-        projlist[1] = new FldSpec(rel, 2);
-        projlist[2] = new FldSpec(rel, 3);
-        projlist[3] = new FldSpec(rel, 4);
-        projlist[4] = new FldSpec(rel, 5);
-        */
+
         FileScan fscan = null;
 
         try {
@@ -405,29 +402,54 @@ class SortFirstSkyDriver extends TestDriver
             e.printStackTrace();
         }
 
+        SortFirstSky sortFirstSky = null;
         try {
-            SortFirstSky sortFirstSky = new SortFirstSky(attrType,
-                                                        (short) COLS,
-                                                        attrSize,
-                                                        fscan,
-                                                        (short) t_size,
-                                                        hfileName,
-                                                        new int[]{1,2},
-                                                       2,
-                    BUFF_SIZE);
+            sortFirstSky = new SortFirstSky(attrType,
+                                            (short) COLS,
+                                            attrSize,
+                                            fscan,
+                                            (short) t_size,
+                                            hfileName,
+                                            new int[]{1,2},
+                                           2,
+                                            BUFF_SIZE);
+
+            while(sortFirstSky.get_next() != null) {
+                System.out.println("Skyline object: ");
+                sortFirstSky.get_next().print(attrType);
+            }
+
         } catch (IOException e) {
             e.printStackTrace();
-        } catch (HFException e) {
+        } catch (IndexException e) {
             e.printStackTrace();
-        } catch (HFBufMgrException e) {
+        } catch (PredEvalException e) {
             e.printStackTrace();
-        } catch (HFDiskMgrException e) {
+        } catch (UnknowAttrType unknowAttrType) {
+            unknowAttrType.printStackTrace();
+        } catch (JoinsException e) {
+            e.printStackTrace();
+        } catch (InvalidTupleSizeException e) {
+            e.printStackTrace();
+        } catch (PageNotReadException e) {
+            e.printStackTrace();
+        } catch (UnknownKeyTypeException e) {
+            e.printStackTrace();
+        } catch (LowMemException e) {
+            e.printStackTrace();
+        } catch (InvalidTypeException e) {
+            e.printStackTrace();
+        } catch (SortException e) {
+            e.printStackTrace();
+        } catch (TupleUtilsException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
             e.printStackTrace();
         } finally {
             status = OK;
             // clean up
             try {
-                fscan.close();
+                sortFirstSky.close();
             }
             catch (Exception e) {
                 status = FAIL;
