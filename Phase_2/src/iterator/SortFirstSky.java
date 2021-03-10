@@ -117,7 +117,7 @@ public class SortFirstSky extends Iterator implements GlobalConst {
         if(counter < _window.length){
             return _window[counter++];
         }else{
-            return _tscan.get_next();
+            return null;
         }
     }
 
