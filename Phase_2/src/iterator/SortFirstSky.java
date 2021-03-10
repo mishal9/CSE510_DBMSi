@@ -133,18 +133,15 @@ public class SortFirstSky extends Iterator implements GlobalConst {
         1. Put the first <n_pages> sorted tuples in main memory
         2. Compare the rest against the ones in main memory
             1. If tuple in heap file is dominated by at least one in main memory - simply discard it from heap
-            2. If tuple in heap file dominates any one in main memory - replace the tuple with the one in main memory
-            3. If tuple is not dominated by any tuple in main memory - put into temp heap file
-        3. At end - return both temp heap + main memory objects
-
+            2. If tuple is not dominated by any tuple in main memory - put into temp heap file
+        3. At end - if tuples in temp heap; return the first window and put temp heap into the window
+        4. Do second pass on data and run against the new window
 
         Scenarios:
 
-        If tuple heap_tuple (dominated by):
+        If tuple heap_tuple:
 	        dominated by tuple memory_tuple -> discard heap_tuple
 	        not dominated by any of tuple memory_tuple -> put into temp heap
-        If tuple heap_tuple  (dominates):
-	        dominates memory_tuple -> discard memory_tuple
          */
 
         // create a tuple of appropriate size
@@ -198,20 +195,12 @@ public class SortFirstSky extends Iterator implements GlobalConst {
                 /*
                 Compare the rest against the ones in main memory
                 1. If tuple in heap file is dominated by at least one in main memory - simply discard it from heap
-                2. If tuple in heap file dominates any one in main memory - replace the tuple with the one in main memory
-                3. If tuple is not dominated by any tuple in main memory - put into temp heap file
+                2. If tuple is not dominated by any tuple in main memory - put into temp heap file
                 */
 
                 for(int i=0; i<_window.length; i++){
-                    if (TupleUtils.Dominates(htuple, _attrType, _window[i], _attrType, _len_in, _str_sizes, _pref_list, _pref_list_length)) {
+                    if (TupleUtils.Dominates(_window[i], _attrType, htuple, _attrType, _len_in, _str_sizes, _pref_list, _pref_list_length)) {
                         // 2. If tuple in heap file dominates any one in main memory - replace the tuple with the one in main memory
-                        System.out.println("Heap tuple");
-                        htuple.print(_attrType);
-                        System.out.println("Dominates ");
-                        _window[i].print(_attrType);
-                        System.out.println(" ");
-                        _window[i] = htuple;
-                    } else {
                         // 1. If tuple in heap file is dominated by at least one in main memory - simply move to the next element
                         isDominatedBy = true;
                         System.out.println("Heap tuple");
@@ -222,44 +211,6 @@ public class SortFirstSky extends Iterator implements GlobalConst {
                         break;
                     }
                 }
-
-                // Also compare with elements in the heap
-                if(temp.getRecCnt() > 0) {
-                    try {
-                        _tscan = new FileScan("sortFirstSkyTemp.in", _attrType, _attrSize, (short) _len_in, _len_in, _projlist, null);
-                    } catch (Exception e) {
-                        status = FAIL;
-                        e.printStackTrace();
-                    }
-
-
-                    try {
-                        Tuple tempHeapTuple = _tscan.get_next();
-
-                            while (tempHeapTuple != null) {
-                                Tuple tTuple = new Tuple(tempHeapTuple);
-
-                                // check for dominance here
-                                System.out.println("Compare ");
-                                htuple.print(_attrType);
-                                System.out.println("Against ");
-                                tTuple.print(_attrType);
-
-                                try {
-                                    tempHeapTuple = _tscan.get_next();
-                                }
-                                catch (Exception e) {
-                                    status = FAIL;
-                                    e.printStackTrace();
-                                }
-                            }
-                        } catch (Exception e) {
-                        status = FAIL;
-                        e.printStackTrace();
-                    }
-                }
-
-                // Create unsorted data file "test1.in"
 
                 if(!isDominatedBy){
                     // 3. If tuple is not dominated by any tuple in main memory - put into temp heap file
@@ -301,15 +252,15 @@ public class SortFirstSky extends Iterator implements GlobalConst {
             }
         }
 
-        // reset
-
+        // second pass
+        /*
         try {
             _tscan = new FileScan("sortFirstSkyTemp.in", _attrType, _attrSize, (short) _len_in, _len_in, _projlist, null);
         } catch (Exception e) {
             status = FAIL;
             e.printStackTrace();
         }
-
+        */
         return;
     }
 }
