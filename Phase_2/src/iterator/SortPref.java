@@ -18,7 +18,7 @@ import java.io.IOException;
  * to clean up.
  */
 public class SortPref extends Iterator implements GlobalConst {
-    private static final int ARBIT_RUNS = 100;
+    private static final int ARBIT_RUNS = 10;
 
     private AttrType[] _in;
     private short n_cols;

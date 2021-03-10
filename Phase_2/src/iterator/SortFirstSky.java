@@ -79,7 +79,7 @@ public class SortFirstSky extends Iterator implements GlobalConst {
 
         // Sort "test1sortPref.in"
         try {
-            _sort = new SortPref(_attrType, (short) _len_in, _attrSize, _fscan,  new TupleOrder(TupleOrder.Descending), _pref_list, _pref_list_length, 2000);
+            _sort = new SortPref(_attrType, (short) _len_in, _attrSize, _fscan,  new TupleOrder(TupleOrder.Descending), _pref_list, _pref_list_length, 2);
         }
         catch (Exception e) {
             status = FAIL;
@@ -109,19 +109,26 @@ public class SortFirstSky extends Iterator implements GlobalConst {
         if ( status == OK )
             computeSkylines(_sort);
 
-        close();
     }
 
     @Override
     public Tuple get_next() throws IOException, JoinsException, IndexException, InvalidTupleSizeException, InvalidTypeException, PageNotReadException, TupleUtilsException, PredEvalException, SortException, LowMemException, UnknowAttrType, UnknownKeyTypeException, Exception {
-        if(counter < _window.length){
+        System.out.println("Counter "+counter);
+        if(counter < _window.length && _window[counter] != null){
             return _window[counter++];
         }else{
             return null;
         }
     }
 
-    public void close(){
+    public boolean hasNext(){
+        if(counter < _window.length)
+            return _window[counter] != null;
+        return false;
+    }
+
+    @Override
+    public void close() throws IOException, JoinsException, SortException, IndexException {
         _fscan.close();
     }
 
@@ -160,9 +167,8 @@ public class SortFirstSky extends Iterator implements GlobalConst {
 
         while (t != null && count < _window.length) {
             Tuple temp = new Tuple(t);
-            _window[count] = temp;
+            _window[count++] = temp;
             // _window.add(temp);
-            count++;
 
             try {
                 t = sort.get_next();
@@ -181,8 +187,6 @@ public class SortFirstSky extends Iterator implements GlobalConst {
             if(_window[i] != null)
                 _window[i].print(_attrType);
         }
-
-        count  = 0;
 
         RID rid = null;
 
@@ -220,19 +224,14 @@ public class SortFirstSky extends Iterator implements GlobalConst {
                     // Inserting potential skyline candidate in the temp heap file
                     htuple.print(_attrType);
 
-                    if(count < _window.length){
-                        _window[count] = htuple;
-                    }else{
-                        try {
-                            rid = temp.insertRecord(htuple.returnTupleByteArray());
-                        }
-                        catch (Exception e) {
-                            status = FAIL;
-                            e.printStackTrace();
-                        }
-                        System.out.println("Is not Dominated by any window objects");
+                    try {
+                        rid = temp.insertRecord(htuple.returnTupleByteArray());
                     }
-
+                    catch (Exception e) {
+                        status = FAIL;
+                        e.printStackTrace();
+                    }
+                    System.out.println("Is not Dominated by any window objects");
                 }
 
             }
