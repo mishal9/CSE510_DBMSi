@@ -3,13 +3,17 @@ package tests;
 import java.io.*;
 
 import bufmgr.PageNotReadException;
+import diskmgr.PCounter;
+import diskmgr.Page;
 import global.*;
 import heap.*;
+import index.IndexException;
 import iterator.*;
 import skylines.SortFirstSky;
 
 import java.util.Arrays;
 import java.util.Scanner;
+
 
 
 class NestedLoopsSkyDriver extends TestDriver
@@ -21,6 +25,7 @@ class NestedLoopsSkyDriver extends TestDriver
     private static short REC_LEN4 = 32;
     private static short REC_LEN5 = 32;
     private static NestedLoopsSky it;
+    private static BlockNestedLoopsSky blck_it;
 
     TupleOrder[] order = new TupleOrder[2];
 
@@ -34,7 +39,7 @@ class NestedLoopsSkyDriver extends TestDriver
 
         System.out.println ("\n" + "Running " + testName() + " tests...." + "\n");
         // We will define the bufpoolsize and num_pgs params ; whereas BUFF_SIZE determined by user input
-        SystemDefs sysdef = new SystemDefs( dbpath, 8000, 3000, "Clock" );
+        SystemDefs sysdef = new SystemDefs( dbpath, 8000, 50, "Clock" );
 
         // Kill anything that might be hanging around
         String newdbpath;
@@ -51,13 +56,13 @@ class NestedLoopsSkyDriver extends TestDriver
 
         // Commands here is very machine dependent.  We assume
         // user are on UNIX system here
-        try {
+        /*try {
             Runtime.getRuntime().exec(remove_logcmd);
             Runtime.getRuntime().exec(remove_dbcmd);
         }
         catch (IOException e) {
             System.err.println (""+e);
-        }
+        }*/
 
         remove_logcmd = remove_cmd + newlogpath;
         remove_dbcmd = remove_cmd + newdbpath;
@@ -65,25 +70,25 @@ class NestedLoopsSkyDriver extends TestDriver
         //This step seems redundant for me.  But it's in the original
         //C++ code.  So I am keeping it as of now, just in case I
         //I missed something
-        try {
+        /*try {
             Runtime.getRuntime().exec(remove_logcmd);
             Runtime.getRuntime().exec(remove_dbcmd);
         }
         catch (IOException e) {
             System.err.println (""+e);
-        }
+        }*/
 
         //Run the tests. Return type different from C++
         boolean _pass = runAllTests();
 
         //Clean up again
-        try {
+        /*try {
             Runtime.getRuntime().exec(remove_logcmd);
             Runtime.getRuntime().exec(remove_dbcmd);
         }
         catch (IOException e) {
             System.err.println (""+e);
-        }
+        }*/
 
         System.out.println ("\n" + "..." + testName() + " tests ");
         System.out.println (_pass==OK ? "completely successfully" : "failed");
@@ -99,7 +104,8 @@ class NestedLoopsSkyDriver extends TestDriver
         boolean status = OK;
 
         // Read data and construct tuples
-        File file = new File("../../data/data2.txt");
+        String relationName = "data/subset3.txt";
+        File file = new File(relationName);
         Scanner sc = null;
         try {
             sc = new Scanner(file);
@@ -179,6 +185,7 @@ class NestedLoopsSkyDriver extends TestDriver
 
             try {
                 rid = f.insertRecord(t.returnTupleByteArray());
+                //t.print(attrType);
             }
             catch (Exception e) {
                 status = FAIL;
@@ -188,18 +195,29 @@ class NestedLoopsSkyDriver extends TestDriver
         }
 
         try {
+        	System.out.println("Number of Disk reads: "+ PCounter.get_rcounter());
+            System.out.println("Number of Disk writes: "+ PCounter.get_wcounter());
+            //boolean status = OK;
+            
             it = new NestedLoopsSky(attrType,
                     (short)COLS,
                     attrSize,
                     null,
-                    f,
-                    new int[]{1},
-                    1,
+                    hfileName,
+                    new int[]{1,2},
+                    2,
                     5);
 
+            System.out.println("Printing the Nested Loop Skyline");
             Tuple temp = it.get_next();
-            temp.print(attrType);
-
+            while (temp!=null)
+            {
+            	temp.print(attrType);
+            	temp = it.get_next();
+            }
+            System.out.println("Number of Disk reads: "+ PCounter.get_rcounter());
+            System.out.println("Number of Disk writes: "+ PCounter.get_wcounter());
+            //System.out.println("size of iterator: " + ObjectSizeFetcher.getObjectSize(it));
         } catch (FileScanException e) {
             e.printStackTrace();
         } catch (TupleUtilsException e) {
@@ -242,7 +260,7 @@ class NestedLoopsSkyDriver extends TestDriver
         boolean status = OK;
 
         // Read data and construct tuples
-        File file = new File("../../data/data3.txt");
+        File file = new File("data/subset3.txt");
         Scanner sc = new Scanner(file);
 
         int COLS = sc.nextInt();
@@ -317,6 +335,7 @@ class NestedLoopsSkyDriver extends TestDriver
 
             try {
                 rid = f.insertRecord(t.returnTupleByteArray());
+                //t.print(attrType);
             }
             catch (Exception e) {
                 status = FAIL;
@@ -326,17 +345,40 @@ class NestedLoopsSkyDriver extends TestDriver
         }
 
         try {
-            it = new NestedLoopsSky(attrType,
-                    (short)COLS,
-                    attrSize,
-                    null,
-                    f,
-                    new int[]{1},
-                    1,
-                    1);
-
-            Tuple temp = it.get_next();
-            temp.print(attrType);
+        	blck_it = new BlockNestedLoopsSky(attrType,
+                    						  (short)COLS,
+                    						  attrSize,
+                    						  null,
+                    						  hfileName,
+                    						  new int[]{1,2},
+                    						  2,
+                    						  500);
+            System.out.println("Printing the Block Nested Loop Skyline");
+            Tuple temp;
+			try {
+				temp = blck_it.get_next();
+				while (temp!=null)
+	            {
+	            	temp.print(attrType);
+	            	temp = blck_it.get_next();
+	            }
+			} catch (IndexException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (SortException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (LowMemException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (UnknownKeyTypeException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+            
 
         } catch (FileScanException e) {
             e.printStackTrace();
@@ -344,22 +386,6 @@ class NestedLoopsSkyDriver extends TestDriver
             e.printStackTrace();
         } catch (InvalidRelation invalidRelation) {
             invalidRelation.printStackTrace();
-        } catch (WrongPermat wrongPermat) {
-            wrongPermat.printStackTrace();
-        } catch (InvalidTypeException e) {
-            e.printStackTrace();
-        } catch (JoinsException e) {
-            e.printStackTrace();
-        } catch (PageNotReadException e) {
-            e.printStackTrace();
-        } catch (FieldNumberOutOfBoundException e) {
-            e.printStackTrace();
-        } catch (PredEvalException e) {
-            e.printStackTrace();
-        } catch (UnknowAttrType unknowAttrType) {
-            unknowAttrType.printStackTrace();
-        } catch (InvalidTupleSizeException e) {
-            e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
@@ -376,9 +402,10 @@ class NestedLoopsSkyDriver extends TestDriver
 
     protected String testName()
     {
-        return "SortFirstSky";
+        return "NestedLoopsSky";
     }
 }
+
 
 public class NestedLoopSkyTest
 {
@@ -389,10 +416,10 @@ public class NestedLoopSkyTest
 
         sortstatus = driver.runTests();
         if (sortstatus != true) {
-            System.out.println("Error occurred during sort first sky tests");
+            System.out.println("Error occurred during nested loop sky tests");
         }
         else {
-            System.out.println("Sort first sky tests completed successfully");
+            System.out.println("Nested Loop sky tests completed successfully");
         }
     }
 }
