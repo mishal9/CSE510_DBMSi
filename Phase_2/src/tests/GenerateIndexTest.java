@@ -3,6 +3,8 @@ package tests;
 import java.io.*;
 import java.util.*;
 import java.lang.*;
+import java.nio.charset.StandardCharsets;
+
 import heap.*;
 import global.*;
 import btree.*;
@@ -92,10 +94,10 @@ class GenerateIndexDriver implements GlobalConst {
 
     protected void runAllTests() {
         try{
-            test1();
-            test2();
+//            test1();
+//            test2();
             test3();
-            test4();
+//            test4();
         } catch (Exception e){
             e.printStackTrace();
         }
@@ -106,9 +108,11 @@ class GenerateIndexDriver implements GlobalConst {
             throws Exception {
         try {
             System.out.println(" Combined BTreeIndex creation");
+            int [] pref_list = new int[] {1,0,1};
+            int pref_list_length = 3;
 
             GenerateIndexFiles obj = new GenerateIndexFiles();
-            IndexFile hf = obj.createCombinedBTreeIndex("../../data/subset2.txt");
+            IndexFile hf = obj.createCombinedBTreeIndex("/Users/kunjpatel/Desktop/CSE510_DBMSi/Phase_2/data/subset2.txt", pref_list, pref_list_length);
 
         } catch (Exception e) {
             throw e;
@@ -124,7 +128,7 @@ class GenerateIndexDriver implements GlobalConst {
             System.out.println(" BTreeIndex creation");
 
             GenerateIndexFiles obj = new GenerateIndexFiles();
-            IndexFile[] hf = obj.createBTreeIndex("../../data/subset2.txt");
+            IndexFile[] hf = obj.createBTreeIndex("/Users/kunjpatel/Desktop/CSE510_DBMSi/Phase_2/data/subset2.txt");
 
         } catch (Exception e) {
             throw e;
@@ -138,20 +142,51 @@ class GenerateIndexDriver implements GlobalConst {
             BTFileScan scan;
             KeyDataEntry entry;
             System.out.println("CombinedBTreeIndex scanning");
+            int [] pref_list = new int[] {1,0,1};
+            int pref_list_length = 3;
 
             GenerateIndexFiles obj = new GenerateIndexFiles();
-            IndexFile indexFile = obj.createCombinedBTreeIndex("../../data/subset2.txt");
+            IndexFile indexFile = obj.createCombinedBTreeIndex("/Users/kunjpatel/Desktop/CSE510_DBMSi/Phase_2/data/subset2.txt",pref_list, pref_list_length);
             System.out.println("Index created! ");
             scan = ((BTreeFile) indexFile).new_scan(null, null);
-            Heapfile hf = new Heapfile("heap_" + "AAA" + obj.prefix);
-            Scan heap_scan = new Scan(hf);
+             
+            
+            Heapfile hf = new Heapfile("heap_" + "AAA");
+            Scan heap_scan = hf.openScan();
+            
             RID rid;
             entry = scan.get_next();
+            
+            Tuple t = new Tuple();
+            short [] Ssizes = new short[pref_list_length];
+            
+            Ssizes[0] = 128;
+            Ssizes[1] = 128;
+            Ssizes[2] = 128;
+            
+            AttrType [] Stypes = new AttrType[pref_list_length];
+            for(int i=0;i<pref_list_length;i++){Stypes[i] = new AttrType (AttrType.attrReal);}
+            
+            t.setHdr((short)pref_list_length, Stypes, Ssizes);            
+            int size = t.size();
+            
+            t = new Tuple(size);
+            t.setHdr((short)pref_list_length, Stypes, Ssizes);  
+            
             while (entry != null) {
+            	RID rid1 = ((LeafData) entry.data).getData();
+            	
+            	t.tupleCopy(hf.getRecord(rid1));
+            	
+//            	System.out.println("^^" + t.getFloFld(1));
+            	            	                
                 System.out.println("SCAN RESULT: " + entry.key + " > " + entry.data);
                 entry = scan.get_next();
+
             }
             System.out.println("AT THE END OF SCAN!");
+            
+            
 
 //      Have to add code to SCAN the heap file using the BTree Index
 
@@ -194,7 +229,7 @@ class GenerateIndexDriver implements GlobalConst {
             System.out.println("BTreeIndex scanning");
 
             GenerateIndexFiles obj = new GenerateIndexFiles();
-            IndexFile[] hf = obj.createBTreeIndex("../../data/subset2.txt");
+            IndexFile[] hf = obj.createBTreeIndex("/Users/kunjpatel/Desktop/CSE510_DBMSi/Phase_2/data/subset2.txt");
             BTFileScan[] scans = new BTFileScan[hf.length];
             for(int i=0;i<hf.length;i++){
                 scans[i] = ((BTreeFile)hf[i]).new_scan(null, null);
