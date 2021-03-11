@@ -115,7 +115,7 @@ public class GenerateIndexFiles{
         for(double[] value :records){
             
             fkey = create_key_float(value, pref_list, pref_list_length);
-            ffkey = new FloatKey(fkey);
+            ffkey = new FloatKey(-fkey);
 
             for(int i=0; i<value.length; i++) {
                 t.setFloFld(i+1, (float) value[i]);

@@ -96,8 +96,10 @@ public class TupleUtils
 								int[] pref_list,
 								int pref_list_length) throws IOException, TupleUtilsException, UnknowAttrType, FieldNumberOutOfBoundException {
 		for (int i = 0; i < pref_list_length; i++) {
-			if (CompareTupleWithTuple(type1[i], t1, pref_list[i], t2, pref_list[i]) != 1)
-				return false;
+			if(pref_list[i] == 1) {
+				if (CompareTupleWithTuple(type1[i], t1, i+1, t2, i+1) != 1)
+					return false;
+			}
 		}
 		return true;
 	}

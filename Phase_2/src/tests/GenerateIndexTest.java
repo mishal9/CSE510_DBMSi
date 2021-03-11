@@ -169,8 +169,7 @@ class GenerateIndexDriver implements GlobalConst {
             t = new Tuple(size);
             t.setHdr((short)pref_list_length, Stypes, Ssizes);  
             
-            while (entry 
-            		!= null) {
+            while (entry != null) {
             	rid = ((LeafData) entry.data).getData();
             	
             	t.tupleCopy(hf.getRecord(rid));
