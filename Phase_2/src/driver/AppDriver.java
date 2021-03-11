@@ -161,13 +161,13 @@ class Driver extends TestDriver implements GlobalConst
 
             projlist = new FldSpec[COLS];
 
-            for(int i=0; i<attrSize.length; i++){
+            for(int i=0; i<attrType.length; i++){
                 projlist[i] = new FldSpec(rel, i+1);;
             }
 
             Tuple t = new Tuple();
             try {
-                t.setHdr((short) 5,attrType, attrSize);
+                t.setHdr((short) attrType.length,attrType, attrSize);
             }
             catch (Exception e) {
                 System.err.println("*** error in Tuple.setHdr() ***");
@@ -180,7 +180,7 @@ class Driver extends TestDriver implements GlobalConst
 
             t = new Tuple(size);
             try {
-                t.setHdr((short) 5, attrType, attrSize);
+                t.setHdr((short) attrType.length, attrType, attrSize);
             }
             catch (Exception e) {
                 System.err.println("*** error in Tuple.setHdr() ***");
@@ -215,7 +215,7 @@ class Driver extends TestDriver implements GlobalConst
                     e.printStackTrace();
                 }
 
-                System.out.println("RID: "+rid);
+                //System.out.println("RID: "+rid);
             }
             System.out.println("record count "+f.getRecCnt());
             sc.close();
@@ -398,7 +398,7 @@ class Driver extends TestDriver implements GlobalConst
 
 		BTreeSky btreesky = new BTreeSky(attrType, len_in1, attrSize, amt_of_mem, am1, relationName, _pref_list,
 				_pref_list.length, index_file_list, _n_pages);
-
+		btreesky.debug =false;
 		Tuple skyEle = btreesky.get_next(); // first sky element
 		System.out.print("First Sky element is: ");
 		skyEle.print(attrType);

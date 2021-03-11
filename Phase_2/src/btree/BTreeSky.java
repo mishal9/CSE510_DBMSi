@@ -6,6 +6,7 @@ import bufmgr.PageNotReadException;
 import global.AttrType;
 import global.GlobalConst;
 import global.RID;
+import global.SystemDefs;
 import heap.Heapfile;
 import heap.InvalidTupleSizeException;
 import heap.InvalidTypeException;
@@ -84,10 +85,19 @@ public class BTreeSky extends Iterator implements GlobalConst {
 		//create full index scans for all btrees
 		BTFileScan[] fullBtreeIndexScans = new BTFileScan[numberOfBtreeIndexes];
 		DiskBackedArray[] setArr = new DiskBackedArray[numberOfBtreeIndexes];
-
+		if(debug) {
+			System.out.println("getNumUnpinnedBuffers "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
+			System.out.println("getNumBuffers "+SystemDefs.JavabaseBM.getNumBuffers());
+		}
 		for (int i = 0; i < numberOfBtreeIndexes; i++) {
 			fullBtreeIndexScans[i] = btreeindexes[i].new_scan(null, null);
+			if(debug) {
+				System.out.println("getNumUnpinnedBuffers "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
+			}
 			setArr[i] = new DiskBackedArray();
+			if(debug) {
+				System.out.println("getNumUnpinnedBuffers "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
+			}
 		}
 		RID firstSkyLineElementRID = null;
 		boolean stopBtreeSkyLoop =false;
@@ -119,7 +129,7 @@ public class BTreeSky extends Iterator implements GlobalConst {
 								System.out.println("rid found in other index" + rid);
 								setArr[otherid].printToConsole();
 							}
-							
+
 							foundCount++;
 						}
 					}
