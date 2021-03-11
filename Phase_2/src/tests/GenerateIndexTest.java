@@ -108,7 +108,7 @@ class GenerateIndexDriver implements GlobalConst {
             throws Exception {
         try {
             System.out.println(" Combined BTreeIndex creation");
-            int [] pref_list = new int[] {1,0,1};
+            int [] pref_list = new int[] {1,1,1};
             int pref_list_length = 3;
 
             GenerateIndexFiles obj = new GenerateIndexFiles();
@@ -142,7 +142,7 @@ class GenerateIndexDriver implements GlobalConst {
             BTFileScan scan;
             KeyDataEntry entry;
             System.out.println("CombinedBTreeIndex scanning");
-            int [] pref_list = new int[] {1,0,1};
+            int [] pref_list = new int[] {1,1,1};
             int pref_list_length = 3;
 
             GenerateIndexFiles obj = new GenerateIndexFiles();
@@ -152,7 +152,7 @@ class GenerateIndexDriver implements GlobalConst {
              
             
             Heapfile hf = new Heapfile("heap_" + "AAA");
-            Scan heap_scan = hf.openScan();
+            Scan heap_scan = new Scan(hf);
             
             RID rid;
             entry = scan.get_next();
@@ -169,10 +169,11 @@ class GenerateIndexDriver implements GlobalConst {
             t = new Tuple(size);
             t.setHdr((short)pref_list_length, Stypes, Ssizes);  
             
-            while (entry != null) {
-            	RID rid1 = ((LeafData) entry.data).getData();
+            while (entry 
+            		!= null) {
+            	rid = ((LeafData) entry.data).getData();
             	
-            	t.tupleCopy(hf.getRecord(rid1));
+            	t.tupleCopy(hf.getRecord(rid));
             	t.print(Stypes); 
             	
                 System.out.println("SCAN RESULT: " + entry.key + " > " + entry.data);
