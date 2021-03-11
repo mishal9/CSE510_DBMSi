@@ -145,7 +145,7 @@ class Driver  extends TestDriver implements GlobalConst
         if ( status == OK ) {
 
             // Read data and construct tuples
-            File file = new File("../../data/"+"subset3"+".txt");
+            File file = new File("../../data/"+"data_large_skyline"+".txt");
             Scanner sc = new Scanner(file);
 
             COLS = sc.nextInt();
@@ -169,7 +169,7 @@ class Driver  extends TestDriver implements GlobalConst
 
             Tuple t = new Tuple();
             try {
-                t.setHdr((short) 5,attrType, attrSize);
+                t.setHdr((short) COLS,attrType, attrSize);
             }
             catch (Exception e) {
                 System.err.println("*** error in Tuple.setHdr() ***");
@@ -183,7 +183,7 @@ class Driver  extends TestDriver implements GlobalConst
 
             t = new Tuple(size);
             try {
-                t.setHdr((short) 5, attrType, attrSize);
+                t.setHdr((short) COLS, attrType, attrSize);
             }
             catch (Exception e) {
                 System.err.println("*** error in Tuple.setHdr() ***");
@@ -333,7 +333,7 @@ class Driver  extends TestDriver implements GlobalConst
                                                             _pref_list,
                                                             _pref_list.length,
                                                             _n_pages);
-                            while(sortFirstSky.get_next() != null) {
+                            while(sortFirstSky.hasNext()) {
                                 System.out.println("Skyline object: ");
                                 sortFirstSky.get_next().print(attrType);
                             }
