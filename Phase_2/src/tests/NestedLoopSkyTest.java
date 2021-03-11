@@ -39,7 +39,7 @@ class NestedLoopsSkyDriver extends TestDriver
 
         System.out.println ("\n" + "Running " + testName() + " tests...." + "\n");
         // We will define the bufpoolsize and num_pgs params ; whereas BUFF_SIZE determined by user input
-        SystemDefs sysdef = new SystemDefs( dbpath, 8000, 50, "Clock" );
+        SystemDefs sysdef = new SystemDefs( dbpath, 8000, 100, "Clock" );
 
         // Kill anything that might be hanging around
         String newdbpath;
@@ -104,7 +104,7 @@ class NestedLoopsSkyDriver extends TestDriver
         boolean status = OK;
 
         // Read data and construct tuples
-        String relationName = "data/subset3.txt";
+        String relationName = "data/data3.txt";
         File file = new File(relationName);
         Scanner sc = null;
         try {
@@ -260,7 +260,7 @@ class NestedLoopsSkyDriver extends TestDriver
         boolean status = OK;
 
         // Read data and construct tuples
-        File file = new File("data/subset3.txt");
+        File file = new File("data/data3.txt");
         Scanner sc = new Scanner(file);
 
         int COLS = sc.nextInt();
@@ -345,6 +345,8 @@ class NestedLoopsSkyDriver extends TestDriver
         }
 
         try {
+        	System.out.println("Number of Disk reads: "+ PCounter.get_rcounter());
+            System.out.println("Number of Disk writes: "+ PCounter.get_wcounter());
         	blck_it = new BlockNestedLoopsSky(attrType,
                     						  (short)COLS,
                     						  attrSize,
@@ -352,7 +354,7 @@ class NestedLoopsSkyDriver extends TestDriver
                     						  hfileName,
                     						  new int[]{1,2},
                     						  2,
-                    						  500);
+                    						  1);
             System.out.println("Printing the Block Nested Loop Skyline");
             Tuple temp;
 			try {
@@ -362,6 +364,9 @@ class NestedLoopsSkyDriver extends TestDriver
 	            	temp.print(attrType);
 	            	temp = blck_it.get_next();
 	            }
+				System.out.println("Number of Disk reads: "+ PCounter.get_rcounter());
+	            System.out.println("Number of Disk writes: "+ PCounter.get_wcounter());
+				
 			} catch (IndexException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

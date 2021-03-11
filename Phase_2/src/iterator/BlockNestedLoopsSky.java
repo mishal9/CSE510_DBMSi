@@ -4,6 +4,7 @@ import heap.*;
 import index.IndexException;
 import global.*;
 import bufmgr.*;
+import diskmgr.PCounter;
 import diskmgr.Page;
 
 import java.lang.*;
@@ -202,7 +203,7 @@ public class BlockNestedLoopsSky extends Iterator implements GlobalConst
         inner_candidate.setHdr(this._len_in1, this._in1, this._t1_str_sizes);
         while (true)
         {
-            
+            //System.out.println("while1");
             /*outer_candidate = this._outer_iterator.get_next();*/
             outer_candidate_temp = this._outer_scan.getNext(_temp);
             if (outer_candidate_temp == null)
@@ -240,6 +241,7 @@ public class BlockNestedLoopsSky extends Iterator implements GlobalConst
             	else
             	{
             		try {
+            			//System.out.println("Inserting tuple to heap");
 						_temp = this._temp_heap_file.insertRecord(temp_adder.returnTupleByteArray());
 					} catch (InvalidSlotNumberException e) {
 						// TODO Auto-generated catch block
@@ -280,6 +282,7 @@ public class BlockNestedLoopsSky extends Iterator implements GlobalConst
     	int temp_counter = 0;
     	while ( ( temp_counter < this._queue.size() ) && ( !this._queue.isEmpty() ) )
     	{
+    		//System.out.println("while2");
     		inner_candidate_temp = this._queue.remove();
     		//System.out.println("inner candidate temp: ");
     		
@@ -366,6 +369,7 @@ public class BlockNestedLoopsSky extends Iterator implements GlobalConst
 		}
     	while ( inner_candidate_temp != null )
     	{
+    		//System.out.println("while3");
     		this.inner_candidate.tupleCopy(inner_candidate_temp);
     		try {
 				boolean heap_dominates_candidate = TupleUtils.Dominates(this.inner_candidate, 
@@ -406,7 +410,15 @@ public class BlockNestedLoopsSky extends Iterator implements GlobalConst
 				{
 					// we need to delete the heap element
 					try {
+						//System.out.println("deleting record");
+						this._scan.closescan();
+						//System.out.println("Number of Disk reads: "+ PCounter.get_rcounter());
+			            //System.out.println("Number of Disk writes: "+ PCounter.get_wcounter());
 						this._temp_heap_file.deleteRecord(_temp);
+						//System.out.println("Record deleted from heapfile");
+						//System.out.println("Number of Disk reads: "+ PCounter.get_rcounter());
+			            //System.out.println("Number of Disk writes: "+ PCounter.get_wcounter());
+						this._scan = this._temp_heap_file.openScan();
 					} catch (InvalidSlotNumberException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
@@ -441,6 +453,15 @@ public class BlockNestedLoopsSky extends Iterator implements GlobalConst
 				e.printStackTrace();
 			}
     		
+    		try {
+				inner_candidate_temp = this._scan.getNext(_temp);
+			} catch (InvalidTupleSizeException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
     	}
     	return true;
     }
