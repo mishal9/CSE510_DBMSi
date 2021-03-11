@@ -80,7 +80,7 @@ public class TestDriver {
   /** 
    * @return whether the test has completely successfully 
    */
-  protected boolean test3 () { return true; }
+  protected boolean test3 () throws IOException { return true; }
 
   /** 
    * @return whether the test has completely successfully 
