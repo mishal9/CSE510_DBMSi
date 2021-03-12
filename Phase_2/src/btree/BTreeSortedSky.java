@@ -65,6 +65,8 @@ public class BTreeSortedSky implements GlobalConst {
 	boolean status = OK;
 	private static Tuple[] _window;
 	
+	private Heapfile temp;
+	
 	/**
 	 * AttrType[] in1 
 	 * int attr_len
@@ -94,15 +96,15 @@ public class BTreeSortedSky implements GlobalConst {
 		
 		this.amt_of_mem = amt_of_mem;
 		
-		System.out.println("************** INIT CALLED ****************");
-		System.out.println("relationName: " + relationName );
-		System.out.println("attrType: " + Arrays.toString(attrType) );
-		System.out.println("attr_len: " + attr_len );
-		System.out.println("t1_str_sizes: " + t1_str_sizes );
-		System.out.println("pref_list: " + Arrays.toString(pref_list) );
-		System.out.println("pref_list_length: " + pref_list_length );
-		System.out.println("n_pages: " + n_pages );
-		System.out.println("**************   INIT END  ****************");
+//		System.out.println("************** INIT CALLED ****************");
+//		System.out.println("relationName: " + relationName );
+//		System.out.println("attrType: " + Arrays.toString(attrType) );
+//		System.out.println("attr_len: " + attr_len );
+//		System.out.println("t1_str_sizes: " + t1_str_sizes );
+//		System.out.println("pref_list: " + Arrays.toString(pref_list) );
+//		System.out.println("pref_list_length: " + pref_list_length );
+//		System.out.println("n_pages: " + n_pages );
+//		System.out.println("**************   INIT END  ****************");
 	}
 	
 	
@@ -130,6 +132,8 @@ public class BTreeSortedSky implements GlobalConst {
 //         */
 		
 		Heapfile hf = new Heapfile("heap_" + "AAA");
+		temp = new Heapfile("sortFirstSkyTemp.in");
+		
 		BTFileScan scan = ((BTreeFile) index_file).new_scan(null, null);
 		KeyDataEntry entry;
 		RID rid;
@@ -143,20 +147,6 @@ public class BTreeSortedSky implements GlobalConst {
 	    entry = scan.get_next();
 	    
 	    int count = 0;
-	    
-//	    while (t != null && count < _window.length) {
-//            Tuple temp = new Tuple(t);
-//            _window[count++] = temp;
-//            try {
-//                t = sort.get_next();
-//            }
-//            catch (Exception e) {
-//                status = FAIL;
-//                e.printStackTrace();
-//            }
-//        }
-	    
-	    System.out.println("attrType " + attrType.length);
 	    
 	    while (entry != null && count < _window.length) {
 	    	Tuple temp = getEmptyTuple();
@@ -172,13 +162,12 @@ public class BTreeSortedSky implements GlobalConst {
             if(_window[i] != null)
                 _window[i].print(attrType);
         }
-        
-
-        int dominates = 0;
+           
+        int d = 0;
         
         while (entry != null) {
             boolean isDominatedBy = false;
-//            System.out.println("=======");
+            
             Tuple htuple = getEmptyTuple();
             
             rid = ((LeafData) entry.data).getData();
@@ -192,25 +181,17 @@ public class BTreeSortedSky implements GlobalConst {
 //                */
             	
                 for(int i=0; i<_window.length; i++){
-                    if (TupleUtils.Dominates(htuple, attrType, _window[i], attrType, (short) attr_len, t1_str_sizes, pref_list, pref_list_length)) {
+                	System.out.println("DOMINATES: " + TupleUtils.Dominates(_window[i] , attrType, htuple, attrType, (short) attr_len, t1_str_sizes, pref_list, pref_list_length));
+                    if (TupleUtils.Dominates(_window[i] , attrType, htuple, attrType, (short) attr_len, t1_str_sizes, pref_list, pref_list_length)) {
                         // 2. If tuple in heap file dominates any one in main memory - replace the tuple with the one in main memory
-//                        System.out.println("Heap tuple");
-//                        htuple.print(attrType);
-//                        System.out.println("Dominates ");
-//                        _window[i].print(attrType);
-//                        System.out.println(" ");
-                        _window[i] = htuple;
-                        dominates++;
-                    } else {
-                        // 1. If tuple in heap file is dominated by at least one in main memory - simply discard it from heap
-                        isDominatedBy = true;
-//                        System.out.println("Heap tuple");
-//                        htuple.print(attrType);
-//                        System.out.println("Dominated by ");
-//                        _window[i].print(attrType);
-//                        System.out.println(" ");
+                    	isDominatedBy = true;
+                        System.out.println("Heap tuple");
+                        htuple.print(attrType);
+                        System.out.println("Dominated by ");
+                        _window[i].print(attrType);
+//                      _window[i] = htuple;
                         break;
-                    }
+                    } 
                 }
 
                 if(!isDominatedBy){
@@ -218,19 +199,30 @@ public class BTreeSortedSky implements GlobalConst {
                     // Tuple remained un-dominated -> potential skyline object
                     // check if space left in window
                     // else put in temp heaps
-                    htuple.print(attrType);
-                    System.out.println("Is not Dominated by any window objects");
+                	d++;
+//                	htuple.print(attrType);
+                    try {
+                        rid = temp.insertRecord(htuple.returnTupleByteArray());
+                    }
+                    catch (Exception e) {
+                        status = FAIL;
+                        e.printStackTrace();
+                    }
+//                    System.out.println("Is not Dominated by any window objects");
                 } 
               entry = scan.get_next();
         }
         
-        System.out.println("Dominates "+dominates);
         System.out.println("Window objects ");
-        
         for(int i=0; i<_window.length; i++){
-            if(_window[i] != null)
+            if(_window[i] != null) {
                 _window[i].print(attrType);
+//                d++;
+            }
         }
+        
+        System.out.println("Data length: " + _window.length);
+        System.out.println("Total count: " + d);
 
         return;
     }

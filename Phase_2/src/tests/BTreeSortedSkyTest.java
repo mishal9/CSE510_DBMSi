@@ -92,13 +92,13 @@ class BTSortedSkyDriver  implements GlobalConst
 	  BTFileScan scan;
       KeyDataEntry entry;
       System.out.println("CombinedBTreeIndex scanning");
-      int [] pref_list = new int[] {1,1,1,1,1};
-      int pref_list_length = 5;
+      int [] pref_list = new int[] {1,0,1};
+      int pref_list_length = 3;
       
       try {
     	  
 	      GenerateIndexFiles obj = new GenerateIndexFiles();
-	      IndexFile indexFile = obj.createCombinedBTreeIndex("/Users/kunjpatel/Desktop/CSE510_DBMSi/Phase_2/data/data1.txt",pref_list, pref_list_length);
+	      IndexFile indexFile = obj.createCombinedBTreeIndex("/Users/kunjpatel/Desktop/CSE510_DBMSi/Phase_2/data/subset2.txt",pref_list, pref_list_length);
 	      System.out.println("Index created! ");
 	      scan = ((BTreeFile) indexFile).new_scan(null, null);
 	       
@@ -125,17 +125,6 @@ class BTSortedSkyDriver  implements GlobalConst
 	      
 	      btree.computeSkylines(null, null, null);
 	  
-	      
-//	      while (entry != null) {
-//	      	rid = ((LeafData) entry.data).getData();
-//	      	
-//	      	t.tupleCopy(hf.getRecord(rid));
-//	      	t.print(Stypes); 
-//	      	
-//	        System.out.println("SCAN RESULT: " + entry.key + " > " + entry.data);
-//	        entry = scan.get_next();
-//	      }
-	      
 	      System.out.println("AT THE END OF SCAN!");
       
       } catch (Exception e) {
