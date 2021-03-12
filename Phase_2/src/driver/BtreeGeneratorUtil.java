@@ -7,6 +7,7 @@ import btree.FloatKey;
 import global.AttrType;
 import global.IndexType;
 import global.RID;
+import global.SystemDefs;
 import heap.Heapfile;
 import heap.InvalidTupleSizeException;
 import heap.InvalidTypeException;
@@ -40,7 +41,7 @@ public class BtreeGeneratorUtil {
 
 		//scanBtree(relationName,"BTreeIndex4", attrType, t1_str_sizes,5,4);
 
-		
+		SystemDefs.JavabaseBM.flushAllPages();
 	}
 
 	/**

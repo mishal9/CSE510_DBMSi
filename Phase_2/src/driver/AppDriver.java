@@ -6,8 +6,12 @@ import java.util.*;
 
 import btree.BTreeSky;
 import btree.IndexFile;
-
+import bufmgr.BufMgrException;
+import bufmgr.HashOperationException;
+import bufmgr.PageNotFoundException;
 import bufmgr.PageNotReadException;
+import bufmgr.PagePinnedException;
+import bufmgr.PageUnpinnedException;
 import diskmgr.PCounter;
 import heap.*;
 import global.*;
@@ -68,24 +72,24 @@ class Driver extends TestDriver implements GlobalConst
 
         // Commands here is very machine dependent.  We assume
         // user are on UNIX system here
-        try {
+        /*try {
             Runtime.getRuntime().exec(remove_logcmd);
             Runtime.getRuntime().exec(remove_dbcmd);
         }
         catch (IOException e) {
             System.err.println ("IO error: "+e);
-        }
+        }*/
 
         remove_logcmd = remove_cmd + newlogpath;
         remove_dbcmd = remove_cmd + newdbpath;
 
-        try {
+        /*try {
             Runtime.getRuntime().exec(remove_logcmd);
             Runtime.getRuntime().exec(remove_dbcmd);
         }
         catch (IOException e) {
             System.err.println ("IO error: "+e);
-        }
+        }*/
 
         //Run the tests. Return type different from C++
         boolean _pass = runAllTests();
@@ -102,7 +106,6 @@ class Driver extends TestDriver implements GlobalConst
         System.out.print ("\n" + "..." + testName() + " tests ");
         System.out.print (_pass==OK ? "completely successfully" : "failed");
         System.out.print (".\n\n");
-
         return _pass;
     }
 
@@ -223,6 +226,27 @@ class Driver extends TestDriver implements GlobalConst
             System.out.println("record count "+f.getRecCnt());
             sc.close();
         }
+        try {
+			SystemDefs.JavabaseBM.flushAllPages();
+		} catch (HashOperationException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (PageUnpinnedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (PagePinnedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (PageNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (BufMgrException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
     }
 
     protected String testName () {
@@ -241,13 +265,13 @@ class Driver extends TestDriver implements GlobalConst
                 switch(choice) {
 
                     case 102:
-                        readDataIntoHeap("../../data/data2.txt");
+                        readDataIntoHeap("data/data_large_skyline.txt");
                         BtreeGeneratorUtil.generateAllBtreesForHeapfile(hFile, f, attrType, attrSize);
                         individualBTreeIndexesCreated = true;
                         break;
 
                     case 103:
-                        readDataIntoHeap("../../data/data3.txt");
+                        readDataIntoHeap("data/data3.txt");
                         BtreeGeneratorUtil.generateAllBtreesForHeapfile(hFile, f, attrType, attrSize);
                         individualBTreeIndexesCreated = true;
                         break;
@@ -257,7 +281,7 @@ class Driver extends TestDriver implements GlobalConst
                         break;
 
                     case 105:
-                        _pref_list = new int[]{1,3};
+                        _pref_list = new int[]{1,2};
                         break;
 
                     case 106:
@@ -284,13 +308,21 @@ class Driver extends TestDriver implements GlobalConst
                         break;
 
                     case 1:
+                    	System.out.println("Number of Disk reads: "+ PCounter.get_rcounter());
+                        System.out.println("Number of Disk writes: "+ PCounter.get_wcounter());
                         // call nested loop sky
                         runNestedLoopSky();
+                        System.out.println("Number of Disk reads: "+ PCounter.get_rcounter());
+                        System.out.println("Number of Disk writes: "+ PCounter.get_wcounter());
                         break;
 
                     case 2:
+                    	System.out.println("Number of Disk reads: "+ PCounter.get_rcounter());
+                        System.out.println("Number of Disk writes: "+ PCounter.get_wcounter());
                         // call block nested loop sky
                         blockNestedSky();
+                        System.out.println("Number of Disk reads: "+ PCounter.get_rcounter());
+                        System.out.println("Number of Disk writes: "+ PCounter.get_wcounter());
                         break;
 
                     case 3:
@@ -309,6 +341,7 @@ class Driver extends TestDriver implements GlobalConst
                         break;
 
                     case 0:
+                    	SystemDefs.JavabaseDB.DBDestroy();
                         break;
                 }
 

@@ -78,6 +78,7 @@ public class NestedLoopsSky extends Iterator
         System.out.println("N pages"+ _n_pages);
 
         try {
+        	SystemDefs.JavabaseBM.limit_memory_usage(true, this._n_pages);
         	this._heap_file = new Heapfile(this._relation_name);
             this._status = true;
         }
@@ -148,6 +149,7 @@ public class NestedLoopsSky extends Iterator
             if (outer_candidate_temp == null)
             {
                 System.out.println("No more records in skyline. All records already scanned.");
+                SystemDefs.JavabaseBM.limit_memory_usage(false, this._n_pages);
                 return null;
             }
             //outer_candidate1.print(this._in1);
@@ -214,11 +216,7 @@ public class NestedLoopsSky extends Iterator
             closeFlag = true;
         }
 
-
-        _scan.closescan();
-
-
-        // _scan.closescan();
+       // _scan.closescan();
         //_outer_scan.closescan();
     }
 

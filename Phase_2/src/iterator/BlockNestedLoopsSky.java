@@ -20,26 +20,25 @@ import java.util.Stack;
  */
 public class BlockNestedLoopsSky extends Iterator implements GlobalConst
 {
-    private AttrType[]  _in1;
+    private AttrType[]   _in1;
     private short        _len_in1;
-    private short[]     _t1_str_sizes;
-    private String      _relation_name;
-    private String      _temp_heap_file_name;
-    private Heapfile    _temp_heap_file;
-    private int[]       _pref_list;
-    private int         _pref_list_length;
-    private int         _n_pages;
-    private Heapfile    _heap_file;
-    private boolean     _status;
-    private Scan        _scan;
-    private Scan        _outer_scan;
-    private Tuple[]     _window;
+    private short[]      _t1_str_sizes;
+    private String       _relation_name;
+    private String       _temp_heap_file_name;
+    private Heapfile     _temp_heap_file;
+    private int[]        _pref_list;
+    private int          _pref_list_length;
+    private int          _n_pages;
+    private Heapfile     _heap_file;
+    private boolean      _status;
+    private Scan         _scan;
+    private Scan         _outer_scan;
     private Queue<Tuple> _queue;
-    private Tuple       outer_candidate_temp, inner_candidate_temp, outer_candidate, inner_candidate;
-    private RID         _temp;
-    private int         _tuple_size;
-    private int         _window_size;
-    private int         _counter;
+    private Tuple        outer_candidate_temp, inner_candidate_temp, outer_candidate, inner_candidate;
+    private RID          _temp;
+    private int          _tuple_size;
+    private int          _window_size;
+    private int          _counter;
 
     /**
      *constructor
@@ -72,6 +71,7 @@ public class BlockNestedLoopsSky extends Iterator implements GlobalConst
             InvalidRelation
     {
     	/* initialize all variables */
+    	
         this._in1 = in1;
         this._len_in1 = (short)len_in1;
         this._t1_str_sizes = t1_str_sizes;
@@ -84,15 +84,16 @@ public class BlockNestedLoopsSky extends Iterator implements GlobalConst
         this._temp_heap_file_name = System.currentTimeMillis() + "temp_block_nested_loop.in";
         this._queue = new LinkedList<>();
         this._counter = 0;
-        
-        System.out.println(_temp_heap_file_name);
-        System.out.println("Attr  types"+ Arrays.toString(this._in1));
-        System.out.println("Attr types length "+ (this._len_in1));
-        System.out.println("Str sizes "+ Arrays.toString(this._t1_str_sizes));
-        System.out.println("Prefernce list "+ Arrays.toString(this._pref_list));
-        System.out.println("N pages"+ _n_pages);
+        //System.out.println(_temp_heap_file_name);
+        //System.out.println("Attr  types"+ Arrays.toString(this._in1));
+        //System.out.println("Attr types length "+ (this._len_in1));
+        //System.out.println("Str sizes "+ Arrays.toString(this._t1_str_sizes));
+        //System.out.println("Prefernce list "+ Arrays.toString(this._pref_list));
+        //System.out.println("N pages"+ _n_pages);
 
         try {
+        	System.out.println("Starting proces----------------------------s");
+        	SystemDefs.JavabaseBM.limit_memory_usage(true, this._n_pages/2);
         	this._heap_file = new Heapfile(this._relation_name);
         	this._temp_heap_file = new Heapfile(this._temp_heap_file_name);
             this._status = true;
@@ -132,10 +133,9 @@ public class BlockNestedLoopsSky extends Iterator implements GlobalConst
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-        this._window_size = ((int)(MINIBASE_PAGESIZE/this._tuple_size))*(this._n_pages);
+        this._window_size = ((int)(MINIBASE_PAGESIZE/this._tuple_size))*(this._n_pages/2);
         //this._window = new Tuple[this._window_size];
         System.out.println("window size: "+ this._window_size);
-        System.out.println("linked list size: "+this._queue.size());
         try {
 			compute_syline();
 		} catch (JoinsException e) {
@@ -169,6 +169,7 @@ public class BlockNestedLoopsSky extends Iterator implements GlobalConst
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+
     }
 
 
@@ -507,6 +508,7 @@ public class BlockNestedLoopsSky extends Iterator implements GlobalConst
 				return this.inner_candidate;
 			}
 		}
+		SystemDefs.JavabaseBM.limit_memory_usage(false, this._n_pages);
 		return null;
 	}
 
