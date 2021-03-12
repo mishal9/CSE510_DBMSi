@@ -214,7 +214,11 @@ public class NestedLoopsSky extends Iterator
             closeFlag = true;
         }
 
-       // _scan.closescan();
+
+        _scan.closescan();
+
+
+        // _scan.closescan();
         //_outer_scan.closescan();
     }
 

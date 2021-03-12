@@ -9,7 +9,6 @@ import global.*;
 import heap.*;
 import index.IndexException;
 import iterator.*;
-import skylines.SortFirstSky;
 
 import java.util.Arrays;
 import java.util.Scanner;
@@ -104,7 +103,7 @@ class NestedLoopsSkyDriver extends TestDriver
         boolean status = OK;
 
         // Read data and construct tuples
-        String relationName = "data/data3.txt";
+        String relationName = "../../data/data3.txt";
         File file = new File(relationName);
         Scanner sc = null;
         try {
@@ -260,7 +259,7 @@ class NestedLoopsSkyDriver extends TestDriver
         boolean status = OK;
 
         // Read data and construct tuples
-        File file = new File("data/data3.txt");
+        File file = new File("../../data/data3.txt");
         Scanner sc = new Scanner(file);
 
         int COLS = sc.nextInt();
