@@ -144,7 +144,7 @@ class Driver extends TestDriver implements GlobalConst
 
             // Read data and construct tuples
 
-            File file = new File("../../data/"+fileName+".txt");
+            File file = new File(fileName);
             Scanner sc = new Scanner(file);
 
             COLS = sc.nextInt();
@@ -241,13 +241,13 @@ class Driver extends TestDriver implements GlobalConst
                 switch(choice) {
 
                     case 102:
-                        readDataIntoHeap("data2");
+                        readDataIntoHeap("../../data/data2.txt");
                         BtreeGeneratorUtil.generateAllBtreesForHeapfile(hFile, f, attrType, attrSize);
                         individualBTreeIndexesCreated = true;
                         break;
 
                     case 103:
-                        readDataIntoHeap("data3");
+                        readDataIntoHeap("../../data/data3.txt");
                         BtreeGeneratorUtil.generateAllBtreesForHeapfile(hFile, f, attrType, attrSize);
                         individualBTreeIndexesCreated = true;
                         break;
@@ -351,31 +351,12 @@ class Driver extends TestDriver implements GlobalConst
                 temp.print(attrType);
                 temp = nestedLoopsSky.get_next();
             }
-        } catch (FileScanException e) {
-            e.printStackTrace();
-        } catch (TupleUtilsException e) {
-            e.printStackTrace();
-        } catch (InvalidRelation invalidRelation) {
-            invalidRelation.printStackTrace();
-        } catch (WrongPermat wrongPermat) {
-            wrongPermat.printStackTrace();
-        } catch (InvalidTypeException e) {
-            e.printStackTrace();
-        } catch (JoinsException e) {
-            e.printStackTrace();
-        } catch (PageNotReadException e) {
-            e.printStackTrace();
-        } catch (FieldNumberOutOfBoundException e) {
-            e.printStackTrace();
-        } catch (PredEvalException e) {
-            e.printStackTrace();
-        } catch (UnknowAttrType unknowAttrType) {
-            unknowAttrType.printStackTrace();
-        } catch (InvalidTupleSizeException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
+        
+		} catch (IOException | JoinsException | InvalidTupleSizeException | InvalidTypeException | PageNotReadException
+				| PredEvalException | UnknowAttrType | FieldNumberOutOfBoundException | WrongPermat
+				| TupleUtilsException | FileScanException | InvalidRelation e) {
+			e.printStackTrace();
+		} finally {
             status = OK;
             // clean up
             try {
@@ -414,30 +395,11 @@ class Driver extends TestDriver implements GlobalConst
                     temp.print(attrType);
                     temp = blockNestedLoopsSky.get_next();
                 }
-            } catch (IndexException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            } catch (SortException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            } catch (LowMemException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            } catch (UnknownKeyTypeException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
             } catch (Exception e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
-
-        } catch (FileScanException e) {
-            e.printStackTrace();
-        } catch (TupleUtilsException e) {
-            e.printStackTrace();
-        } catch (InvalidRelation invalidRelation) {
-            invalidRelation.printStackTrace();
-        } catch (IOException e) {
+       
+        } catch (IOException | FileScanException | TupleUtilsException | InvalidRelation e) {
             e.printStackTrace();
         } finally {
             blockNestedLoopsSky.close();
@@ -476,31 +438,7 @@ class Driver extends TestDriver implements GlobalConst
                 System.out.println("Skyline object: ");
                 sortFirstSky.get_next().print(attrType);
             }
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (IndexException e) {
-            e.printStackTrace();
-        } catch (PredEvalException e) {
-            e.printStackTrace();
-        } catch (UnknowAttrType unknowAttrType) {
-            unknowAttrType.printStackTrace();
-        } catch (JoinsException e) {
-            e.printStackTrace();
-        } catch (InvalidTupleSizeException e) {
-            e.printStackTrace();
-        } catch (PageNotReadException e) {
-            e.printStackTrace();
-        } catch (UnknownKeyTypeException e) {
-            e.printStackTrace();
-        } catch (LowMemException e) {
-            e.printStackTrace();
-        } catch (InvalidTypeException e) {
-            e.printStackTrace();
-        } catch (SortException e) {
-            e.printStackTrace();
-        } catch (TupleUtilsException e) {
-            e.printStackTrace();
+            
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
@@ -541,7 +479,7 @@ class Driver extends TestDriver implements GlobalConst
 		System.out.print("First Sky element is: ");
 		skyEle.print(attrType);
 
-		while (skyEle != null) { // TODO check this after integration with BNL skyline
+		while (skyEle != null) {
 			skyEle = btreesky.get_next(); // subsequent sky elements
 			if (skyEle == null) {
 				System.out.println("No more sky elements");

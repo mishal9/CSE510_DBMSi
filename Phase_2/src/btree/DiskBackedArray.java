@@ -29,8 +29,8 @@ public class DiskBackedArray {
 	
 	private Heapfile heapfile;
 
-	public DiskBackedArray() throws HFException, HFBufMgrException, HFDiskMgrException, IOException  {
-		heapfile = new Heapfile(new String("temp"+System.currentTimeMillis()));
+	public DiskBackedArray(String heapfilenameSuffix) throws HFException, HFBufMgrException, HFDiskMgrException, IOException  {
+		heapfile = new Heapfile(new String("temp"+heapfilenameSuffix));
 	}
 	
 	public Heapfile getHeapfile() {
@@ -53,6 +53,7 @@ public class DiskBackedArray {
 		RID rid = new RID();
 		Tuple tup;
 		boolean done = false;
+		System.out.print("DiskBackedArray [ ");
 		while(!done) {
 			tup= scan.getNext(rid );
 			if(tup==null) {
@@ -61,7 +62,7 @@ public class DiskBackedArray {
 			}
 			System.out.print(""+getRIDFromByteArr(tup.returnTupleByteArray())+" ");
 		}
-		System.out.println("");
+		System.out.println("]");
 		scan.closescan();
 	}
 	

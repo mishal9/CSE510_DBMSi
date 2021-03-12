@@ -13,6 +13,7 @@ import heap.InvalidTypeException;
 import heap.Scan;
 import heap.Tuple;
 import index.IndexException;
+import iterator.BlockNestedLoopsSky;
 import iterator.Iterator;
 import iterator.JoinsException;
 import iterator.LowMemException;
@@ -36,8 +37,10 @@ public class BTreeSky extends Iterator implements GlobalConst {
 	private int n_pages;
 	public boolean debug = false;
 
+
+	private String prunedHeapFileName ="btreeskyprunedfile.in";
 	private Tuple firstSkyLineElement;
-	//private BlockNestedLoopSkyline blockNestedLoopSkyline;
+	private BlockNestedLoopsSky blockNestedLoopSkyline;
 
 
 
@@ -73,7 +76,7 @@ public class BTreeSky extends Iterator implements GlobalConst {
 
 		this.firstSkyLineElement = null;
 
-		//TODO blockNestedLoopSkyline = null;
+		this.blockNestedLoopSkyline = null;
 
 
 	}
@@ -86,17 +89,17 @@ public class BTreeSky extends Iterator implements GlobalConst {
 		BTFileScan[] fullBtreeIndexScans = new BTFileScan[numberOfBtreeIndexes];
 		DiskBackedArray[] setArr = new DiskBackedArray[numberOfBtreeIndexes];
 		if(debug) {
-			System.out.println("getNumUnpinnedBuffers "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
-			System.out.println("getNumBuffers "+SystemDefs.JavabaseBM.getNumBuffers());
+			//System.out.println("getNumUnpinnedBuffers "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
+			//System.out.println("getNumBuffers "+SystemDefs.JavabaseBM.getNumBuffers());
 		}
 		for (int i = 0; i < numberOfBtreeIndexes; i++) {
 			fullBtreeIndexScans[i] = btreeindexes[i].new_scan(null, null);
 			if(debug) {
-				System.out.println("getNumUnpinnedBuffers "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
+				//System.out.println("getNumUnpinnedBuffers "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
 			}
-			setArr[i] = new DiskBackedArray();
+			setArr[i] = new DiskBackedArray(""+i);
 			if(debug) {
-				System.out.println("getNumUnpinnedBuffers "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
+				//System.out.println("getNumUnpinnedBuffers "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
 			}
 		}
 		RID firstSkyLineElementRID = null;
@@ -122,7 +125,7 @@ public class BTreeSky extends Iterator implements GlobalConst {
 				for (int otherid = 0; otherid < numberOfBtreeIndexes; otherid++) {
 					if (otherid != i) {
 						if(debug) {
-							System.out.println("checking " + setArr[otherid] + " for " + rid);
+							System.out.println("checking " + setArr[otherid]+ " otherid: "+otherid + " for " + rid);
 						}
 						if (setArr[otherid].getIndex(rid) >= 0) {
 							if(debug) {
@@ -146,13 +149,15 @@ public class BTreeSky extends Iterator implements GlobalConst {
 
 				setArr[i].add(rid);
 				if (debug) {
+					System.out.println("added rid"+ rid +" to diskBackedArray ");
+					setArr[i].printToConsole();
 					System.out.println("oooo");
 				}
 			}
 			if (debug) {
 				System.out.println("---");
 			}
-		} //end of btreeskyline main loop, now do block nested
+		} //end of btreeskyline main loop, now collect all scanned tuples and do block nested
 
 		//open main relation data file
 		Heapfile originalDataHeapFile = new Heapfile(relationName);
@@ -162,10 +167,10 @@ public class BTreeSky extends Iterator implements GlobalConst {
 		//create heapfile with all elements of the all the arrays of the indexes
 
 		//create a heapfile which will store the pruned data
-		Heapfile prunedDataFile = new Heapfile("somerelation.in");
+		Heapfile prunedDataFile = new Heapfile(prunedHeapFileName );
 
 		//an array to check and avoid inserting duplicates in the pruned data
-		DiskBackedArray insertCheckerList = new DiskBackedArray();
+		DiskBackedArray insertCheckerList = new DiskBackedArray("checker");
 
 		for (int i = 0; i < numberOfBtreeIndexes; i++) {
 			DiskBackedArray curArray = setArr[i];
@@ -216,13 +221,13 @@ public class BTreeSky extends Iterator implements GlobalConst {
 			scan.closescan();
 
 		}
-		if(debug) {
+		if(true) {
 			System.out.println("prunedDataFile count --> "+prunedDataFile.getRecCnt());
 		}
 		//run block nested loop skyline on the pruned data now
-
-		//TODO
-		// blockNestedLoopSkyline = new BlockNestedLoopSkyline()
+		
+		Iterator bnlIterator = null;
+		blockNestedLoopSkyline = new BlockNestedLoopsSky(attrType, attrType.length, t1_str_sizes, bnlIterator, prunedHeapFileName, pref_list, pref_length_list, n_pages);
 	}
 
 
@@ -256,15 +261,13 @@ public class BTreeSky extends Iterator implements GlobalConst {
 			return firstSkyLineElement;
 
 		} else { //run block nested loop sky
-			//blockNestedLoopSkyline.get_next(); TODO
+			return blockNestedLoopSkyline.get_next();
 		}
-		return null;
 	}
 
 	@Override
 	public void close() throws IOException, JoinsException, SortException, IndexException {
-		// TODO blockNestedLoopSkyline.close()
-
+		blockNestedLoopSkyline.close();
 	}
 
 }
