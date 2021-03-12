@@ -7,14 +7,13 @@ import java.util.*;
 import btree.BTreeSky;
 import btree.IndexFile;
 
+import bufmgr.PageNotReadException;
 import diskmgr.PCounter;
 import heap.*;
 import global.*;
-import iterator.FileScan;
-import iterator.FldSpec;
-import iterator.Iterator;
-import iterator.RelSpec;
-import skylines.SortFirstSky;
+
+import index.IndexException;
+import iterator.*;
 import tests.TestDriver;
 
 
@@ -32,7 +31,7 @@ class Driver extends TestDriver implements GlobalConst
     private static int[] _pref_list;
     private static int _n_pages;
     private static int COLS;
-    private static final String hFile = "hFile100.in";
+    private static final String hFile = "hFile.in";
     private static AttrType[] attrType;
     private short[] attrSize;
     // create an iterator by open a file scan
@@ -40,6 +39,7 @@ class Driver extends TestDriver implements GlobalConst
     private static RelSpec rel = new RelSpec(RelSpec.outer);
 
     private static boolean individualBTreeIndexesCreated;
+    private static int _t_size;
 
     public Driver(){
         super("main");
@@ -50,7 +50,7 @@ class Driver extends TestDriver implements GlobalConst
         dbpath = "MINIBASE.minibase-db";
 		logpath = "MINIBASE.minibase-log";
         // Each page can handle at most 25 tuples on original data => 7308 / 25 = 292
-        SystemDefs sysdef = new SystemDefs(dbpath,10000, 3000,"Clock");
+        SystemDefs sysdef = new SystemDefs(dbpath,8000, 3000,"Clock");
 
         // Kill anything that might be hanging around
         String newdbpath;
@@ -142,7 +142,8 @@ class Driver extends TestDriver implements GlobalConst
         if ( status == OK ) {
 
             // Read data and construct tuples
-            File file = new File(fileName);
+
+            File file = new File("../../data/"+"data_large_skyline"+".txt");
             Scanner sc = new Scanner(file);
 
             COLS = sc.nextInt();
@@ -167,7 +168,7 @@ class Driver extends TestDriver implements GlobalConst
 
             Tuple t = new Tuple();
             try {
-                t.setHdr((short) attrType.length,attrType, attrSize);
+                t.setHdr((short) COLS,attrType, attrSize);
             }
             catch (Exception e) {
                 System.err.println("*** error in Tuple.setHdr() ***");
@@ -176,11 +177,12 @@ class Driver extends TestDriver implements GlobalConst
             }
 
             int size = t.size();
+            _t_size = t.size();
             System.out.println("Size: "+size);
 
             t = new Tuple(size);
             try {
-                t.setHdr((short) attrType.length, attrType, attrSize);
+                t.setHdr((short) COLS, attrType, attrSize);
             }
             catch (Exception e) {
                 System.err.println("*** error in Tuple.setHdr() ***");
@@ -316,28 +318,53 @@ class Driver extends TestDriver implements GlobalConst
                             e.printStackTrace();
                         }
 
+                        SortFirstSky sortFirstSky = null;
                         try {
-                            SortFirstSky sortFirstSky = new SortFirstSky(attrType,
+                            sortFirstSky = new SortFirstSky(attrType,
                                                             (short) COLS,
                                                             attrSize,
                                                             fscan,
+                                                            (short)_t_size,
                                                             hFile,
                                                             _pref_list,
                                                             _pref_list.length,
                                                             _n_pages);
+                            while(sortFirstSky.hasNext()) {
+                                System.out.println("Skyline object: ");
+                                sortFirstSky.get_next().print(attrType);
+                            }
+
                         } catch (IOException e) {
                             e.printStackTrace();
-                        } catch (HFException e) {
+                        } catch (IndexException e) {
                             e.printStackTrace();
-                        } catch (HFBufMgrException e) {
+                        } catch (PredEvalException e) {
                             e.printStackTrace();
-                        } catch (HFDiskMgrException e) {
+                        } catch (UnknowAttrType unknowAttrType) {
+                            unknowAttrType.printStackTrace();
+                        } catch (JoinsException e) {
+                            e.printStackTrace();
+                        } catch (InvalidTupleSizeException e) {
+                            e.printStackTrace();
+                        } catch (PageNotReadException e) {
+                            e.printStackTrace();
+                        } catch (UnknownKeyTypeException e) {
+                            e.printStackTrace();
+                        } catch (LowMemException e) {
+                            e.printStackTrace();
+                        } catch (InvalidTypeException e) {
+                            e.printStackTrace();
+                        } catch (SortException e) {
+                            e.printStackTrace();
+                        } catch (TupleUtilsException e) {
+                            e.printStackTrace();
+                        } catch (Exception e) {
                             e.printStackTrace();
                         } finally {
                             status = OK;
                             // clean up
                             try {
-                                fscan.close();
+                                sortFirstSky.close();
                             }
                             catch (Exception e) {
                                 status = FAIL;

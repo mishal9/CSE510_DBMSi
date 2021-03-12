@@ -16,4 +16,12 @@ public class PCounter {
     public static void writeIncrement() {
         wcounter++;
     }
+    
+    public static int get_wcounter() {
+    	return wcounter;
+    }
+    
+    public static int get_rcounter() {
+    	return rcounter;
+    }
 }

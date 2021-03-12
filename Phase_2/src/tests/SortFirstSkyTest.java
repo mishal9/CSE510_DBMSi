@@ -1,10 +1,12 @@
 package tests;
 
 import java.io.*;
+
+import bufmgr.PageNotReadException;
 import global.*;
 import heap.*;
+import index.IndexException;
 import iterator.*;
-import skylines.SortFirstSky;
 
 import java.util.Arrays;
 import java.util.Scanner;
@@ -41,11 +43,7 @@ class SortFirstSkyDriver extends TestDriver
 
 
     private static int   NUM_RECORDS = data1.length;
-    private static short REC_LEN1 = 160;
-    private static short REC_LEN2 = 160;
-    private static short REC_LEN3 = 160;
-    private static short REC_LEN4 = 160;
-    private static short REC_LEN5 = 160;
+    private static short REC_LEN = 8;
     private static int   SORTPGNUM = 1500;
     private static int BUFF_SIZE = 10;
 
@@ -61,7 +59,7 @@ class SortFirstSkyDriver extends TestDriver
 
         System.out.println ("\n" + "Running " + testName() + " tests...." + "\n");
         // We will define the bufpoolsize and num_pgs params ; whereas BUFF_SIZE determined by user input
-        SystemDefs sysdef = new SystemDefs( dbpath, 8000, 3000, "Clock" );
+        SystemDefs sysdef = new SystemDefs( dbpath, 3000, 3000, "Clock" );
 
         // Kill anything that might be hanging around
         String newdbpath;
@@ -133,11 +131,11 @@ class SortFirstSkyDriver extends TestDriver
         attrType[4] = new AttrType(AttrType.attrReal);
 
         short[] attrSize = new short[5];
-        attrSize[0] = REC_LEN1;
-        attrSize[1] = REC_LEN2;
-        attrSize[2] = REC_LEN3;
-        attrSize[3] = REC_LEN4;
-        attrSize[4] = REC_LEN5;
+        attrSize[0] = REC_LEN;
+        attrSize[1] = REC_LEN;
+        attrSize[2] = REC_LEN;
+        attrSize[3] = REC_LEN;
+        attrSize[4] = REC_LEN;
 
 
         // create a tuple of appropriate size
@@ -213,7 +211,7 @@ class SortFirstSkyDriver extends TestDriver
         // Sort "test1sortPref.in"
         SortPref sort = null;
         try {
-            sort = new SortPref(attrType, (short) 5, attrSize, fscan, order[1], new int[]{1,2}, 2, SORTPGNUM);
+            sort = new SortPref(attrType, (short) 5, attrSize, fscan, order[1], new int[]{1,2}, 2, 5);
         }
         catch (Exception e) {
             status = FAIL;
@@ -314,7 +312,7 @@ class SortFirstSkyDriver extends TestDriver
 
         short[] attrSize = new short[COLS];
         for(int i=0; i<attrSize.length; i++){
-            attrSize[i] = REC_LEN1;
+            attrSize[i] = REC_LEN;
         }
 
         String hfileName = "test2sortPref.in";
@@ -351,6 +349,8 @@ class SortFirstSkyDriver extends TestDriver
             e.printStackTrace();
         }
 
+        int t_size = t.size();
+
         while (sc.hasNextLine()) {
             // create a tuple of appropriate size
 
@@ -386,13 +386,7 @@ class SortFirstSkyDriver extends TestDriver
         for(int i=0; i<attrSize.length; i++){
             projlist[i] = new FldSpec(rel, i+1);;
         }
-        /*
-        projlist[0] = new FldSpec(rel, 1);
-        projlist[1] = new FldSpec(rel, 2);
-        projlist[2] = new FldSpec(rel, 3);
-        projlist[3] = new FldSpec(rel, 4);
-        projlist[4] = new FldSpec(rel, 5);
-        */
+
         FileScan fscan = null;
 
         try {
@@ -403,34 +397,229 @@ class SortFirstSkyDriver extends TestDriver
             e.printStackTrace();
         }
 
+        SortFirstSky sortFirstSky = null;
         try {
-            SortFirstSky sortFirstSky = new SortFirstSky(attrType,
-                                                        (short) COLS,
-                                                        attrSize,
-                                                        fscan,
-                                                        hfileName,
-                                                        new int[]{1,2},
-                                                       2,
-                    BUFF_SIZE);
+            sortFirstSky = new SortFirstSky(attrType,
+                                            (short) COLS,
+                                            attrSize,
+                                            fscan,
+                                            (short) t_size,
+                                            hfileName,
+                                            new int[]{1,2},
+                                           2,
+                                            BUFF_SIZE);
+
+            while(sortFirstSky.get_next() != null) {
+                System.out.println("Skyline object: ");
+                sortFirstSky.get_next().print(attrType);
+            }
+
         } catch (IOException e) {
             e.printStackTrace();
-        } catch (HFException e) {
+        } catch (IndexException e) {
             e.printStackTrace();
-        } catch (HFBufMgrException e) {
+        } catch (PredEvalException e) {
             e.printStackTrace();
-        } catch (HFDiskMgrException e) {
+        } catch (UnknowAttrType unknowAttrType) {
+            unknowAttrType.printStackTrace();
+        } catch (JoinsException e) {
+            e.printStackTrace();
+        } catch (InvalidTupleSizeException e) {
+            e.printStackTrace();
+        } catch (PageNotReadException e) {
+            e.printStackTrace();
+        } catch (UnknownKeyTypeException e) {
+            e.printStackTrace();
+        } catch (LowMemException e) {
+            e.printStackTrace();
+        } catch (InvalidTypeException e) {
+            e.printStackTrace();
+        } catch (SortException e) {
+            e.printStackTrace();
+        } catch (TupleUtilsException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
             e.printStackTrace();
         } finally {
             status = OK;
             // clean up
+
             try {
-                fscan.close();
+                f.deleteFile();
             }
             catch (Exception e) {
                 status = FAIL;
                 e.printStackTrace();
             }
         }
+
+        System.err.println("------------------- TEST 2 completed ---------------------\n");
+
+        return status;
+    }
+
+    protected boolean test3() throws IOException {
+        System.out.println("------------------------ TEST 3 --------------------------");
+
+        boolean status = OK;
+
+        // Read data and construct tuples
+        File file = new File("../../data/data_large_skyline.txt");
+        Scanner sc = new Scanner(file);
+
+        int COLS = sc.nextInt();
+
+        AttrType[] attrType = new AttrType[COLS];
+        for(int i=0; i<attrType.length; i++){
+            attrType[i] = new AttrType(AttrType.attrReal);
+        }
+
+
+        short[] attrSize = new short[COLS];
+        for(int i=0; i<attrSize.length; i++){
+            attrSize[i] = REC_LEN;
+        }
+
+        String hfileName = "test3sortFirstSky.in";
+
+        // create a tuple of appropriate size
+        Tuple t = new Tuple();
+        try {
+            t.setHdr((short) COLS, attrType, attrSize);
+        }
+        catch (Exception e) {
+            status = FAIL;
+            e.printStackTrace();
+        }
+
+        int size = t.size();
+
+        // Create unsorted data file "test1.in"
+        RID             rid = null;
+        Heapfile        f = null;
+        try {
+            f = new Heapfile(hfileName);
+        }
+        catch (Exception e) {
+            status = FAIL;
+            e.printStackTrace();
+        }
+
+        t = new Tuple(size);
+        try {
+            t.setHdr((short) COLS, attrType, attrSize);
+        }
+        catch (Exception e) {
+            status = FAIL;
+            e.printStackTrace();
+        }
+
+        int t_size = t.size();
+
+        while (sc.hasNextLine()) {
+            // create a tuple of appropriate size
+
+            double[] doubleArray = Arrays.stream(Arrays.stream(sc.nextLine().trim()
+                    .split("\\s+"))
+                    .filter(s -> !s.isEmpty())
+                    .toArray(String[]::new))
+                    .mapToDouble(Double::parseDouble)
+                    .toArray();
+
+            for(int i=0; i<doubleArray.length; i++) {
+                try {
+                    t.setFloFld(i+1, (float) doubleArray[i]);
+                } catch (Exception e) {
+                    status = FAIL;
+                    e.printStackTrace();
+                }
+            }
+
+            try {
+                rid = f.insertRecord(t.returnTupleByteArray());
+            }
+            catch (Exception e) {
+                status = FAIL;
+                e.printStackTrace();
+            }
+
+        }
+
+        // create an iterator by open a file scan
+        FldSpec[] projlist = new FldSpec[COLS];
+        RelSpec rel = new RelSpec(RelSpec.outer);
+        for(int i=0; i<attrSize.length; i++){
+            projlist[i] = new FldSpec(rel, i+1);;
+        }
+
+        FileScan fscan = null;
+
+        try {
+            fscan = new FileScan(hfileName, attrType, attrSize, (short) COLS, COLS, projlist, null);
+        }
+        catch (Exception e) {
+            status = FAIL;
+            e.printStackTrace();
+        }
+
+        SortFirstSky sortFirstSky = null;
+
+        try {
+            sortFirstSky = new SortFirstSky(attrType,
+                    (short) COLS,
+                    attrSize,
+                    fscan,
+                    (short) t_size,
+                    hfileName,
+                    new int[]{1,2},
+                    2,
+                    BUFF_SIZE);
+
+            while(sortFirstSky.hasNext()) {
+                System.out.println("Skyline object: ");
+                Tuple xt = sortFirstSky.get_next();
+                xt.print(attrType);
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (IndexException e) {
+            e.printStackTrace();
+        } catch (PredEvalException e) {
+            e.printStackTrace();
+        } catch (UnknowAttrType unknowAttrType) {
+            unknowAttrType.printStackTrace();
+        } catch (JoinsException e) {
+            e.printStackTrace();
+        } catch (InvalidTupleSizeException e) {
+            e.printStackTrace();
+        } catch (PageNotReadException e) {
+            e.printStackTrace();
+        } catch (UnknownKeyTypeException e) {
+            e.printStackTrace();
+        } catch (LowMemException e) {
+            e.printStackTrace();
+        } catch (InvalidTypeException e) {
+            e.printStackTrace();
+        } catch (SortException e) {
+            e.printStackTrace();
+        } catch (TupleUtilsException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            status = OK;
+            // clean up
+            try {
+                sortFirstSky.close();
+            }
+            catch (Exception e) {
+                status = FAIL;
+                e.printStackTrace();
+            }
+        }
+
+        System.err.println("------------------- TEST 3 completed ---------------------\n");
 
         return status;
     }
