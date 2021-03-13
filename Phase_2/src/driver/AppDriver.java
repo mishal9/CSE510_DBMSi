@@ -132,13 +132,13 @@ class Driver extends TestDriver implements GlobalConst
          int choice= GetStuff.getChoice();
          switch(choice) {
          case 1:
-        	 dataFile = "../../data/data2.txt";
+        	 dataFile = "data/data2.txt";
         	 break;
          case 2:
-        	 dataFile = "../../data/data3.txt";
+        	 dataFile = "data/data3.txt";
         	 break;
          case 3:
-        	 dataFile = "../../data/data_large_skyline.txt";
+        	 dataFile = "data/data_large_skyline.txt";
         	 break;
          default:
         	 System.err.println("Invalid Choice");
@@ -553,18 +553,11 @@ class Driver extends TestDriver implements GlobalConst
         System.out.println("Pref list length: "+_pref_list.length);
 
         //limiting buffer pages in BufMgr
-        SystemDefs.JavabaseBM.limit_memory_usage(true, this._n_pages);
+        SystemDefs.JavabaseBM.limit_memory_usage(true, _n_pages);
 
         GenerateIndexFiles obj = new GenerateIndexFiles();
         IndexFile indexFile = obj.createCombinedBTreeIndex(dataFile,_pref_list, _pref_list.length);
         System.out.println("Index created! ");
-        BTFileScan scan = ((BTreeFile) indexFile).new_scan(null, null);
-
-        Heapfile hf = new Heapfile("heap_" + "AAA");
-
-        RID rid;
-        KeyDataEntry entry = scan.get_next();
-
         Tuple t = new Tuple();
         short [] Ssizes = null;
 
@@ -579,7 +572,7 @@ class Driver extends TestDriver implements GlobalConst
         t = new Tuple(size);
         t.setHdr((short)_pref_list.length, attrType, Ssizes);
 
-        BTreeSortedSky btree = new BTreeSortedSky(attrType, _pref_list.length, Ssizes, 0, null, "heap_AAA", _pref_list, _pref_list.length, indexFile, 2 );
+        BTreeSortedSky btree = new BTreeSortedSky(attrType, _pref_list.length, Ssizes, 0, null, "heap_AAA", _pref_list, _pref_list.length, indexFile, _n_pages );
 
         btree.computeSkylines();
     }

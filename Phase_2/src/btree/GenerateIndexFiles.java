@@ -92,7 +92,6 @@ public class GenerateIndexFiles{
 
         Heapfile heapfile = new Heapfile("heap_" + filename);
         
-
         file = new BTreeFile(filename, keyType, keySize, 1);
 
         AttrType [] Stypes = new AttrType[pref_list_length];

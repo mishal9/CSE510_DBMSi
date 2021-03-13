@@ -78,7 +78,7 @@ public class BTreeSortedSky implements GlobalConst {
 
 
 		this.relationName = relationName;
-		this.index_file = index_file;
+		this.index_file = (BTreeFile) index_file;
 		this.attrType = attrType;
 		this.attr_len = attr_len;
 		this.t1_str_sizes = t1_str_sizes;
@@ -94,29 +94,28 @@ public class BTreeSortedSky implements GlobalConst {
 	
 	
 	public void computeSkylines() throws InvalidSlotNumberException, InvalidTupleSizeException, Exception {
-
 		Heapfile hf = new Heapfile("heap_" + "AAA");
 		temp = new Heapfile("sortFirstSkyTemp.in");
-		
 		BTFileScan scan = ((BTreeFile) index_file).new_scan(null, null);
 		KeyDataEntry entry;
 		RID rid;
 		
 		Tuple t = getEmptyTuple();
+		System.out.println("Number of pages "+n_pages);
+		int window_size = ((int)(MINIBASE_PAGESIZE/t.size()))*(n_pages/2);
+		System.out.println("Tuple size "+t.size());
+		System.out.println("SIZE: " + window_size);
 
-		System.out.println("SIZE: " + (MINIBASE_PAGESIZE / t.size()) * n_pages);
-
-		_window = new Tuple[(MINIBASE_PAGESIZE / t.size()) * n_pages];
-		
+		_window = new Tuple[window_size];
+		System.out.println("Windows size in btree sorted sky: "+ _window.length);
 	    entry = scan.get_next();
 	    
 	    int count = 0;
-	    
 	    while (entry != null && count < _window.length) {
 	    	Tuple temp = getEmptyTuple();
         	rid = ((LeafData) entry.data).getData();
         	temp.tupleCopy(hf.getRecord(rid));
-        	temp.print(attrType); 
+        	//temp.print(attrType); 
         	
         	boolean isDominatedByWindow = checkDominationWithinWindowTuples(temp,count);
         	
@@ -126,7 +125,6 @@ public class BTreeSortedSky implements GlobalConst {
         	
             entry = scan.get_next();
         }
-	    
 //	    System.out.println("In memory objects");
 //        for(int i=0; i<_window.length; i++) {
 //            if(_window[i] != null) {}
@@ -164,12 +162,13 @@ public class BTreeSortedSky implements GlobalConst {
         System.out.println("******************** SKYLINE TUPLES ********************");
         for(int i=0; i<_window.length; i++){
             if(_window[i] != null) {
-                _window[i].print(attrType);
+               _window[i].print(attrType);
             }
         }
-        
-        scan.DestroyBTreeFileScan();        
-        
+        ((BTreeFile) index_file).close();
+        scan.DestroyBTreeFileScan();
+        SystemDefs.JavabaseBM.flushAllPages();
+        System.out.println("record count in temporary file: "+temp.getRecCnt());
         if(temp.getRecCnt() == 0) return;
         
         BlockNestedLoopsSky bnls = new BlockNestedLoopsSky(
@@ -180,7 +179,7 @@ public class BTreeSortedSky implements GlobalConst {
         		"sortFirstSkyTemp.in",
         		pref_list,
         		pref_list_length,
-        		n_pages
+        		n_pages/2
         		);
         
         Tuple res = bnls.get_next();
@@ -189,9 +188,10 @@ public class BTreeSortedSky implements GlobalConst {
         	res.print(attrType);
         	res = bnls.get_next();
         }
-     
+        bnls.close();
+        temp.deleteFile();
         System.out.println("**************** THE END ***************");
-
+        
         return;
     }
 	
