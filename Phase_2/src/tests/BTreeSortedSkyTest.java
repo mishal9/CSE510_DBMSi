@@ -199,7 +199,7 @@ protected boolean test3 () {
     try {
   	  
 	      GenerateIndexFiles obj = new GenerateIndexFiles();
-	      IndexFile indexFile = obj.createCombinedBTreeIndex("../../data3.txt",pref_list, pref_list_length);
+	      IndexFile indexFile = obj.createCombinedBTreeIndex("../../data/data3.txt",pref_list, pref_list_length);
 	      System.out.println("Index created! ");
 	      scan = ((BTreeFile) indexFile).new_scan(null, null);
 	      

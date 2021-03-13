@@ -103,10 +103,11 @@ public class BTreeSortedSky implements GlobalConst {
 		RID rid;
 		
 		Tuple t = getEmptyTuple();
-	    
-		_window = new Tuple[10];
-		
+
 		System.out.println("SIZE: " + (MINIBASE_PAGESIZE / t.size()) * n_pages);
+
+		_window = new Tuple[(MINIBASE_PAGESIZE / t.size()) * n_pages];
+		
 	    entry = scan.get_next();
 	    
 	    int count = 0;

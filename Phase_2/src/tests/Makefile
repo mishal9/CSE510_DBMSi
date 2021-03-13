@@ -102,6 +102,14 @@ NestedLoopSkyTest:NestedLoopSkyTest.java
 nestedloopskytest: NestedLoopSkyTest
 	$(JAVA) tests.NestedLoopSkyTest
 
+# test btree sort sky
+
+BTreeSortedSkyTest:BTreeSortedSkyTest.java
+	$(JAVAC) TestDriver.java BTreeSortedSkyTest.java
+
+btreesortskytest: BTreeSortedSkyTest
+	$(JAVA) tests.BTreeSortedSkyTest
+
 
 
 

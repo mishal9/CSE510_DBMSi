@@ -40,7 +40,7 @@ public class SortFirstSky extends Iterator implements GlobalConst {
     public SortFirstSky(AttrType[] in1, int len_in1, short[] t1_str_sizes,
                         Iterator am1, short tuple_size, java.lang.String
                                 relationName, int[] pref_list, int pref_list_length,
-                        int n_pages) throws IOException {
+                        int n_pages) throws IOException, TupleUtilsException, UnknowAttrType, FieldNumberOutOfBoundException, InvalidTupleSizeException, HFBufMgrException, InvalidSlotNumberException, HFDiskMgrException {
 
         _in = in1;
         _len_in = (short)len_in1;
@@ -103,8 +103,14 @@ public class SortFirstSky extends Iterator implements GlobalConst {
         System.out.println("Length of the buffer: "+_window.length);
         System.out.println("-----------------------------------------------------");
 
-        if ( status == OK )
-            computeSkylines(_sort);
+        if ( status == OK ) {
+            computeSkylines(_sort, _window);
+
+            // now check if temp_heap has records:
+            // empty window; outer_heap <- temp_heap
+            // delete outer loop
+            // run computeSkyLines(outer_heap_updated, window)
+        }
 
     }
 
@@ -129,24 +135,27 @@ public class SortFirstSky extends Iterator implements GlobalConst {
         _fscan.close();
     }
 
-    public void computeSkylines(SortPref sort) throws IOException {
+    public void computeSkylines(SortPref sort, Tuple[] window) throws IOException, TupleUtilsException, UnknowAttrType, FieldNumberOutOfBoundException, HFBufMgrException, HFDiskMgrException, InvalidSlotNumberException, InvalidTupleSizeException {
 
         /*
-        SORT FIRST SKY:
+        SORT FIRST SKY(heap, window):
 
-        1. Put the first <n_pages> sorted tuples in main memory
-        2. Compare the rest against the ones in main memory
-            1. If tuple in heap file is dominated by at least one in main memory - simply discard it from heap
-            2. If tuple is not dominated by any tuple in main memory - put into temp heap file
-        3. At end - if tuples in temp heap; return the first window and put temp heap into the window
-        4. Do second pass on data and run against the new window
+        1. Take the outer tuple through a sort iterator
+        2. if window == empty; push the tuple to the window
+        3. else compare outer tuple with the window objects
+        4. if any window tuple dominates outer tuple -> move to the next tuple
+        5. if any window tuple could not dominate outer tuple ->
+            if count < window.length
+                move outer tuple to window
+            else
+                move outer tuple to heap
+        6. if temp_heap.getRecCnt() > 0:
+            1. empty window
+            2. treat temp_heap as outer_heap
+            2.a delete heap
+            3. run skyline using (temp_heap, window)
 
-        Scenarios:
-
-        If tuple heap_tuple:
-	        dominated by tuple memory_tuple -> discard heap_tuple
-	        not dominated by any of tuple memory_tuple -> put into temp heap
-         */
+        */
 
         // create a tuple of appropriate size
         Tuple t = new Tuple();
@@ -162,82 +171,56 @@ public class SortFirstSky extends Iterator implements GlobalConst {
 
         int count = 0;
 
-        while (t != null && count < _window.length) {
-            Tuple temp = new Tuple(t);
-            _window[count++] = temp;
-            // _window.add(temp);
-
-            try {
-                t = sort.get_next();
-            }
-            catch (Exception e) {
-                status = FAIL;
-                e.printStackTrace();
-            }
-        }
-
-
-        // AT THIS point: in-memory window is formed
-
-        System.out.println("In memory objects");
-        for(int i=0; i<_window.length; i++) {
-            if(_window[i] != null)
-                _window[i].print(_attrType);
-        }
-
         RID rid = null;
 
         while (t != null) {
+
+            Tuple outer_tuple = new Tuple(t);
             boolean isDominatedBy = false;
-            System.out.println("=======");
-            Tuple htuple = new Tuple(t);
-
-            try {
-                /*
-                Compare the rest against the ones in main memory
-                1. If tuple in heap file is dominated by at least one in main memory - simply discard it from heap
-                2. If tuple is not dominated by any tuple in main memory - put into temp heap file
-                */
-
-                for(int i=0; i<_window.length; i++){
-                    if (TupleUtils.Dominates(_window[i], _attrType, htuple, _attrType, _len_in, _str_sizes, _pref_list, _pref_list_length)) {
-                        // 2. If tuple in heap file dominates any one in main memory - replace the tuple with the one in main memory
-                        // 1. If tuple in heap file is dominated by at least one in main memory - simply move to the next element
-                        isDominatedBy = true;
-                        System.out.println("Heap tuple");
-                        htuple.print(_attrType);
-                        System.out.println("Dominated by ");
-                        _window[i].print(_attrType);
-                        System.out.println(" ");
-                        break;
+            if(count == 0){
+                window[count] = outer_tuple;
+            }else {
+                // compare outer_tuple with all the window objects here
+                for (int i = 0; i < window.length; i++) {
+                    if (window[i] != null) {
+                        // if window[i] is not null
+                        // check if window_tuple dominates outer_tuple
+                        if (TupleUtils.Dominates(window[i], _attrType, outer_tuple, _attrType, _len_in, _str_sizes, _pref_list, _pref_list_length)) {
+                            // If tuple in heap file is dominated by at least one in main memory - simply move to the next element
+                            isDominatedBy = true;
+                            System.out.println("Heap tuple");
+                            outer_tuple.print(_attrType);
+                            System.out.println("Dominated by ");
+                            window[i].print(_attrType);
+                            System.out.println(" ");
+                            break;
+                        }else{
+                            // replace window tuple with the outer_tuple
+                            Tuple temp = window[i];
+                            window[i] = outer_tuple;
+                            outer_tuple = temp;
+                        }
                     }
                 }
+            }
 
-                if(!isDominatedBy){
-                    // 3. If tuple is not dominated by any tuple in main memory - put into temp heap file
-                    // Tuple remained un-dominated -> potential skyline object
-                    // check if space left in window
-                    // else put in temp heap
-                    // Inserting potential skyline candidate in the temp heap file
-                    htuple.print(_attrType);
-
+            if(isDominatedBy == false) {
+                if (count < window.length) {
+                    // move outer tuple to window
+                    // If tuple in outer loop dominates the window object - replace the window object
+                    window[count] = outer_tuple;
+                } else {
+                    // move outer tuple to heap
                     try {
-                        rid = temp.insertRecord(htuple.returnTupleByteArray());
-                    }
-                    catch (Exception e) {
+                        rid = temp.insertRecord(outer_tuple.returnTupleByteArray());
+                    } catch (Exception e) {
                         status = FAIL;
                         e.printStackTrace();
                     }
-                    System.out.println("Is not Dominated by any window objects");
                 }
-
-            }
-            catch (Exception e) {
-                status = FAIL;
-                e.printStackTrace();
             }
 
-            count ++;
+            count++;
 
             try {
                 t = sort.get_next();
@@ -248,15 +231,6 @@ public class SortFirstSky extends Iterator implements GlobalConst {
             }
         }
 
-        // second pass
-        /*
-        try {
-            _tscan = new FileScan("sortFirstSkyTemp.in", _attrType, _attrSize, (short) _len_in, _len_in, _projlist, null);
-        } catch (Exception e) {
-            status = FAIL;
-            e.printStackTrace();
-        }
-        */
         return;
     }
 }
