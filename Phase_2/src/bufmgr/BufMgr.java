@@ -273,16 +273,23 @@ class Clock extends Replacer {
       
       head = (head+1) % numBuffers;
       while ( state_bit[head].state != Available ) {
-	if ( state_bit[head].state == Referenced )
-	  state_bit[head].state = Available;
+    	  if ( state_bit[head].state == Referenced )
+    		  state_bit[head].state = Available;
 	
-	if ( num == 2*numBuffers ) {
+    	  if ( num == 2*numBuffers ) {
+    		  int temp_head = 0;
+    		  while ( temp_head < numBuffers )
+    		  {
+    			  /* unpin everything */
+    			  state_bit[temp_head].state = Available;
+    			  temp_head++;
+    		  }
+    		  mgr.limit_memory_usage(false, 0);
+    		  throw new BufferPoolExceededException (null, "BUFMGR: BUFFER_EXCEEDED.");
 	  
-	  throw new BufferPoolExceededException (null, "BUFMGR: BUFFER_EXCEEDED.");
-	  
-	}
-	++num;
-	head = (head+1) % numBuffers;
+    	  }
+    	  ++num;
+    	  head = (head+1) % numBuffers;
       }
       
       // Make sure pin count is 0.
@@ -862,10 +869,7 @@ public class BufMgr implements GlobalConst{
 		  /* initialise the buffer manager variables 
 		   * Make sure that all the pages are unpinned annd flushed before calling this function
 		   */
-		  frmeTable = new FrameDesc[numBuffers];
-	      bufPool = new byte[numBuffers][MAX_SPACE];
-	      for (int i=0; i<numBuffers; i++)  // initialize frameTable
-	    		frmeTable[i] = new FrameDesc();
+		  clean_buffer_allocation();
 	      
 	      /* enabling it without disabling it */
 		  if ( limit_memory_usage == false )
@@ -882,6 +886,13 @@ public class BufMgr implements GlobalConst{
 		  limit_memory_usage = false;
 		  numBuffers = restore_num_buf;
 	  }
+  }
+  
+  private void clean_buffer_allocation() {
+	  frmeTable = new FrameDesc[numBuffers];
+      bufPool = new byte[numBuffers][MAX_SPACE];
+      for (int i=0; i<numBuffers; i++)  // initialize frameTable
+    		frmeTable[i] = new FrameDesc();
   }
 
   private void read_page (PageId pageno, Page page)
