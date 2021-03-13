@@ -53,7 +53,7 @@ public class NestedLoopsSky extends Iterator
     /* tuples used for computation during the skyline -- for debug purposes */
     private Tuple       outer_candidate, inner_candidate, outer_candidate_temp, inner_candidate_temp;
     
-    /* size of the tuples inthe skyline */
+    /* size of the tuples in the skyline */
     private int         _tuple_size;
 
     /**
@@ -61,6 +61,7 @@ public class NestedLoopsSky extends Iterator
      *@param in1  array showing what the attributes of the input fields are.
      *@param len_in1  number of attributes in the input tuple
      *@param t1_str_sizes  shows the length of the string fields
+     *@param am1 iterator over the data file ( not used in our case; passing it as null )
      *@param relationName heapfile to be opened
      *@param pref_list array of the indices of the preferred attributes
      *@param pref_list_length number of preferred attributes
@@ -170,6 +171,7 @@ public class NestedLoopsSky extends Iterator
             if (this.outer_candidate_temp == null)
             {
                 System.out.println("No more records in skyline. All records already scanned.");
+                this._outer_scan.closescan();
                 SystemDefs.JavabaseBM.limit_memory_usage(false, this._n_pages);
                 return null;
             }
@@ -233,7 +235,6 @@ public class NestedLoopsSky extends Iterator
         if (!closeFlag)
         {
             closeFlag = true;
-            this._outer_scan.closescan();
         }
     }
 

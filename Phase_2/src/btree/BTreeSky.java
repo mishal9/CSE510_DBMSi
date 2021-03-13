@@ -225,6 +225,7 @@ public class BTreeSky extends Iterator implements GlobalConst {
 		System.out.println("Will now run Block Nested Loop Skyline on \n Pruned DataFile record count: "+prunedDataFile.getRecCnt());
 		
 		//run block nested loop skyline on the pruned data now
+<<<<<<< Updated upstream
 		
 		//close all btree scans and btree index files
 		for (int i = 0; i < numberOfBtreeIndexes; i++) {
@@ -241,6 +242,9 @@ public class BTreeSky extends Iterator implements GlobalConst {
 		//unlimit the buffer manager here, it will be limited again in BNL
 		SystemDefs.JavabaseBM.limit_memory_usage(false, this.n_pages);
 		SystemDefs.JavabaseBM.flushAllPages();
+=======
+
+>>>>>>> Stashed changes
 		Iterator bnlIterator = null;
 		blockNestedLoopSkyline = new BlockNestedLoopsSky(attrType, attrType.length, t1_str_sizes, bnlIterator, prunedHeapFileName, pref_list, pref_length_list, n_pages);
 	}

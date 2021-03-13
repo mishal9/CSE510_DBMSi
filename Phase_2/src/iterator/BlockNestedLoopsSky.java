@@ -20,24 +20,61 @@ import java.util.Stack;
  */
 public class BlockNestedLoopsSky extends Iterator implements GlobalConst
 {
+	/* Tuple attributes array */
     private AttrType[]   _in1;
+    
+    /* number of attributes for any tuple */
     private short        _len_in1;
+    
+    /* length of the string fields in the tuple */
     private short[]      _t1_str_sizes;
+    
+    /* filename for the file containing tuples */
     private String       _relation_name;
+    
+    /* name of the temporary heap file created to store skyline elements */
     private String       _temp_heap_file_name;
+    
+    /* temporary heap file used to store the skyline elements */
     private Heapfile     _temp_heap_file;
-    private int[]        _pref_list;
-    private int          _pref_list_length;
-    private int          _n_pages;
-    private Heapfile     _heap_file;
-    private boolean      _status;
+    
+    /* scan on the temporary heap file used to compute the skyline */
     private Scan         _scan;
+    
+    /* indices of attributes of a tuple to be considered for the skyline */
+    private int[]        _pref_list;
+    
+    /* number of attributes of a tuple to be considered for the skyline */
+    private int          _pref_list_length;
+    
+    /* number of pages available for the skyline operation */
+    private int          _n_pages;
+    
+    /* heap file containing our data on which skyline is computed */
+    private Heapfile     _heap_file;
+    
+    /* outer scan on the heapfile containing the data */ 
     private Scan         _outer_scan;
+    
+    /* stores the status of each operation */
+    private boolean      _status;
+    
+    /* Windows which is used to store some skyline elements */
     private Queue<Tuple> _queue;
-    private Tuple        outer_candidate_temp, inner_candidate_temp, outer_candidate, inner_candidate;
-    private RID          _temp;
-    private int          _tuple_size;
+    
+    /* number of tuples the queue can hold */
     private int          _window_size;
+    
+    /* tuples used for computation during the skyline -- for debug purposes */
+    private Tuple        outer_candidate_temp, inner_candidate_temp, outer_candidate, inner_candidate;
+    
+    /* temporary record ID used to calculate skyline -- for debug purposes */
+    private RID          _temp;
+    
+    /* size of the tuples in the skyline/window/temporary_heap_file */
+    private int          _tuple_size;
+    
+    /* keeps track of number of skyline elements returned from the window */
     private int          _counter;
 
     /**
@@ -45,10 +82,11 @@ public class BlockNestedLoopsSky extends Iterator implements GlobalConst
      *@param in1  array showing what the attributes of the input fields are.
      *@param len_in1  number of attributes in the input tuple
      *@param t1_str_sizes  shows the length of the string fields
+     *@param am1 iterator over the data file ( not used in our case; passing it as null )
      *@param relationName heapfile to be opened
-     *@param n_out_flds  number of fields in the out tuple
-     *@param proj_list  shows what input fields go where in the output tuple
-     *@param outFilter  select expressions
+     *@param pref_list array of the indices of the preferred attributes
+     *@param pref_list_length number of preferred attributes
+     *@param n_pages number of pages available for the skyline operation
      *@exception IOException some I/O fault
      *@exception FileScanException exception from this class
      *@exception TupleUtilsException exception from this class
@@ -71,7 +109,6 @@ public class BlockNestedLoopsSky extends Iterator implements GlobalConst
             InvalidRelation
     {
     	/* initialize all variables */
-    	
         this._in1 = in1;
         this._len_in1 = (short)len_in1;
         this._t1_str_sizes = t1_str_sizes;
@@ -84,15 +121,12 @@ public class BlockNestedLoopsSky extends Iterator implements GlobalConst
         this._temp_heap_file_name = System.currentTimeMillis() + "temp_block_nested_loop.in";
         this._queue = new LinkedList<>();
         this._counter = 0;
-        //System.out.println(_temp_heap_file_name);
-        //System.out.println("Attr  types"+ Arrays.toString(this._in1));
-        //System.out.println("Attr types length "+ (this._len_in1));
-        //System.out.println("Str sizes "+ Arrays.toString(this._t1_str_sizes));
-        //System.out.println("Prefernce list "+ Arrays.toString(this._pref_list));
-        //System.out.println("N pages"+ _n_pages);
 
+        /* In this algorithm we will be allocating n_pages/2 pages to the buffer manager and rest
+         * to the window used to store tuples in main memory.
+         */
         try {
-        	System.out.println("Starting proces----------------------------s");
+        	/* limit the memory usage of BM to calculated pages */
         	SystemDefs.JavabaseBM.limit_memory_usage(true, this._n_pages/2);
         	this._heap_file = new Heapfile(this._relation_name);
         	System.out.println("BNL heapfile size "+_heap_file.getRecCnt());
@@ -104,7 +138,7 @@ public class BlockNestedLoopsSky extends Iterator implements GlobalConst
             e.printStackTrace();
         }
 
-        /*outer_candidate = this._outer_iterator.get_next();*/
+        /* open a scan on the data file */
         if ( this._status == true )
         {
             try
@@ -120,8 +154,9 @@ public class BlockNestedLoopsSky extends Iterator implements GlobalConst
             }
         }
         
-        this.outer_candidate_temp = new Tuple();
+        /* initialise tuple size */
         try {
+        	this.outer_candidate_temp = new Tuple();
 			this.outer_candidate_temp.setHdr(this._len_in1, this._in1, this._t1_str_sizes);
 			this._tuple_size = this.outer_candidate_temp.size();
 		} catch (InvalidTypeException e) {
@@ -134,10 +169,10 @@ public class BlockNestedLoopsSky extends Iterator implements GlobalConst
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-        this._window_size = ((int)(MINIBASE_PAGESIZE/this._tuple_size))*(this._n_pages/2);
-        //this._window = new Tuple[this._window_size];
-        System.out.println("window size: "+ this._window_size);
+        
+        /* calculate the window size and start computing the skyline */
         try {
+        	this._window_size = ((int)(MINIBASE_PAGESIZE/this._tuple_size))*(this._n_pages/2);
 			compute_syline();
 		} catch (JoinsException e) {
 			// TODO Auto-generated catch block
@@ -205,12 +240,10 @@ public class BlockNestedLoopsSky extends Iterator implements GlobalConst
         inner_candidate.setHdr(this._len_in1, this._in1, this._t1_str_sizes);
         while (true)
         {
-            //System.out.println("while1");
-            /*outer_candidate = this._outer_iterator.get_next();*/
             outer_candidate_temp = this._outer_scan.getNext(_temp);
             if (outer_candidate_temp == null)
             {
-                //System.out.println("No more records in skyline. All records already scanned.");
+            	this._outer_scan.closescan();
                 break;
             }
             //outer_candidate1.print(this._in1);
@@ -270,13 +303,7 @@ public class BlockNestedLoopsSky extends Iterator implements GlobalConst
             	}
             }
             this._scan.closescan();
-            //System.out.println("----------------------Printing the entire queue-------------------");
-        	//System.out.println("----Size of the queue: "+this._queue.size()+"--------");
-        	//this._queue.peek().print(_in1);
-        	//System.out.println("----------------------end of iteration-------------------");
         }
-        
-        this._scan = this._temp_heap_file.openScan();
     }
     
     public boolean can_be_added_to_queue(Tuple candidate)
@@ -477,6 +504,28 @@ public class BlockNestedLoopsSky extends Iterator implements GlobalConst
         if (!closeFlag)
         {
             closeFlag = true;
+            this._scan.closescan();
+            try {
+				this._temp_heap_file.deleteFile();
+			} catch (InvalidSlotNumberException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (FileAlreadyDeletedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (InvalidTupleSizeException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (HFBufMgrException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (HFDiskMgrException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
         }
 
        // _scan.closescan();
@@ -510,6 +559,7 @@ public class BlockNestedLoopsSky extends Iterator implements GlobalConst
 			}
 		}
 		SystemDefs.JavabaseBM.limit_memory_usage(false, this._n_pages);
+		System.out.println("No more records in skyline. All records already scanned.");
 		return null;
 	}
 
