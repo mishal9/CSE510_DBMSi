@@ -496,10 +496,14 @@ class Driver extends TestDriver implements GlobalConst
 			individualBTreeIndexesCreated = true;
 		}
 		
+		//limiting buffer pages in BufMgr
+		SystemDefs.JavabaseBM.limit_memory_usage(true, this._n_pages);
+		
 		int len_in1 = 4;
 		int amt_of_mem = 100; // TODO what should this be?
 		Iterator am1 = null;
 		String relationName = hFile;
+		
 		//get only the btree indexes specified by the the pref_list array
 		IndexFile[] index_file_list = BtreeGeneratorUtil.getBtreeSubset(_pref_list);
 		PCounter.initialize();
