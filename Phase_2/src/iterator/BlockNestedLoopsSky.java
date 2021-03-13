@@ -95,6 +95,7 @@ public class BlockNestedLoopsSky extends Iterator implements GlobalConst
         	System.out.println("Starting proces----------------------------s");
         	SystemDefs.JavabaseBM.limit_memory_usage(true, this._n_pages/2);
         	this._heap_file = new Heapfile(this._relation_name);
+        	System.out.println("BNL heapfile size "+_heap_file.getRecCnt());
         	this._temp_heap_file = new Heapfile(this._temp_heap_file_name);
             this._status = true;
         }

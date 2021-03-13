@@ -308,8 +308,7 @@ class Driver extends TestDriver implements GlobalConst
                         break;
 
                     case 1:
-                    	System.out.println("Number of Disk reads: "+ PCounter.get_rcounter());
-                        System.out.println("Number of Disk writes: "+ PCounter.get_wcounter());
+                    	PCounter.initialize();
                         // call nested loop sky
                         runNestedLoopSky();
                         System.out.println("Number of Disk reads: "+ PCounter.get_rcounter());
@@ -317,8 +316,7 @@ class Driver extends TestDriver implements GlobalConst
                         break;
 
                     case 2:
-                    	System.out.println("Number of Disk reads: "+ PCounter.get_rcounter());
-                        System.out.println("Number of Disk writes: "+ PCounter.get_wcounter());
+                    	PCounter.initialize();
                         // call block nested loop sky
                         blockNestedSky();
                         System.out.println("Number of Disk reads: "+ PCounter.get_rcounter());
@@ -507,21 +505,23 @@ class Driver extends TestDriver implements GlobalConst
 
 		BTreeSky btreesky = new BTreeSky(attrType, len_in1, attrSize, amt_of_mem, am1, relationName, _pref_list,
 				_pref_list.length, index_file_list, _n_pages);
-		btreesky.debug =false;
+		btreesky.debug = false;
+		int numSkyEle = 0;
 		Tuple skyEle = btreesky.get_next(); // first sky element
 		System.out.print("First Sky element is: ");
 		skyEle.print(attrType);
-
+		numSkyEle++;
 		while (skyEle != null) {
 			skyEle = btreesky.get_next(); // subsequent sky elements
 			if (skyEle == null) {
 				System.out.println("No more sky elements");
 				break;
 			}
+			numSkyEle++;
 			System.out.print("Sky element is: ");
 			skyEle.print(attrType);
 		}
-
+		System.out.println("Skyline Length: "+numSkyEle);
 		btreesky.close();
 		System.out.println("End of runBtreeSky");
 	}

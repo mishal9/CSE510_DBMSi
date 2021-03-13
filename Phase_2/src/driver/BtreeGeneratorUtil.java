@@ -74,7 +74,7 @@ public class BtreeGeneratorUtil {
 		while (temp != null) {
 			t.tupleCopy(temp);
 
-			key = t.getFloFld(keyNoForIndex);
+			key = -1 * t.getFloFld(keyNoForIndex);
 			//System.out.print("btree key:"+key+" ");
 			//t.print(attrType);
 
