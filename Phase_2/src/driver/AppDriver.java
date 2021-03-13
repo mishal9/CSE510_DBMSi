@@ -55,7 +55,7 @@ class Driver extends TestDriver implements GlobalConst
         dbpath = "MINIBASE.minibase-db";
 		logpath = "MINIBASE.minibase-log";
         // Each page can handle at most 25 tuples on original data => 7308 / 25 = 292
-        SystemDefs sysdef = new SystemDefs(dbpath,8000, 3000,"Clock");
+        SystemDefs sysdef = new SystemDefs(dbpath,80000, 3000,"Clock");
 
         // Kill anything that might be hanging around
         String newdbpath;
@@ -113,11 +113,12 @@ class Driver extends TestDriver implements GlobalConst
         System.out.println("------------SKYLINE PROCESSING MENU ------------------");
         System.out.println("[101]   Set pref = [1]");
         System.out.println("[102]   Set pref = [1,3]");
-        System.out.println("[103]   Set pref = [1,3,5]");
-        System.out.println("[104]   Set pref = [1,2,3,4,5]");
-        System.out.println("[105]   Set n_page = 5");
-        System.out.println("[106]   Set n_page = 10");
-        System.out.println("[107]   Set n_page = <your_wish>");
+        System.out.println("[103]   Set pref = [1,2]");
+        System.out.println("[104]   Set pref = [1,3,5]");
+        System.out.println("[105]   Set pref = [1,2,3,4,5]");
+        System.out.println("[106]   Set n_page = 5");
+        System.out.println("[107]   Set n_page = 10");
+        System.out.println("[108]   Set n_page = <your_wish>");
         System.out.println("[1]  Run Nested Loop skyline on data with parameters ");
         System.out.println("[2]  Run Block Nested Loop on data with parameters ");
         System.out.println("[3]  Run Sort First Sky on data with parameters ");
@@ -151,6 +152,7 @@ class Driver extends TestDriver implements GlobalConst
         	 break;        	 
          }
 		try {
+			System.out.println("Reading file: "+dataFile);
 			readDataIntoHeap(dataFile);
 			BtreeGeneratorUtil.generateAllBtreesForHeapfile(hFile, f, attrType, attrSize);
 			individualBTreeIndexesCreated = true;
@@ -287,28 +289,30 @@ class Driver extends TestDriver implements GlobalConst
                         break;
 
                     case 102:
+                        _pref_list = new int[]{1,3};
+                        break;
+                    case 103:
                         _pref_list = new int[]{1,2};
                         break;
-
-                    case 103:
+                    case 104:
                         _pref_list = new int[]{1,3,5};
                         break;
 
-                    case 104:
+                    case 105:
                         _pref_list = new int[]{1,2,3,4,5};
                         break;
 
-                    case 105:
+                    case 106:
                         _n_pages = 5;
                         System.out.println("n_pages set to :" + _n_pages);
                         break;
 
-                    case 106:
+                    case 107:
                         _n_pages = 10;
                         System.out.println("n_pages set to :" + _n_pages);
                         break;
 
-                    case 107:
+                    case 108:
                         System.out.println("Enter n_pages of your choice: ");
                         _n_pages = GetStuff.getChoice();
                         if(_n_pages<0)
@@ -317,19 +321,13 @@ class Driver extends TestDriver implements GlobalConst
                         break;
 
                     case 1:
-                    	PCounter.initialize();
                         // call nested loop sky
                         runNestedLoopSky();
-                        System.out.println("Number of Disk reads: "+ PCounter.get_rcounter());
-                        System.out.println("Number of Disk writes: "+ PCounter.get_wcounter());
                         break;
 
                     case 2:
-                    	PCounter.initialize();
                         // call block nested loop sky
                         blockNestedSky();
-                        System.out.println("Number of Disk reads: "+ PCounter.get_rcounter());
-                        System.out.println("Number of Disk writes: "+ PCounter.get_wcounter());
                         break;
 
                     case 3:
@@ -372,9 +370,9 @@ class Driver extends TestDriver implements GlobalConst
         System.out.println("N pages: "+_n_pages);
         System.out.println("Pref list: "+Arrays.toString(_pref_list));
         System.out.println("Pref list length: "+_pref_list.length);
-
+        PCounter.initialize();
         NestedLoopsSky nestedLoopsSky = null;
-
+        int numSkyEle =0;
         try {
             nestedLoopsSky = new NestedLoopsSky(attrType,
                     (short)COLS,
@@ -388,6 +386,7 @@ class Driver extends TestDriver implements GlobalConst
             System.out.println("Printing the Nested Loop Skyline");
             Tuple temp = nestedLoopsSky.get_next();
             while (temp!=null) {
+            	numSkyEle++;
                 temp.print(attrType);
                 temp = nestedLoopsSky.get_next();
             }
@@ -407,6 +406,10 @@ class Driver extends TestDriver implements GlobalConst
                 e.printStackTrace();
             }
         }
+        System.out.println("Skyline Length: "+numSkyEle);
+        System.out.println("Number of Disk reads: "+ PCounter.get_rcounter());
+        System.out.println("Number of Disk writes: "+ PCounter.get_wcounter());
+        PCounter.initialize();
     }
 
     private void blockNestedSky(){
@@ -416,7 +419,8 @@ class Driver extends TestDriver implements GlobalConst
         System.out.println("Pref list length: "+_pref_list.length);
 
         BlockNestedLoopsSky blockNestedLoopsSky = null;
-
+        PCounter.initialize();
+        int numSkyEle = 0;
         try {
             blockNestedLoopsSky = new BlockNestedLoopsSky(attrType,
                     (short)COLS,
@@ -433,8 +437,10 @@ class Driver extends TestDriver implements GlobalConst
                 temp = blockNestedLoopsSky.get_next();
                 while (temp!=null) {
                     temp.print(attrType);
+                    numSkyEle++;
                     temp = blockNestedLoopsSky.get_next();
                 }
+               
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -444,6 +450,10 @@ class Driver extends TestDriver implements GlobalConst
         } finally {
             blockNestedLoopsSky.close();
         }
+        System.out.println("Skyline Length: "+numSkyEle);
+        System.out.println("Number of Disk reads: "+ PCounter.get_rcounter());
+        System.out.println("Number of Disk writes: "+ PCounter.get_wcounter());
+        PCounter.initialize();
     }
 
     private void runSortFirstSky() {
