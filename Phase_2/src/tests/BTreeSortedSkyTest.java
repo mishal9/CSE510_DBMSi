@@ -90,18 +90,27 @@ implements GlobalConst
   }
 
   
-  protected boolean runAllTests () {
+ protected boolean runAllTests () {
 	  
-	  BTFileScan scan;
-      KeyDataEntry entry;
-      System.out.println("CombinedBTreeIndex scanning");
-      int [] pref_list = new int[] {1,0,1,0,1};
-      int pref_list_length = 5;
-      
-      try {
-    	  
+	  boolean res1 = test1();
+	  boolean res2 = test2();
+	  boolean res3 = test3();
+	  boolean res4 = test4();
+	  
+	  return res1 && res2 && res3 && res4;
+}
+
+protected boolean test1 () {
+	BTFileScan scan;
+    KeyDataEntry entry;
+    System.out.println("CombinedBTreeIndex scanning");
+    int [] pref_list = new int[] {1,1,1,0,0};
+    int pref_list_length = 5;
+    
+    try {
+  	  
 	      GenerateIndexFiles obj = new GenerateIndexFiles();
-	      IndexFile indexFile = obj.createCombinedBTreeIndex("/Users/kunjpatel/Desktop/CSE510_DBMSi/Phase_2/data/subset.txt",pref_list, pref_list_length);
+	      IndexFile indexFile = obj.createCombinedBTreeIndex("../../data/data1.txt",pref_list, pref_list_length);
 	      System.out.println("Index created! ");
 	      scan = ((BTreeFile) indexFile).new_scan(null, null);
 	      
@@ -122,21 +131,153 @@ implements GlobalConst
 	      t = new Tuple(size);
 	      t.setHdr((short)pref_list_length, attrType, Ssizes);  
 	      
-	      BTreeSortedSky btree = new BTreeSortedSky(attrType, pref_list_length, Ssizes, 0, null, "heap_AAA", pref_list, pref_list_length, indexFile, 10 );
+	      BTreeSortedSky btree = new BTreeSortedSky(attrType, pref_list_length, Ssizes, 0, null, "heap_AAA", pref_list, pref_list_length, indexFile, 2 );
 	      
-	      btree.startLoop();
+	      btree.computeSkylines();
 	  
 	      System.out.println("AT THE END OF SCAN!");
-      
-      } catch (Exception e) {
-    	  e.printStackTrace();
-      }
-      
-      return true;
-  }
-  
+    
+    } catch (Exception e) {
+  	  e.printStackTrace();
+    }
+    
+    return true;
+
 }
 
+protected boolean test2 () {
+	BTFileScan scan;
+    KeyDataEntry entry;
+    System.out.println("CombinedBTreeIndex scanning");
+    int [] pref_list = new int[] {1,0};
+    int pref_list_length = 2;
+    
+    try {
+  	  
+	      GenerateIndexFiles obj = new GenerateIndexFiles();
+	      IndexFile indexFile = obj.createCombinedBTreeIndex("../../data/data_large_skyline.txt",pref_list, pref_list_length);
+	      System.out.println("Index created! ");
+	      scan = ((BTreeFile) indexFile).new_scan(null, null);
+	      
+	      Heapfile hf = new Heapfile("heap_" + "AAA");
+	      
+	      RID rid;
+	      entry = scan.get_next();
+	      
+	      Tuple t = new Tuple();
+	      short [] Ssizes = null;
+	      
+	      AttrType [] attrType = new AttrType[pref_list_length];
+	      for(int i=0;i<pref_list_length;i++){attrType[i] = new AttrType (AttrType.attrReal);}
+	      
+	      t.setHdr((short)pref_list_length, attrType, Ssizes);            
+	      int size = t.size();
+	      
+	      t = new Tuple(size);
+	      t.setHdr((short)pref_list_length, attrType, Ssizes);  
+	      
+	      BTreeSortedSky btree = new BTreeSortedSky(attrType, pref_list_length, Ssizes, 0, null, "heap_AAA", pref_list, pref_list_length, indexFile, 2 );
+	      
+	      btree.computeSkylines();
+	  
+	      System.out.println("AT THE END OF SCAN!");
+    
+    } catch (Exception e) {
+  	  e.printStackTrace();
+    }
+    
+    return true;
+}
+
+protected boolean test3 () {
+	BTFileScan scan;
+    KeyDataEntry entry;
+    System.out.println("CombinedBTreeIndex scanning");
+    int [] pref_list = new int[] {1,0,1,0,1};
+    int pref_list_length = 5;
+    
+    try {
+  	  
+	      GenerateIndexFiles obj = new GenerateIndexFiles();
+	      IndexFile indexFile = obj.createCombinedBTreeIndex("../../data3.txt",pref_list, pref_list_length);
+	      System.out.println("Index created! ");
+	      scan = ((BTreeFile) indexFile).new_scan(null, null);
+	      
+	      Heapfile hf = new Heapfile("heap_" + "AAA");
+	      
+	      RID rid;
+	      entry = scan.get_next();
+	      
+	      Tuple t = new Tuple();
+	      short [] Ssizes = null;
+	      
+	      AttrType [] attrType = new AttrType[pref_list_length];
+	      for(int i=0;i<pref_list_length;i++){attrType[i] = new AttrType (AttrType.attrReal);}
+	      
+	      t.setHdr((short)pref_list_length, attrType, Ssizes);            
+	      int size = t.size();
+	      
+	      t = new Tuple(size);
+	      t.setHdr((short)pref_list_length, attrType, Ssizes);  
+	      
+	      BTreeSortedSky btree = new BTreeSortedSky(attrType, pref_list_length, Ssizes, 0, null, "heap_AAA", pref_list, pref_list_length, indexFile, 2 );
+	      
+	      btree.computeSkylines();
+	  
+	      System.out.println("AT THE END OF SCAN!");
+    
+    } catch (Exception e) {
+  	  e.printStackTrace();
+    }
+    
+    return true;
+}
+
+protected boolean test4 () {
+	BTFileScan scan;
+    KeyDataEntry entry;
+    System.out.println("CombinedBTreeIndex scanning");
+    int [] pref_list = new int[] {1,0,1,0,1};
+    int pref_list_length = 5;
+    
+    try {
+  	  
+	      GenerateIndexFiles obj = new GenerateIndexFiles();
+	      IndexFile indexFile = obj.createCombinedBTreeIndex("../../data/data2.txt",pref_list, pref_list_length);
+	      System.out.println("Index created! ");
+	      scan = ((BTreeFile) indexFile).new_scan(null, null);
+	      
+	      Heapfile hf = new Heapfile("heap_" + "AAA");
+	      
+	      RID rid;
+	      entry = scan.get_next();
+	      
+	      Tuple t = new Tuple();
+	      short [] Ssizes = null;
+	      
+	      AttrType [] attrType = new AttrType[pref_list_length];
+	      for(int i=0;i<pref_list_length;i++){attrType[i] = new AttrType (AttrType.attrReal);}
+	      
+	      t.setHdr((short)pref_list_length, attrType, Ssizes);            
+	      int size = t.size();
+	      
+	      t = new Tuple(size);
+	      t.setHdr((short)pref_list_length, attrType, Ssizes);  
+	      
+	      BTreeSortedSky btree = new BTreeSortedSky(attrType, pref_list_length, Ssizes, 0, null, "heap_AAA", pref_list, pref_list_length, indexFile, 2 );
+	      
+	      btree.computeSkylines();
+	  
+	      System.out.println("AT THE END OF SCAN!");
+    
+    } catch (Exception e) {
+  	  e.printStackTrace();
+  	  return true;
+    }
+    
+    return true;
+	}
+}
 
 public class BTreeSortedSkyTest {
 

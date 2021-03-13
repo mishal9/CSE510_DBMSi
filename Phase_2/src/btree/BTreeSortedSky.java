@@ -8,8 +8,10 @@ import java.util.Arrays;
 
 import bufmgr.PageNotReadException;
 import global.AttrType;
+import global.ExtendedSystemDefs;
 import global.GlobalConst;
 import global.RID;
+import global.SystemDefs;
 import btree.*;
 import heap.FieldNumberOutOfBoundException;
 import heap.HFBufMgrException;
@@ -34,6 +36,8 @@ import iterator.TupleUtils;
 import iterator.TupleUtilsException;
 import iterator.UnknowAttrType;
 import iterator.UnknownKeyTypeException;
+import iterator.BlockNestedLoopsSky;
+
 
 /**
  * BTreeSortedSky(
@@ -67,19 +71,7 @@ public class BTreeSortedSky implements GlobalConst {
 	private static Tuple[] _window;
 	
 	private Heapfile temp;
-	
-	/**
-	 * AttrType[] in1 
-	 * int attr_len
-	 * short[] t1_str_sizes
-	 * int Iterator am1
-	 * java.lang.String relationName 
-	 * int[] pref_list 
-	 * int[] pref_list_length
-	 * IndexFile index_file
-	 * int n_pages
-	 */
- 
+
 	public BTreeSortedSky(AttrType[] attrType, int attr_len, short[] t1_str_sizes, int amt_of_mem, Iterator am1,
 			String relationName, int[] pref_list, int pref_list_length, IndexFile index_file,
 			int n_pages) throws Exception {
@@ -97,20 +89,11 @@ public class BTreeSortedSky implements GlobalConst {
 		
 		this.amt_of_mem = amt_of_mem;
 		
-//		System.out.println("************** INIT CALLED ****************");
-//		System.out.println("relationName: " + relationName );
-//		System.out.println("attrType: " + Arrays.toString(attrType) );
-//		System.out.println("attr_len: " + attr_len );
-//		System.out.println("t1_str_sizes: " + t1_str_sizes );
-//		System.out.println("pref_list: " + Arrays.toString(pref_list) );
-//		System.out.println("pref_list_length: " + pref_list_length );
-//		System.out.println("n_pages: " + n_pages );
-//		System.out.println("**************   INIT END  ****************");
 	}
 	
 	
 	
-	public void startLoop() throws InvalidSlotNumberException, InvalidTupleSizeException, Exception {
+	public void computeSkylines() throws InvalidSlotNumberException, InvalidTupleSizeException, Exception {
 
 		Heapfile hf = new Heapfile("heap_" + "AAA");
 		temp = new Heapfile("sortFirstSkyTemp.in");
@@ -121,7 +104,7 @@ public class BTreeSortedSky implements GlobalConst {
 		
 		Tuple t = getEmptyTuple();
 	    
-		_window = new Tuple[(MINIBASE_PAGESIZE / t.size()) * n_pages];
+		_window = new Tuple[10];
 		
 		System.out.println("SIZE: " + (MINIBASE_PAGESIZE / t.size()) * n_pages);
 	    entry = scan.get_next();
@@ -134,7 +117,7 @@ public class BTreeSortedSky implements GlobalConst {
         	temp.tupleCopy(hf.getRecord(rid));
         	temp.print(attrType); 
         	
-        	boolean isDominatedByWindow = checkDominationForWindowTuples(temp,count);
+        	boolean isDominatedByWindow = checkDominationWithinWindowTuples(temp,count);
         	
         	if(!isDominatedByWindow) {
         		_window[count++] = temp;
@@ -148,23 +131,18 @@ public class BTreeSortedSky implements GlobalConst {
 //            if(_window[i] != null) {}
 //                _window[i].print(attrType);
 //        }
+        
                    
         while (entry != null) {
             boolean isDominatedBy = false;
-            
             Tuple htuple = getEmptyTuple();
             
             rid = ((LeafData) entry.data).getData();
             htuple.tupleCopy(hf.getRecord(rid));
-
             	
                 for(int i=0; i<_window.length; i++){
                     if (TupleUtils.DominatesForCombinedTree(_window[i] , attrType, htuple, attrType, (short) attr_len, t1_str_sizes, pref_list, pref_list_length)) {
                     	isDominatedBy = true;
-                        System.out.println("Heap tuple");
-                        htuple.print(attrType);
-                        System.out.println("Dominated by ");
-                        _window[i].print(attrType);
                         break;
                     } 
                 }
@@ -182,30 +160,41 @@ public class BTreeSortedSky implements GlobalConst {
               entry = scan.get_next();
         }
         
-        System.out.println("Window objects ");
+        System.out.println("******************** SKYLINE TUPLES ********************");
         for(int i=0; i<_window.length; i++){
             if(_window[i] != null) {
                 _window[i].print(attrType);
             }
         }
         
-        System.out.println("HEAP ELEMENTS: " + temp.getRecCnt());
-        System.out.println("WINDOW SIZE: " + _window.length);
+        scan.DestroyBTreeFileScan();        
+        
+        if(temp.getRecCnt() == 0) return;
+        
+        BlockNestedLoopsSky bnls = new BlockNestedLoopsSky(
+        		attrType, 
+        		attr_len,
+        		t1_str_sizes,
+        		am1,
+        		"sortFirstSkyTemp.in",
+        		pref_list,
+        		pref_list_length,
+        		n_pages
+        		);
+        
+        Tuple res = bnls.get_next();
+
+        while(res != null) {
+        	res.print(attrType);
+        	res = bnls.get_next();
+        }
+     
+        System.out.println("**************** THE END ***************");
 
         return;
     }
 	
-	
-	private BTFileScan computeSkyline(BTFileScan scan, Tuple _window) {
-		 
-		
-		
-		
-		return scan;
-	}
-	
-	
-	private boolean checkDominationForWindowTuples(Tuple temp, int count) throws TupleUtilsException, UnknowAttrType, FieldNumberOutOfBoundException, IOException {
+	private boolean checkDominationWithinWindowTuples(Tuple temp, int count) throws TupleUtilsException, UnknowAttrType, FieldNumberOutOfBoundException, IOException {
 		if(count == 0) return false;
 		
 		for(int i = 0; i < count; i++) {
