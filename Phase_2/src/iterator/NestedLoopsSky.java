@@ -50,7 +50,7 @@ public class NestedLoopsSky extends Iterator
             int len_in1,
             short[] t1_str_sizes,
             Iterator am1,
-            Heapfile heapfile,
+            String relationName,
             int[] pref_list,
             int pref_list_length,
             int n_pages
@@ -64,11 +64,11 @@ public class NestedLoopsSky extends Iterator
         this._len_in1 = (short)len_in1;
         this._t1_str_sizes = t1_str_sizes;
         //this._outer_iterator = (FileScan)am1;
+        this._relation_name = relationName;
         this._pref_list = pref_list;
         this._pref_list_length = pref_list_length;
         this._n_pages = n_pages;
         this._next_skyline_element = null;
-        this._heap_file = heapfile;
         this._scan = null;
 
         System.out.println("Attr  types"+ Arrays.toString(this._in1));
@@ -78,6 +78,8 @@ public class NestedLoopsSky extends Iterator
         System.out.println("N pages"+ _n_pages);
 
         try {
+        	SystemDefs.JavabaseBM.limit_memory_usage(true, this._n_pages);
+        	this._heap_file = new Heapfile(this._relation_name);
             this._status = true;
         }
         catch (Exception e) {
@@ -126,22 +128,32 @@ public class NestedLoopsSky extends Iterator
             PredEvalException,
             UnknowAttrType,
             FieldNumberOutOfBoundException,
-            WrongPermat, TupleUtilsException {
+            WrongPermat, TupleUtilsException 
+    {
         /* read the next tuple from outer_iterator
          * Assumption here is that inner iterator is a filescan iterator */
-        Tuple outer_candidate, tup;
+        Tuple outer_candidate = new Tuple();
+        outer_candidate.setHdr(this._len_in1, this._in1, this._t1_str_sizes);
+        int size = outer_candidate.size();
+        outer_candidate = new Tuple(size);
+        outer_candidate.setHdr(this._len_in1, this._in1, this._t1_str_sizes);
+        Tuple inner_candidate = new Tuple(size);
+        inner_candidate.setHdr(this._len_in1, this._in1, this._t1_str_sizes);
+        RID temp = new RID();
+        Tuple outer_candidate_temp, inner_candidate_temp;
         while (true)
         {
-            RID temp = new RID();
+            
             /*outer_candidate = this._outer_iterator.get_next();*/
-            Tuple outer_candidate1 = this._outer_scan.getNext(temp);
-            if (outer_candidate1 == null)
+            outer_candidate_temp = this._outer_scan.getNext(temp);
+            if (outer_candidate_temp == null)
             {
                 System.out.println("No more records in skyline. All records already scanned.");
+                SystemDefs.JavabaseBM.limit_memory_usage(false, this._n_pages);
                 return null;
             }
             //outer_candidate1.print(this._in1);
-
+            outer_candidate.tupleCopy(outer_candidate_temp);
             /* open a scan on the heapfile/relationname for inner loop */
             if ( this._status == true )
             {
@@ -160,23 +172,25 @@ public class NestedLoopsSky extends Iterator
             boolean inner_dominates_outer = false;
             while (!inner_scan_complete)
             {
-                Tuple tuple = this._scan.getNext(temp);
-                System.out.println("Comparing "+tuple);
-                if (tuple == null)
+                inner_candidate_temp = this._scan.getNext(temp);
+                //System.out.println("Comparing "+inner_candidate_temp);
+                if (inner_candidate_temp == null)
                 {
                     inner_scan_complete = true;
                 }
                 else
                 {
                     /* compare the outer loop tuple with inner loop tuple */
-                    inner_dominates_outer = TupleUtils.Dominates(tuple,
-                            this._in1,
-                            outer_candidate1,
-                            this._in1,
-                            this._len_in1,
-                            this._t1_str_sizes,
-                            this._pref_list,
-                            this._pref_list_length);
+                	inner_candidate.tupleCopy(inner_candidate_temp);
+                	//inner_candidate.print(this._in1);
+                    inner_dominates_outer = TupleUtils.Dominates(inner_candidate,
+                            									 this._in1,
+                            									 outer_candidate,
+                            									 this._in1,
+                            									 this._len_in1,
+                            									 this._t1_str_sizes,
+                            									 this._pref_list,
+                            									 this._pref_list_length);
 
                     if (inner_dominates_outer) {
                         break;
@@ -185,8 +199,9 @@ public class NestedLoopsSky extends Iterator
             }
             if (inner_dominates_outer == false)
             {
-                return outer_candidate1;
+                return outer_candidate;
             }
+            this._scan.closescan();
         }
     }
 

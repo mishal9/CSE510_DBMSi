@@ -3,24 +3,28 @@ package driver;
 
 import java.io.*;
 import java.util.*;
-import java.lang.*;
 
+import btree.BTreeSky;
+import btree.IndexFile;
+import bufmgr.BufMgrException;
+import bufmgr.HashOperationException;
+import bufmgr.PageNotFoundException;
 import bufmgr.PageNotReadException;
+import bufmgr.PagePinnedException;
+import bufmgr.PageUnpinnedException;
 import diskmgr.PCounter;
 import heap.*;
 import global.*;
+
 import index.IndexException;
 import iterator.*;
+import iterator.Iterator;
 import tests.TestDriver;
 
-/** Note that in JAVA, methods can't be overridden to be more private.
- Therefore, the declaration of all private functions are now declared
- protected as opposed to the private type in C++.
- */
 
 //watching point: RID rid, some of them may not have to be newed.
 
-class Driver  extends TestDriver implements GlobalConst
+class Driver extends TestDriver implements GlobalConst
 {
     protected String dbpath;
     protected String logpath;
@@ -38,6 +42,8 @@ class Driver  extends TestDriver implements GlobalConst
     // create an iterator by open a file scan
     private static FldSpec[] projlist;
     private static RelSpec rel = new RelSpec(RelSpec.outer);
+
+    private static boolean individualBTreeIndexesCreated;
     private static int _t_size;
 
     public Driver(){
@@ -46,8 +52,8 @@ class Driver  extends TestDriver implements GlobalConst
 
     public boolean runTests () {
         System.out.println ("\n" + "Running " + testName() + " tests...." + "\n");
-        dbpath = "/tmp/main"+System.getProperty("user.name")+".minibase-db";
-        logpath = "/tmp/main"+System.getProperty("user.name")+".minibase-log";
+        dbpath = "MINIBASE.minibase-db";
+		logpath = "MINIBASE.minibase-log";
         // Each page can handle at most 25 tuples on original data => 7308 / 25 = 292
         SystemDefs sysdef = new SystemDefs(dbpath,8000, 3000,"Clock");
 
@@ -100,7 +106,6 @@ class Driver  extends TestDriver implements GlobalConst
         System.out.print ("\n" + "..." + testName() + " tests ");
         System.out.print (_pass==OK ? "completely successfully" : "failed");
         System.out.print (".\n\n");
-
         return _pass;
     }
 
@@ -124,31 +129,29 @@ class Driver  extends TestDriver implements GlobalConst
         System.out.print("Hi, make your choice :");
     }
     
-    private void readDataIntoHeap(String fileName) throws IOException, InvalidTupleSizeException, InvalidTypeException {
+    private void readDataIntoHeap(String fileName) throws IOException, InvalidTupleSizeException, InvalidTypeException, InvalidSlotNumberException, HFDiskMgrException, HFBufMgrException, HFException {
 
         // Create the heap file object
         try {
             f = new Heapfile(hFile);
         }
-        catch (Exception e) {
-            status = FAIL;
-            System.err.println ("*** Could not create heap file\n");
-            e.printStackTrace();
-        }
-
-        if ( status == OK && SystemDefs.JavabaseBM.getNumUnpinnedBuffers()
-                != SystemDefs.JavabaseBM.getNumBuffers() ) {
-            System.err.println ("*** The heap file has left pages pinned\n");
-            status = FAIL;
-        }
+		catch (HFException | HFBufMgrException | HFDiskMgrException | IOException e) {
+			status = FAIL;
+			System.err.println("*** Could not create heap file\n");
+			e.printStackTrace();
+			throw e;
+		}
+       
 
         if ( status == OK ) {
 
             // Read data and construct tuples
-            File file = new File("../../data/"+"data_large_skyline"+".txt");
+
+            File file = new File(fileName);
             Scanner sc = new Scanner(file);
 
             COLS = sc.nextInt();
+            sc.nextLine(); // skipping the whole first line from the file as that has only 5 in it
 
             attrType = new AttrType[COLS];
             attrSize = new short[COLS];
@@ -163,7 +166,7 @@ class Driver  extends TestDriver implements GlobalConst
 
             projlist = new FldSpec[COLS];
 
-            for(int i=0; i<attrSize.length; i++){
+            for(int i=0; i<attrType.length; i++){
                 projlist[i] = new FldSpec(rel, i+1);;
             }
 
@@ -200,7 +203,7 @@ class Driver  extends TestDriver implements GlobalConst
                         .toArray(String[]::new))
                         .mapToDouble(Double::parseDouble)
                         .toArray();
-
+                
                 for(int i=0; i<doubleArray.length; i++) {
                     try {
                         t.setFloFld(i+1, (float) doubleArray[i]);
@@ -218,27 +221,41 @@ class Driver  extends TestDriver implements GlobalConst
                     e.printStackTrace();
                 }
 
-                System.out.println("RID: "+rid);
+                //System.out.println("RID: "+rid);
             }
-            try {
-                System.out.println("record count "+f.getRecCnt());
-            } catch (InvalidSlotNumberException e) {
-                e.printStackTrace();
-            } catch (HFDiskMgrException e) {
-                e.printStackTrace();
-            } catch (HFBufMgrException e) {
-                e.printStackTrace();
-            }
+            System.out.println("record count "+f.getRecCnt());
+            sc.close();
         }
+        try {
+			SystemDefs.JavabaseBM.flushAllPages();
+		} catch (HashOperationException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (PageUnpinnedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (PagePinnedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (PageNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (BufMgrException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
     }
 
     protected String testName () {
         return "Main Driver";
     }
 
-    protected boolean runAllTests (){
+	protected boolean runAllTests (){
         int choice=100;
-
+               
         while(choice!=0) {
             menu();
 
@@ -248,11 +265,15 @@ class Driver  extends TestDriver implements GlobalConst
                 switch(choice) {
 
                     case 102:
-                        readDataIntoHeap("data2");
+                        readDataIntoHeap("data/data_large_skyline.txt");
+                        BtreeGeneratorUtil.generateAllBtreesForHeapfile(hFile, f, attrType, attrSize);
+                        individualBTreeIndexesCreated = true;
                         break;
 
                     case 103:
-                        readDataIntoHeap("data3");
+                        readDataIntoHeap("data/data3.txt");
+                        BtreeGeneratorUtil.generateAllBtreesForHeapfile(hFile, f, attrType, attrSize);
+                        individualBTreeIndexesCreated = true;
                         break;
 
                     case 104:
@@ -260,7 +281,7 @@ class Driver  extends TestDriver implements GlobalConst
                         break;
 
                     case 105:
-                        _pref_list = new int[]{1,3};
+                        _pref_list = new int[]{1,2};
                         break;
 
                     case 106:
@@ -287,114 +308,38 @@ class Driver  extends TestDriver implements GlobalConst
                         break;
 
                     case 1:
+                    	PCounter.initialize();
                         // call nested loop sky
-                        System.out.println("Will run nested loop skyline with params: ");
-                        System.out.println("N pages: "+_n_pages);
-                        System.out.println("Pref list: "+Arrays.toString(_pref_list));
-                        System.out.println("Pref list length: "+_pref_list.length);
+                        runNestedLoopSky();
+                        System.out.println("Number of Disk reads: "+ PCounter.get_rcounter());
+                        System.out.println("Number of Disk writes: "+ PCounter.get_wcounter());
                         break;
 
                     case 2:
+                    	PCounter.initialize();
                         // call block nested loop sky
-                        System.out.println("Will run block nested loop skyline with params: ");
-                        System.out.println("N pages: "+_n_pages);
-                        System.out.println("Pref list: "+Arrays.toString(_pref_list));
-                        System.out.println("Pref list length: "+_pref_list.length);
+                        blockNestedSky();
+                        System.out.println("Number of Disk reads: "+ PCounter.get_rcounter());
+                        System.out.println("Number of Disk writes: "+ PCounter.get_wcounter());
                         break;
 
                     case 3:
                         // call sort first sky
-                        System.out.println("Will run sort first sky with params: ");
-                        System.out.println("N pages: "+_n_pages);
-                        System.out.println("Pref list: "+Arrays.toString(_pref_list));
-                        System.out.println("Pref list length: "+_pref_list.length);
-
-
-                        // create an iterator by open a file scan
-
-                        FileScan fscan = null;
-
-                        try {
-                            fscan = new FileScan(hFile, attrType, attrSize, (short) COLS, COLS, projlist, null);
-                        }
-                        catch (Exception e) {
-                            status = FAIL;
-                            e.printStackTrace();
-                        }
-
-                        SortFirstSky sortFirstSky = null;
-                        try {
-                            sortFirstSky = new SortFirstSky(attrType,
-                                                            (short) COLS,
-                                                            attrSize,
-                                                            fscan,
-                                                            (short)_t_size,
-                                                            hFile,
-                                                            _pref_list,
-                                                            _pref_list.length,
-                                                            _n_pages);
-                            while(sortFirstSky.hasNext()) {
-                                System.out.println("Skyline object: ");
-                                sortFirstSky.get_next().print(attrType);
-                            }
-
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        } catch (IndexException e) {
-                            e.printStackTrace();
-                        } catch (PredEvalException e) {
-                            e.printStackTrace();
-                        } catch (UnknowAttrType unknowAttrType) {
-                            unknowAttrType.printStackTrace();
-                        } catch (JoinsException e) {
-                            e.printStackTrace();
-                        } catch (InvalidTupleSizeException e) {
-                            e.printStackTrace();
-                        } catch (PageNotReadException e) {
-                            e.printStackTrace();
-                        } catch (UnknownKeyTypeException e) {
-                            e.printStackTrace();
-                        } catch (LowMemException e) {
-                            e.printStackTrace();
-                        } catch (InvalidTypeException e) {
-                            e.printStackTrace();
-                        } catch (SortException e) {
-                            e.printStackTrace();
-                        } catch (TupleUtilsException e) {
-                            e.printStackTrace();
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        } finally {
-                            status = OK;
-                            // clean up
-                            try {
-                                sortFirstSky.close();
-                            }
-                            catch (Exception e) {
-                                status = FAIL;
-                                e.printStackTrace();
-                            }
-                        }
-
+                        runSortFirstSky();
                         break;
 
                     case 4:
                         // call btree sky
-                        System.out.println("Will run b tree sky with params: ");
-                        System.out.println("N pages: "+_n_pages);
-                        System.out.println("Pref list: "+Arrays.toString(_pref_list));
-                        System.out.println("Pref list length: "+_pref_list.length);
+                    	runBtreeSky();
                         break;
 
                     case 5:
                         // call btree sort sky
-                        System.out.println("Will run btree sort sky with params: ");
-                        System.out.println("N pages: "+_n_pages);
-                        System.out.println("Pref list: "+Arrays.toString(_pref_list));
-                        System.out.println("Pref list length: "+_pref_list.length);
+                        runBtreeSortSky();
                         break;
 
                     case 0:
+                    	SystemDefs.JavabaseDB.DBDestroy();
                         break;
                 }
 
@@ -409,7 +354,183 @@ class Driver  extends TestDriver implements GlobalConst
 
             }
         }
+
         return true;
+    }
+
+    private void runNestedLoopSky(){
+        System.out.println("Will run nested loop skyline with params: ");
+        System.out.println("N pages: "+_n_pages);
+        System.out.println("Pref list: "+Arrays.toString(_pref_list));
+        System.out.println("Pref list length: "+_pref_list.length);
+
+        NestedLoopsSky nestedLoopsSky = null;
+
+        try {
+            nestedLoopsSky = new NestedLoopsSky(attrType,
+                    (short)COLS,
+                    attrSize,
+                    null,
+                    hFile,
+                    _pref_list,
+                    _pref_list.length,
+                    _n_pages);
+
+            System.out.println("Printing the Nested Loop Skyline");
+            Tuple temp = nestedLoopsSky.get_next();
+            while (temp!=null) {
+                temp.print(attrType);
+                temp = nestedLoopsSky.get_next();
+            }
+        
+		} catch (IOException | JoinsException | InvalidTupleSizeException | InvalidTypeException | PageNotReadException
+				| PredEvalException | UnknowAttrType | FieldNumberOutOfBoundException | WrongPermat
+				| TupleUtilsException | FileScanException | InvalidRelation e) {
+			e.printStackTrace();
+		} finally {
+            status = OK;
+            // clean up
+            try {
+                nestedLoopsSky.close();
+            }
+            catch (Exception e) {
+                status = FAIL;
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void blockNestedSky(){
+        System.out.println("Will run block nested loop skyline with params: ");
+        System.out.println("N pages: "+_n_pages);
+        System.out.println("Pref list: "+Arrays.toString(_pref_list));
+        System.out.println("Pref list length: "+_pref_list.length);
+
+        BlockNestedLoopsSky blockNestedLoopsSky = null;
+
+        try {
+            blockNestedLoopsSky = new BlockNestedLoopsSky(attrType,
+                    (short)COLS,
+                    attrSize,
+                    null,
+                    hFile,
+                    _pref_list,
+                    _pref_list.length,
+                    _n_pages);
+
+            System.out.println("Printing the Block Nested Loop Skyline");
+            Tuple temp;
+            try {
+                temp = blockNestedLoopsSky.get_next();
+                while (temp!=null) {
+                    temp.print(attrType);
+                    temp = blockNestedLoopsSky.get_next();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+       
+        } catch (IOException | FileScanException | TupleUtilsException | InvalidRelation e) {
+            e.printStackTrace();
+        } finally {
+            blockNestedLoopsSky.close();
+        }
+    }
+
+    private void runSortFirstSky() {
+
+        System.out.println("Will run sort first sky with params: ");
+        System.out.println("N pages: "+_n_pages);
+        System.out.println("Pref list: "+Arrays.toString(_pref_list));
+        System.out.println("Pref list length: "+_pref_list.length);
+
+        FileScan fscan = null;
+
+        try {
+            fscan = new FileScan(hFile, attrType, attrSize, (short) COLS, COLS, projlist, null);
+        }
+        catch (Exception e) {
+            status = FAIL;
+            e.printStackTrace();
+        }
+
+        SortFirstSky sortFirstSky = null;
+        try {
+            sortFirstSky = new SortFirstSky(attrType,
+                (short) COLS,
+                attrSize,
+                fscan,
+                (short)_t_size,
+                hFile,
+                _pref_list,
+                _pref_list.length,
+                _n_pages);
+            while(sortFirstSky.hasNext()) {
+                System.out.println("Skyline object: ");
+                sortFirstSky.get_next().print(attrType);
+            }
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            status = OK;
+            // clean up
+            try {
+                sortFirstSky.close();
+            }
+            catch (Exception e) {
+                status = FAIL;
+                e.printStackTrace();
+            }
+        }
+    }
+
+	private void runBtreeSky() throws Exception {
+		System.out.println("Will run b tree sky with params: ");
+		System.out.println("N pages: " + _n_pages);
+		System.out.println("Pref list: " + Arrays.toString(_pref_list));
+		System.out.println("Pref list length: " + _pref_list.length);
+		
+		if (individualBTreeIndexesCreated == false) {
+			BtreeGeneratorUtil.generateAllBtreesForHeapfile(hFile, f, attrType, attrSize);
+			individualBTreeIndexesCreated = true;
+		}
+		
+		int len_in1 = 4;
+		int amt_of_mem = 100; // TODO what should this be?
+		Iterator am1 = null;
+		String relationName = hFile;
+		//get only the btree indexes specified by the the pref_list array
+		IndexFile[] index_file_list = BtreeGeneratorUtil.getBtreeSubset(_pref_list);
+
+		BTreeSky btreesky = new BTreeSky(attrType, len_in1, attrSize, amt_of_mem, am1, relationName, _pref_list,
+				_pref_list.length, index_file_list, _n_pages);
+		btreesky.debug = false;
+		int numSkyEle = 0;
+		Tuple skyEle = btreesky.get_next(); // first sky element
+		System.out.print("First Sky element is: ");
+		skyEle.print(attrType);
+		numSkyEle++;
+		while (skyEle != null) {
+			skyEle = btreesky.get_next(); // subsequent sky elements
+			if (skyEle == null) {
+				System.out.println("No more sky elements");
+				break;
+			}
+			numSkyEle++;
+			System.out.print("Sky element is: ");
+			skyEle.print(attrType);
+		}
+		System.out.println("Skyline Length: "+numSkyEle);
+		btreesky.close();
+		System.out.println("End of runBtreeSky");
+	}
+
+	private void runBtreeSortSky() {
+        System.out.println("Will run btree sort sky with params: ");
+        System.out.println("N pages: "+_n_pages);
+        System.out.println("Pref list: "+Arrays.toString(_pref_list));
+        System.out.println("Pref list length: "+_pref_list.length);
     }
 }
 
@@ -453,14 +574,9 @@ public class AppDriver implements  GlobalConst{
 
     public static void main(String [] argvs) {
 
-        PCounter.initialize();
-
         try{
             Driver driver = new Driver();
             driver.runTests();
-
-            System.out.println("Read statistics "+PCounter.rcounter);
-            System.out.println("Write statistics "+PCounter.wcounter);
         }
         catch (Exception e) {
             System.err.println ("Error encountered during running main driver:\n");
