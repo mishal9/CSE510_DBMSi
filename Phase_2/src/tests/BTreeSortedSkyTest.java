@@ -10,7 +10,8 @@ import diskmgr.*;
 import global.*;
 import btree.*;
 
-class BTSortedSkyDriver  implements GlobalConst
+class BTSortedSkyDriver extends TestDriver
+implements GlobalConst
 {
 
   public BTreeFile file;
@@ -22,7 +23,7 @@ class BTSortedSkyDriver  implements GlobalConst
   protected String logpath;
   public int deleteFashion;
   
-  public void runTests () {
+  public boolean runTests () {
     Random random = new Random();
     dbpath = "BTREE" + random.nextInt() + ".minibase-db"; 
     logpath = "BTREE" + random.nextInt() + ".minibase-log"; 
@@ -84,27 +85,27 @@ class BTSortedSkyDriver  implements GlobalConst
     System.out.print ("\n" + "..." + " Finished ");
     System.out.println (".\n\n");
     
+    return true;
+    
   }
 
   
-  protected void runAllTests () {
+  protected boolean runAllTests () {
 	  
 	  BTFileScan scan;
       KeyDataEntry entry;
       System.out.println("CombinedBTreeIndex scanning");
-      int [] pref_list = new int[] {1,0,1};
-      int pref_list_length = 3;
+      int [] pref_list = new int[] {1,0,1,0,1};
+      int pref_list_length = 5;
       
       try {
     	  
 	      GenerateIndexFiles obj = new GenerateIndexFiles();
-	      IndexFile indexFile = obj.createCombinedBTreeIndex("/Users/kunjpatel/Desktop/CSE510_DBMSi/Phase_2/data/subset2.txt",pref_list, pref_list_length);
+	      IndexFile indexFile = obj.createCombinedBTreeIndex("/Users/kunjpatel/Desktop/CSE510_DBMSi/Phase_2/data/subset.txt",pref_list, pref_list_length);
 	      System.out.println("Index created! ");
 	      scan = ((BTreeFile) indexFile).new_scan(null, null);
-	       
 	      
 	      Heapfile hf = new Heapfile("heap_" + "AAA");
-	      Scan heap_scan = new Scan(hf);
 	      
 	      RID rid;
 	      entry = scan.get_next();
@@ -123,13 +124,15 @@ class BTSortedSkyDriver  implements GlobalConst
 	      
 	      BTreeSortedSky btree = new BTreeSortedSky(attrType, pref_list_length, Ssizes, 0, null, "heap_AAA", pref_list, pref_list_length, indexFile, 10 );
 	      
-	      btree.computeSkylines(null, null, null);
+	      btree.startLoop();
 	  
 	      System.out.println("AT THE END OF SCAN!");
       
       } catch (Exception e) {
     	  e.printStackTrace();
       }
+      
+      return true;
   }
   
 }

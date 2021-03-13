@@ -11,6 +11,7 @@ import global.AttrType;
 import global.GlobalConst;
 import global.RID;
 import btree.*;
+import heap.FieldNumberOutOfBoundException;
 import heap.HFBufMgrException;
 import heap.HFDiskMgrException;
 import heap.HFException;
@@ -109,28 +110,8 @@ public class BTreeSortedSky implements GlobalConst {
 	
 	
 	
-	public void computeSkylines(String file, SortPref sort, Heapfile tmp) throws InvalidSlotNumberException, InvalidTupleSizeException, Exception {
-//
-//        /*
-//        SORT FIRST SKY:
-//
-//        1. Put the first <n_pages> sorted tuples in main memory
-//        2. Compare the rest against the ones in main memory
-//            1. If tuple in heap file is dominated by at least one in main memory - simply discard it from heap
-//            2. If tuple in heap file dominates any one in main memory - replace the tuple with the one in main memory
-//            3. If tuple is not dominated by any tuple in main memory - put into temp heap file
-//        3. At end - return both temp heap + main memory objects
-//
-//
-//        Scenarios:
-//
-//        If tuple heap_tuple (dominated by):
-//	        dominated by tuple memory_tuple -> discard heap_tuple
-//	        not dominated by any of tuple memory_tuple -> put into temp heap
-//        If tuple heap_tuple  (dominates):
-//	        dominates memory_tuple -> discard memory_tuple
-//         */
-		
+	public void startLoop() throws InvalidSlotNumberException, InvalidTupleSizeException, Exception {
+
 		Heapfile hf = new Heapfile("heap_" + "AAA");
 		temp = new Heapfile("sortFirstSkyTemp.in");
 		
@@ -143,7 +124,6 @@ public class BTreeSortedSky implements GlobalConst {
 		_window = new Tuple[(MINIBASE_PAGESIZE / t.size()) * n_pages];
 		
 		System.out.println("SIZE: " + (MINIBASE_PAGESIZE / t.size()) * n_pages);
-		//Getting the first tuple
 	    entry = scan.get_next();
 	    
 	    int count = 0;
@@ -153,18 +133,22 @@ public class BTreeSortedSky implements GlobalConst {
         	rid = ((LeafData) entry.data).getData();
         	temp.tupleCopy(hf.getRecord(rid));
         	temp.print(attrType); 
-        	_window[count++] = temp;
+        	
+        	boolean isDominatedByWindow = checkDominationForWindowTuples(temp,count);
+        	
+        	if(!isDominatedByWindow) {
+        		_window[count++] = temp;
+        	}
+        	
             entry = scan.get_next();
         }
 	    
-	    System.out.println("In memory objects");
-        for(int i=0; i<_window.length; i++) {
-            if(_window[i] != null)
-                _window[i].print(attrType);
-        }
-           
-        int d = 0;
-        
+//	    System.out.println("In memory objects");
+//        for(int i=0; i<_window.length; i++) {
+//            if(_window[i] != null) {}
+//                _window[i].print(attrType);
+//        }
+                   
         while (entry != null) {
             boolean isDominatedBy = false;
             
@@ -172,43 +156,28 @@ public class BTreeSortedSky implements GlobalConst {
             
             rid = ((LeafData) entry.data).getData();
             htuple.tupleCopy(hf.getRecord(rid));
-//            try {
-//                /*
-//                Compare the rest against the ones in main memory
-//                1. If tuple in heap file is dominated by at least one in main memory - simply discard it from heap
-//                2. If tuple in heap file dominates any one in main memory - replace the tuple with the one in main memory
-//                3. If tuple is not dominated by any tuple in main memory - put into temp heap file
-//                */
+
             	
                 for(int i=0; i<_window.length; i++){
-                	System.out.println("DOMINATES: " + TupleUtils.Dominates(_window[i] , attrType, htuple, attrType, (short) attr_len, t1_str_sizes, pref_list, pref_list_length));
-                    if (TupleUtils.Dominates(_window[i] , attrType, htuple, attrType, (short) attr_len, t1_str_sizes, pref_list, pref_list_length)) {
-                        // 2. If tuple in heap file dominates any one in main memory - replace the tuple with the one in main memory
+                    if (TupleUtils.DominatesForCombinedTree(_window[i] , attrType, htuple, attrType, (short) attr_len, t1_str_sizes, pref_list, pref_list_length)) {
                     	isDominatedBy = true;
                         System.out.println("Heap tuple");
                         htuple.print(attrType);
                         System.out.println("Dominated by ");
                         _window[i].print(attrType);
-//                      _window[i] = htuple;
                         break;
                     } 
                 }
 
                 if(!isDominatedBy){
-                    // 3. If tuple is not dominated by any tuple in main memory - put into temp heap file
-                    // Tuple remained un-dominated -> potential skyline object
-                    // check if space left in window
-                    // else put in temp heaps
-                	d++;
-//                	htuple.print(attrType);
                     try {
                         rid = temp.insertRecord(htuple.returnTupleByteArray());
+                        
                     }
                     catch (Exception e) {
                         status = FAIL;
                         e.printStackTrace();
                     }
-//                    System.out.println("Is not Dominated by any window objects");
                 } 
               entry = scan.get_next();
         }
@@ -217,15 +186,36 @@ public class BTreeSortedSky implements GlobalConst {
         for(int i=0; i<_window.length; i++){
             if(_window[i] != null) {
                 _window[i].print(attrType);
-//                d++;
             }
         }
         
-        System.out.println("Data length: " + _window.length);
-        System.out.println("Total count: " + d);
+        System.out.println("HEAP ELEMENTS: " + temp.getRecCnt());
+        System.out.println("WINDOW SIZE: " + _window.length);
 
         return;
     }
+	
+	
+	private BTFileScan computeSkyline(BTFileScan scan, Tuple _window) {
+		 
+		
+		
+		
+		return scan;
+	}
+	
+	
+	private boolean checkDominationForWindowTuples(Tuple temp, int count) throws TupleUtilsException, UnknowAttrType, FieldNumberOutOfBoundException, IOException {
+		if(count == 0) return false;
+		
+		for(int i = 0; i < count; i++) {
+			if (TupleUtils.DominatesForCombinedTree(_window[i] , attrType, temp, attrType, (short) attr_len, t1_str_sizes, pref_list, pref_list_length)) {
+				return true;
+			}
+		}
+		
+		return false;
+	}
 	
 	
 	private Tuple getEmptyTuple() throws InvalidTypeException, InvalidTupleSizeException, IOException {
