@@ -851,24 +851,34 @@ public class BufMgr implements GlobalConst{
     
   } // end of write_page
   
+  /** 
+   * This function will clear the buffer manager data and reduce the allowed limit of pages to specified number
+   *
+   * @param operation boolean to enable and disable this feature
+   * @param n_pages number of pages to allowed for the buffer manager operations from now on
+   */
   public void limit_memory_usage(boolean operation, int n_pages) {
 	  if ( operation == true ) {
-		  System.out.println("occupied buffer before this are: " + (numBuffers - replacer.getNumUnpinnedBuffers()));
-		  
+		  /* initialise the buffer manager variables 
+		   * Make sure that all the pages are unpinned annd flushed before calling this function
+		   */
 		  frmeTable = new FrameDesc[numBuffers];
 	      bufPool = new byte[numBuffers][MAX_SPACE];
 	      for (int i=0; i<numBuffers; i++)  // initialize frameTable
 	    		frmeTable[i] = new FrameDesc();
+	      
+	      /* enabling it without disabling it */
 		  if ( limit_memory_usage == false )
 			  restore_num_buf = numBuffers;
 		  numBuffers = n_pages;
 		  limit_memory_usage = true;
-		  System.out.println("numbuf: "+ numBuffers);
-		  System.out.println(" restore: "+ restore_num_buf);
+		  System.out.println("Number of buffer manager pages to be used now onwards: "+ numBuffers);
+		  System.out.println("Total number of buffer manager pages: "+ restore_num_buf);
 		  hashTable.initer();
 	  }
 	  else
 	  {
+		  /* disable the feature and let buffer manager function normally with total number of pages */
 		  limit_memory_usage = false;
 		  numBuffers = restore_num_buf;
 	  }

@@ -10,25 +10,51 @@ import java.util.Arrays;
 
 /**
  *use the iterator and relationName to compute the skyline using nested loop method
- *output file, call get_next to get all tuples
+ *output file, call get_next to get next tuple in the skyline
  */
 public class NestedLoopsSky extends Iterator
 {
+	/* Tuple attributes array */
     private AttrType[]  _in1;
+    
+    /* number of attributes for any tuple */
     private short        _len_in1;
+    
+    /* length of the string fields in the tuple */
     private short[]     _t1_str_sizes;
-    //private FileScan    _outer_iterator;
-    //private FileScan    _inner_iterator;
+    
+    /* filename for the file containing tuples */
     private String      _relation_name;
+    
+    /* indices of attributes of a tuple to be considered for the skyline */
     private int[]       _pref_list;
+    
+    /* number of attributes of a tuple to be considered for the skyline */
     private int         _pref_list_length;
+    
+    /* number of pages available for the skyline operation */
     private int         _n_pages;
-    private Tuple       _next_skyline_element;
+    
+    /* heap file containing our data on which skyline is computed */
     private Heapfile    _heap_file;
+    
+    /* stores the status of each operation */
     private boolean     _status;
-    private Scan        _scan;
+    
+    /* inner scan on the heapfile containing the data */
+    private Scan        _inner_scan;
+    
+    /* outer scan on the heapfile containing the data */ 
     private Scan        _outer_scan;
-
+    
+    /* iterator over the data ( NULL in our implementation )*/
+    private Iterator    _itr;
+    
+    /* tuples used for computation during the skyline -- for debug purposes */
+    private Tuple       outer_candidate, inner_candidate, outer_candidate_temp, inner_candidate_temp;
+    
+    /* size of the tuples inthe skyline */
+    private int         _tuple_size;
 
     /**
      *constructor
@@ -36,9 +62,9 @@ public class NestedLoopsSky extends Iterator
      *@param len_in1  number of attributes in the input tuple
      *@param t1_str_sizes  shows the length of the string fields
      *@param relationName heapfile to be opened
-     *@param n_out_flds  number of fields in the out tuple
-     *@param proj_list  shows what input fields go where in the output tuple
-     *@param outFilter  select expressions
+     *@param pref_list array of the indices of the preferred attributes
+     *@param pref_list_length number of preferred attributes
+     *@param n_pages number of pages available for the skyline operation
      *@exception IOException some I/O fault
      *@exception FileScanException exception from this class
      *@exception TupleUtilsException exception from this class
@@ -63,52 +89,47 @@ public class NestedLoopsSky extends Iterator
         this._in1 = in1;
         this._len_in1 = (short)len_in1;
         this._t1_str_sizes = t1_str_sizes;
-        //this._outer_iterator = (FileScan)am1;
+        this._itr = am1;
         this._relation_name = relationName;
         this._pref_list = pref_list;
         this._pref_list_length = pref_list_length;
         this._n_pages = n_pages;
-        this._next_skyline_element = null;
-        this._scan = null;
-
-        System.out.println("Attr  types"+ Arrays.toString(this._in1));
-        System.out.println("Attr types length "+ (this._len_in1));
-        System.out.println("Str sizes "+ Arrays.toString(this._t1_str_sizes));
-        System.out.println("Prefernce list "+ Arrays.toString(this._pref_list));
-        System.out.println("N pages"+ _n_pages);
-
+        this._inner_scan = null;
+        SystemDefs.JavabaseBM.limit_memory_usage(true, this._n_pages);
         try {
-        	SystemDefs.JavabaseBM.limit_memory_usage(true, this._n_pages);
+        	/* open the data heap file */
         	this._heap_file = new Heapfile(this._relation_name);
+        	/* open a scan on the heap file */
+            this._outer_scan = this._heap_file.openScan();
             this._status = true;
         }
         catch (Exception e) {
             System.err.println("Could not open the heapfile");
             e.printStackTrace();
         }
-
-        /*outer_candidate = this._outer_iterator.get_next();*/
-        if ( this._status == true )
-        {
-            try
-            {
-                this._outer_scan = this._heap_file.openScan();
-            }
-            catch (Exception e)
-            {
-                this._status = false;
-                System.err.println ("*** Error opening scan\n");
-                e.printStackTrace();
-            }
-        }
-
+        
+        /* initialise the tuple size */
+        try {
+        	outer_candidate_temp = new Tuple();
+			outer_candidate_temp.setHdr(this._len_in1, this._in1, this._t1_str_sizes);
+			this._tuple_size = this.outer_candidate_temp.size();
+		} catch (InvalidTypeException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InvalidTupleSizeException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 
     }
 
 
 
     /**
-     *@return the result tuple
+     *@return Tuple next tuple in the skyline
      *@exception JoinsException some join exception
      *@exception IOException I/O errors
      *@exception InvalidTupleSizeException invalid tuple size
@@ -130,36 +151,35 @@ public class NestedLoopsSky extends Iterator
             FieldNumberOutOfBoundException,
             WrongPermat, TupleUtilsException 
     {
-        /* read the next tuple from outer_iterator
-         * Assumption here is that inner iterator is a filescan iterator */
-        Tuple outer_candidate = new Tuple();
+    	/* ---------------------------------------------Algorithm ----------------------------------------------- 
+    	 * step 1: set the size of the tuples to be compared and returned
+    	 * step 2: on each iteration, start comparing the outer scan tuple with all the inner scan tuples
+    	 * step 3: return the outer scan tuple if it is not dominated by any tuple in the inner scan
+    	 * 
+    	 * The function returns the next skyline element or null if skyline is over
+    	 */
+        
+    	this.outer_candidate = new Tuple(this._tuple_size);
         outer_candidate.setHdr(this._len_in1, this._in1, this._t1_str_sizes);
-        int size = outer_candidate.size();
-        outer_candidate = new Tuple(size);
-        outer_candidate.setHdr(this._len_in1, this._in1, this._t1_str_sizes);
-        Tuple inner_candidate = new Tuple(size);
+        this.inner_candidate = new Tuple(this._tuple_size);
         inner_candidate.setHdr(this._len_in1, this._in1, this._t1_str_sizes);
         RID temp = new RID();
-        Tuple outer_candidate_temp, inner_candidate_temp;
         while (true)
         {
-            
-            /*outer_candidate = this._outer_iterator.get_next();*/
-            outer_candidate_temp = this._outer_scan.getNext(temp);
-            if (outer_candidate_temp == null)
+            this.outer_candidate_temp = this._outer_scan.getNext(temp);
+            if (this.outer_candidate_temp == null)
             {
                 System.out.println("No more records in skyline. All records already scanned.");
                 SystemDefs.JavabaseBM.limit_memory_usage(false, this._n_pages);
                 return null;
             }
-            //outer_candidate1.print(this._in1);
-            outer_candidate.tupleCopy(outer_candidate_temp);
-            /* open a scan on the heapfile/relationname for inner loop */
+            this.outer_candidate.tupleCopy(outer_candidate_temp);
             if ( this._status == true )
             {
                 try
                 {
-                    this._scan = this._heap_file.openScan();
+                	/* another scan on the data heap file */
+                    this._inner_scan = this._heap_file.openScan();
                 }
                 catch (Exception e)
                 {
@@ -172,20 +192,18 @@ public class NestedLoopsSky extends Iterator
             boolean inner_dominates_outer = false;
             while (!inner_scan_complete)
             {
-                inner_candidate_temp = this._scan.getNext(temp);
-                //System.out.println("Comparing "+inner_candidate_temp);
-                if (inner_candidate_temp == null)
+                this.inner_candidate_temp = this._inner_scan.getNext(temp);
+                if (this.inner_candidate_temp == null)
                 {
                     inner_scan_complete = true;
                 }
                 else
                 {
                     /* compare the outer loop tuple with inner loop tuple */
-                	inner_candidate.tupleCopy(inner_candidate_temp);
-                	//inner_candidate.print(this._in1);
-                    inner_dominates_outer = TupleUtils.Dominates(inner_candidate,
+                	this.inner_candidate.tupleCopy(inner_candidate_temp);
+                    inner_dominates_outer = TupleUtils.Dominates(this.inner_candidate,
                             									 this._in1,
-                            									 outer_candidate,
+                            									 this.outer_candidate,
                             									 this._in1,
                             									 this._len_in1,
                             									 this._t1_str_sizes,
@@ -199,9 +217,10 @@ public class NestedLoopsSky extends Iterator
             }
             if (inner_dominates_outer == false)
             {
-                return outer_candidate;
+            	/* no one dominated the outer loop tuple and hence it belongs to the skyline */
+                return this.outer_candidate;
             }
-            this._scan.closescan();
+            this._inner_scan.closescan();
         }
     }
 
@@ -214,10 +233,8 @@ public class NestedLoopsSky extends Iterator
         if (!closeFlag)
         {
             closeFlag = true;
+            this._outer_scan.closescan();
         }
-
-       // _scan.closescan();
-        //_outer_scan.closescan();
     }
 
 }
