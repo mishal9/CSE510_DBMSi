@@ -3,6 +3,8 @@ package btree;
 import java.io.*;
 import java.security.Key;
 import java.util.*;
+
+
 import java.lang.*;
 
 import heap.*;
@@ -45,6 +47,16 @@ public class GenerateIndexFiles{
         }
         return sb.toString();
     }
+    
+    float create_key_float(double[] values, int[] pref_list, int pref_list_length) {
+		float sum = 0.0f;
+		for(int i = 0; i < values.length; i++) {
+			if(pref_list[i] == 1) {
+				sum += (float) values[i];
+			}
+		}
+		return sum;
+	}
 
     private double[][] readFile(String filePath) throws FileNotFoundException {
         File dfile = new File(filePath);
@@ -68,42 +80,50 @@ public class GenerateIndexFiles{
         return ret;
     }
 
-    public IndexFile createCombinedBTreeIndex(String filePath)
+    public IndexFile createCombinedBTreeIndex(String filePath, int[] pref_list, int pref_list_length)
             throws IOException, AddFileEntryException, GetFileEntryException, ConstructPageException, HashEntryNotFoundException, IteratorException, InvalidFrameNumberException, PageUnpinnedException, ReplacerException, NodeNotMatchException, UnpinPageException, LeafInsertRecException, IndexSearchException, InsertException, PinPageException, ConvertException, DeleteRecException, KeyNotMatchException, LeafDeleteException, KeyTooLongException, IndexInsertRecException, HFDiskMgrException, HFBufMgrException, HFException, FieldNumberOutOfBoundException, InvalidSlotNumberException, SpaceNotAvailableException, InvalidTupleSizeException, InvalidTypeException {
 
         double[][] records = readFile(filePath);
-        String filename = "AAA"+prefix++;
+        String filename = "AAA";
         int COLS = records.length;
 
-        int keyType = AttrType.attrString;
-        int keySize = 1 + (13 * COLS);
+        int keyType = AttrType.attrReal;
+        int keySize = 4;
 
         Heapfile heapfile = new Heapfile("heap_" + filename);
+        
+
         file = new BTreeFile(filename, keyType, keySize, 1);
 
-        AttrType [] Stypes = new AttrType[COLS];
-        for(int i=0;i<COLS;i++){Stypes[i] = new AttrType (AttrType.attrReal);}
+        AttrType [] Stypes = new AttrType[pref_list_length];
+        for(int i=0;i<pref_list_length;i++){Stypes[i] = new AttrType (AttrType.attrReal);}
         Tuple t = new Tuple();
         short [] Ssizes = null;
 
-        t.setHdr((short) COLS,Stypes, Ssizes);
+        t.setHdr((short) pref_list_length,Stypes, Ssizes);
         int size = t.size();
+        
 
         t = new Tuple(size);
-        t.setHdr((short) COLS, Stypes, Ssizes);
+        t.setHdr((short) pref_list_length, Stypes, Ssizes);
 
-        KeyClass key;
         RID rid;
-        String skey;
+        
+        float fkey;
+        KeyClass ffkey;
+        
         for(double[] value :records){
-            skey = create_key(value);
-            key = new StringKey(skey);
+            
+            fkey = create_key_float(value, pref_list, pref_list_length);
+            ffkey = new FloatKey(-fkey);
 
             for(int i=0; i<value.length; i++) {
                 t.setFloFld(i+1, (float) value[i]);
             }
+            
             rid = heapfile.insertRecord(t.returnTupleByteArray());
-            file.insert(key, rid);
+                       
+            file.insert(ffkey, rid);
         }
         return file;
     }
