@@ -226,6 +226,19 @@ public class BTreeSky extends Iterator implements GlobalConst {
 		}
 		//run block nested loop skyline on the pruned data now
 		
+		//close all btree scans and btree index files
+		for (int i = 0; i < numberOfBtreeIndexes; i++) {
+			fullBtreeIndexScans[i].DestroyBTreeFileScan();
+			btreeindexes[i].close();
+			setArr[i].close();
+			
+		}
+		
+		if(true) {
+			System.out.println("getNumUnpinnedBuffers "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
+			System.out.println("getNumBuffers "+SystemDefs.JavabaseBM.getNumBuffers());
+		}
+		SystemDefs.JavabaseBM.flushAllPages();
 		Iterator bnlIterator = null;
 		blockNestedLoopSkyline = new BlockNestedLoopsSky(attrType, attrType.length, t1_str_sizes, bnlIterator, prunedHeapFileName, pref_list, pref_length_list, n_pages);
 	}

@@ -502,7 +502,7 @@ class Driver extends TestDriver implements GlobalConst
 		String relationName = hFile;
 		//get only the btree indexes specified by the the pref_list array
 		IndexFile[] index_file_list = BtreeGeneratorUtil.getBtreeSubset(_pref_list);
-
+		PCounter.initialize();
 		BTreeSky btreesky = new BTreeSky(attrType, len_in1, attrSize, amt_of_mem, am1, relationName, _pref_list,
 				_pref_list.length, index_file_list, _n_pages);
 		btreesky.debug = false;
@@ -524,6 +524,9 @@ class Driver extends TestDriver implements GlobalConst
 		System.out.println("Skyline Length: "+numSkyEle);
 		btreesky.close();
 		System.out.println("End of runBtreeSky");
+		 System.out.println("Number of Disk reads: "+ PCounter.get_rcounter());
+         System.out.println("Number of Disk writes: "+ PCounter.get_wcounter());
+         PCounter.initialize();
 	}
 
 	private void runBtreeSortSky() {
