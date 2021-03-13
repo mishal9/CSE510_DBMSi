@@ -221,9 +221,9 @@ public class BTreeSky extends Iterator implements GlobalConst {
 			scan.closescan();
 
 		}
-		if(true) {
-			System.out.println("prunedDataFile count --> "+prunedDataFile.getRecCnt());
-		}
+		
+		System.out.println("Will now run Block Nested Loop Skyline on \n Pruned DataFile record count: "+prunedDataFile.getRecCnt());
+		
 		//run block nested loop skyline on the pruned data now
 		
 		//close all btree scans and btree index files

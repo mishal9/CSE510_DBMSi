@@ -110,16 +110,14 @@ class Driver extends TestDriver implements GlobalConst
     }
 
     private void menu() {
-        System.out.println("-------------------------- MENU ------------------");
-        System.out.println("[102]   Read input data 2");
-        System.out.println("[103]   Read input data 3");
-        System.out.println("[104]   Set pref = [1]");
-        System.out.println("[105]   Set pref = [1,3]");
-        System.out.println("[106]   Set pref = [1,3,5]");
-        System.out.println("[107]   Set pref = [1,2,3,4,5]");
-        System.out.println("[108]   Set n_page = 5");
-        System.out.println("[109]   Set n_page = 10");
-        System.out.println("[110]   Set n_page = <your_wish>");
+        System.out.println("------------SKYLINE PROCESSING MENU ------------------");
+        System.out.println("[101]   Set pref = [1]");
+        System.out.println("[102]   Set pref = [1,3]");
+        System.out.println("[103]   Set pref = [1,3,5]");
+        System.out.println("[104]   Set pref = [1,2,3,4,5]");
+        System.out.println("[105]   Set n_page = 5");
+        System.out.println("[106]   Set n_page = 10");
+        System.out.println("[107]   Set n_page = <your_wish>");
         System.out.println("[1]  Run Nested Loop skyline on data with parameters ");
         System.out.println("[2]  Run Block Nested Loop on data with parameters ");
         System.out.println("[3]  Run Sort First Sky on data with parameters ");
@@ -129,7 +127,41 @@ class Driver extends TestDriver implements GlobalConst
         System.out.print("Hi, make your choice :");
     }
     
-    private void readDataIntoHeap(String fileName) throws IOException, InvalidTupleSizeException, InvalidTypeException, InvalidSlotNumberException, HFDiskMgrException, HFBufMgrException, HFException {
+    private void dbcreationmenu() {
+    	 System.out.println("------------------DB CREATION MENU ------------------");
+         System.out.println("[1]   Read input data data2.txt");
+         System.out.println("[2]   Read input data data3.txt");
+         System.out.println("[3]   Read input data data_large_skyline.txt");
+         System.out.print("Hi, make your choice :");
+         int choice= GetStuff.getChoice();
+         String dataFile = "";
+         switch(choice) {
+         case 1:
+        	 dataFile = "data/data2.txt";
+        	 break;
+         case 2:
+        	 dataFile = "data/data3.txt";
+        	 break;
+         case 3:
+        	 dataFile = "data/data_large_skyline.txt";
+        	 break;
+         default:
+        	 System.err.println("Invalid Choice");
+        	 System.exit(-1);
+        	 break;        	 
+         }
+		try {
+			readDataIntoHeap(dataFile);
+			BtreeGeneratorUtil.generateAllBtreesForHeapfile(hFile, f, attrType, attrSize);
+			individualBTreeIndexesCreated = true;
+			System.out.println("DATABASE CREATED");
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.exit(-1);
+		}
+    }
+    
+    private void readDataIntoHeap(String fileName) throws IOException, InvalidTupleSizeException, InvalidTypeException, InvalidSlotNumberException, HFDiskMgrException, HFBufMgrException, HFException, HashOperationException, PageUnpinnedException, PagePinnedException, PageNotFoundException, BufMgrException {
 
         // Create the heap file object
         try {
@@ -182,7 +214,7 @@ class Driver extends TestDriver implements GlobalConst
 
             int size = t.size();
             _t_size = t.size();
-            System.out.println("Size: "+size);
+            //System.out.println("Size: "+size);
 
             t = new Tuple(size);
             try {
@@ -223,30 +255,12 @@ class Driver extends TestDriver implements GlobalConst
 
                 //System.out.println("RID: "+rid);
             }
-            System.out.println("record count "+f.getRecCnt());
+            System.out.println("Number of records in Database: "+f.getRecCnt());
             sc.close();
         }
-        try {
-			SystemDefs.JavabaseBM.flushAllPages();
-		} catch (HashOperationException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (PageUnpinnedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (PagePinnedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (PageNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (BufMgrException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+       
+		SystemDefs.JavabaseBM.flushAllPages();
+		
     }
 
     protected String testName () {
@@ -255,56 +269,51 @@ class Driver extends TestDriver implements GlobalConst
 
 	protected boolean runAllTests (){
         int choice=100;
-               
+        
+        dbcreationmenu();
+       
         while(choice!=0) {
             menu();
-
+           
             try{
+            	
                 choice= GetStuff.getChoice();
 
                 switch(choice) {
 
-                    case 102:
-                        readDataIntoHeap("data/data_large_skyline.txt");
-                        BtreeGeneratorUtil.generateAllBtreesForHeapfile(hFile, f, attrType, attrSize);
-                        individualBTreeIndexesCreated = true;
-                        break;
-
-                    case 103:
-                        readDataIntoHeap("data/data3.txt");
-                        BtreeGeneratorUtil.generateAllBtreesForHeapfile(hFile, f, attrType, attrSize);
-                        individualBTreeIndexesCreated = true;
-                        break;
-
-                    case 104:
+                   
+                    case 101:
                         _pref_list = new int[]{1};
                         break;
 
-                    case 105:
+                    case 102:
                         _pref_list = new int[]{1,2};
                         break;
 
-                    case 106:
+                    case 103:
                         _pref_list = new int[]{1,3,5};
                         break;
 
-                    case 107:
+                    case 104:
                         _pref_list = new int[]{1,2,3,4,5};
                         break;
 
-                    case 108:
+                    case 105:
                         _n_pages = 5;
+                        System.out.println("n_pages set to :" + _n_pages);
                         break;
 
-                    case 109:
+                    case 106:
                         _n_pages = 10;
+                        System.out.println("n_pages set to :" + _n_pages);
                         break;
 
-                    case 110:
+                    case 107:
                         System.out.println("Enter n_pages of your choice: ");
                         _n_pages = GetStuff.getChoice();
                         if(_n_pages<0)
                             break;
+                        System.out.println("n_pages set to :" + _n_pages);
                         break;
 
                     case 1:
@@ -549,7 +558,6 @@ class GetStuff {
     GetStuff() {}
 
     public static int getChoice () {
-
         BufferedReader in = new BufferedReader (new InputStreamReader(System.in));
         int choice = -1;
 
