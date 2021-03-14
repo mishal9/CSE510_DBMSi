@@ -99,7 +99,7 @@ public class BTreeSortedSky extends Iterator implements GlobalConst {
 
 
 
-	public void computeSkylines() throws InvalidSlotNumberException, InvalidTupleSizeException, Exception {
+	public void computeSkylines() throws  Exception {
 		Heapfile hf = new Heapfile("heap_" + "AAA");
 		temp = new Heapfile("sortFirstSkyTemp.in");
 		BTFileScan scan = ((BTreeFile) index_file).new_scan(null, null);
@@ -236,7 +236,7 @@ public class BTreeSortedSky extends Iterator implements GlobalConst {
 	@Override
 	public void close() throws IOException, JoinsException, SortException, IndexException {
 		// TODO Auto-generated method stub
-		bnls.close();
+		this.bnls.close();
 		try {
 			temp.deleteFile();
 		} catch (InvalidSlotNumberException e) {

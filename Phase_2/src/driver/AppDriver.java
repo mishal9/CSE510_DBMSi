@@ -129,16 +129,19 @@ class Driver extends TestDriver implements GlobalConst
          System.out.println("[2]   Read input data data3.txt");
          System.out.println("[3]   Read input data data_large_skyline.txt");
          System.out.print("Hi, make your choice :");
-         int choice= GetStuff.getChoice();
+
+        String OS = System.getProperty("os.name").toLowerCase();
+
+        int choice= GetStuff.getChoice();
          switch(choice) {
          case 1:
-        	 dataFile = "data/data2.txt";
+        	 dataFile = OS.indexOf("mac") >= 0 ? "../../data/data2.txt" : "data/data2.txt";
         	 break;
          case 2:
-        	 dataFile = "data/data3.txt";
+        	 dataFile = OS.indexOf("mac") >= 0 ? "../../data/data3.txt" : "data/data3.txt";
         	 break;
          case 3:
-        	 dataFile = "data/data_large_skyline.txt";
+        	 dataFile = OS.indexOf("mac") >= 0 ? "../../data/data_large_skyline.txt" : "data/data_large_skyline.txt";
         	 break;
          default:
         	 System.err.println("Invalid Choice");
@@ -148,7 +151,7 @@ class Driver extends TestDriver implements GlobalConst
 		try {
 			System.out.println("Reading file: "+dataFile);
 			readDataIntoHeap(dataFile);
-			BtreeGeneratorUtil.generateAllBtreesForHeapfile(hFile, f, attrType, attrSize);
+			//BtreeGeneratorUtil.generateAllBtreesForHeapfile(hFile, f, attrType, attrSize);
 			individualBTreeIndexesCreated = true;
 			System.out.println("DATABASE CREATED");
 		} catch (Exception e) {
@@ -276,8 +279,6 @@ class Driver extends TestDriver implements GlobalConst
                 choice= GetStuff.getChoice();
 
                 switch(choice) {
-
-                   
                     case 101:
                         _pref_list = new int[]{1};
                         break;
