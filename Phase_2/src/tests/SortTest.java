@@ -2,11 +2,9 @@ package tests;
 
 import java.io.*; 
 import global.*;
-import bufmgr.*;
-import diskmgr.*;
 import heap.*;
 import iterator.*;
-import index.*;
+
 import java.util.Random;
 
 
@@ -56,7 +54,7 @@ class SORTDriver extends TestDriver
     super("sorttest");
   }
 
-  public boolean runTests ()  {
+  public boolean runTests () throws HFDiskMgrException, HFException, HFBufMgrException, IOException {
     
     System.out.println ("\n" + "Running " + testName() + " tests...." + "\n");
     

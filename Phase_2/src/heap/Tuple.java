@@ -214,7 +214,7 @@ public class Tuple implements GlobalConst{
     * @exception   FieldNumberOutOfBoundException Tuple field number out of bound
     */
 
-    public float getFloFld(int fldNo) 
+    public float getFloFld(int fldNo)
     	throws IOException, FieldNumberOutOfBoundException
      {
 	float val;
@@ -495,7 +495,7 @@ public void setHdr (short numFlds,  AttrType types[], short strSizes[])
    }
    System.out.print(", ");
  } 
- 
+
  switch(type[fldCnt-1].attrType) {
 
    case AttrType.attrInteger:
@@ -517,11 +517,26 @@ public void setHdr (short numFlds,  AttrType types[], short strSizes[])
    case AttrType.attrSymbol:
      break;
    }
+
    System.out.println("]");
 
  }
 
-  /**
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        Tuple other = (Tuple) obj;
+        if (data != other.data)
+            return false;
+        return true;
+    }
+
+    /**
    * private method
    * Padding must be used when storing different types.
    * 

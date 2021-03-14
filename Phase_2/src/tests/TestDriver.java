@@ -57,8 +57,10 @@ public class TestDriver {
     //To port it to a different platform, get "user.name" should
     //still work well because this feature is not meant to be UNIX
     //dependent. 
-    dbpath = "/tmp/"+nameRoot+System.getProperty("user.name")+".minibase-db"; 
-    logpath = "/tmp/"+nameRoot +System.getProperty("user.name")+".minibase-log"; 
+	long time=System.currentTimeMillis();
+	time=10;
+	dbpath = "nls" + time + ".minibase-db";
+	logpath = "nls" + time + ".minibase-log";
   }
 
   /**
@@ -80,7 +82,7 @@ public class TestDriver {
   /** 
    * @return whether the test has completely successfully 
    */
-  protected boolean test3 () { return true; }
+  protected boolean test3 () throws IOException { return true; }
 
   /** 
    * @return whether the test has completely successfully 
