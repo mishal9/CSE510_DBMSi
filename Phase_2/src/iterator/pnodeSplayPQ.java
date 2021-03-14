@@ -167,13 +167,13 @@ public class pnodeSplayPQ extends pnodePQ
 	 *                           <code>attrNull</code> encountered
 	 * @exception TupleUtilsException error in tuple compare routines
 	 */
-	public void enq(pnode item,
+	public void enqPref(pnode item,
 					AttrType[] type,
 					short len_in,
 					short[] str_sizes,
 					int[] pref_list,
 					int pref_list_length)
-			throws IOException, FieldNumberOutOfBoundException {
+			throws IOException, FieldNumberOutOfBoundException, UnknowAttrType, TupleUtilsException {
 		count ++;
 		pnodeSplayNode newnode = new pnodeSplayNode(item);
 		pnodeSplayNode t = root;

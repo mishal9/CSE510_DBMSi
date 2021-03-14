@@ -104,7 +104,6 @@ public class DB implements GlobalConst {
     
     set_bits(pageId, 1+num_map_pages, 1);
 
-    PCounter.initialize();
   }
   
   /** Close DB file.
@@ -979,6 +978,9 @@ class DBHeaderPage implements PageUsedBytes, GlobalConst {
 
     int position = START_FILE_ENTRIES + entryNo * SIZE_OF_FILE_ENTRY;
     pageNo.pid = Convert.getIntValue (position, data);
+    if (pageNo.pid == INVALID_PAGE) {
+        return "arbitraryPageName";
+      }
     return (Convert.getStrValue (position+4, data, MAX_NAME + 2));
   }
   

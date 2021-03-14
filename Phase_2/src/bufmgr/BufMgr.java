@@ -6,7 +6,10 @@ import java.io.*;
 import java.util.*;
 import diskmgr.*;
 import global.*;
- 
+import heap.Tuple;
+
+
+
 
 /** A frame description class. It describes each page in the buffer
  * pool, the page number in the file, whether it is dirty or not,
@@ -119,9 +122,15 @@ class BufHashTbl implements GlobalConst{
   /** Creates a buffer hash table object. */
   public BufHashTbl()
     {
-      for (int i=0; i < HTSIZE; i++)
-	ht[i] = null;
+      initer();
     }
+  
+  public void initer() {
+	  //display();
+	  for (int i=0; i < HTSIZE; i++)
+			ht[i] = null;
+	  //display();
+  }
   
   
   /** Insert association between page pageNo and frame frameNo 
@@ -133,7 +142,7 @@ class BufHashTbl implements GlobalConst{
    */
   public boolean insert(PageId pageNo, int frameNo)
     {
-      
+      //System.out.println("-----------------frameno: "+frameNo + " page no " + pageNo.pid);
       BufHTEntry ent = new BufHTEntry();
       int index = hash(pageNo);
       
@@ -160,6 +169,7 @@ class BufHashTbl implements GlobalConst{
       
       for (ent=ht[hash(pageNo)]; ent!=null; ent=ent.next) {
         if (ent.pageNo.pid == pageNo.pid) {
+        	//System.out.println("has frameno "+ ent.frameNo + " " + pageNo.pid);
 	  return(ent.frameNo);
         }
       }
@@ -263,16 +273,23 @@ class Clock extends Replacer {
       
       head = (head+1) % numBuffers;
       while ( state_bit[head].state != Available ) {
-	if ( state_bit[head].state == Referenced )
-	  state_bit[head].state = Available;
+    	  if ( state_bit[head].state == Referenced )
+    		  state_bit[head].state = Available;
 	
-	if ( num == 2*numBuffers ) {
+    	  if ( num == 2*numBuffers ) {
+    		  int temp_head = 0;
+    		  while ( temp_head < numBuffers )
+    		  {
+    			  /* unpin everything */
+    			  state_bit[temp_head].state = Available;
+    			  temp_head++;
+    		  }
+    		  mgr.limit_memory_usage(false, 0);
+    		  throw new BufferPoolExceededException (null, "BUFMGR: BUFFER_EXCEEDED.");
 	  
-	  throw new BufferPoolExceededException (null, "BUFMGR: BUFFER_EXCEEDED.");
-	  
-	}
-	++num;
-	head = (head+1) % numBuffers;
+    	  }
+    	  ++num;
+    	  head = (head+1) % numBuffers;
       }
       
       // Make sure pin count is 0.
@@ -286,7 +303,7 @@ class Clock extends Replacer {
       state_bit[head].state = Pinned;        // Pin this victim so that other
       (mgr.frameTable())[head].pin();    
       // process can't pick it as victim (???)
-      
+      //System.out.println("returning frame "+head);
       return head;
     }
   
@@ -317,10 +334,13 @@ class Clock extends Replacer {
 public class BufMgr implements GlobalConst{
   
   /** The hash table, only allocated once. */
-  private BufHashTbl hashTable = new BufHashTbl(); 
+  public BufHashTbl hashTable = new BufHashTbl(); 
   
   /** Total number of buffer frames in the buffer pool. */
   private int  numBuffers;	
+  
+  /** numBuffer to be restored once memory constraint is removed **/
+  private int restore_num_buf;
   
   /** physical buffer pool. */
   private byte[][] bufPool;  // default = byte[NUMBUF][MAX_SPACE];
@@ -330,6 +350,12 @@ public class BufMgr implements GlobalConst{
   
   /** The replacer object, which is only used in this class. */
   private Replacer replacer;
+  
+  
+  private int num_pinned_pages = 0;
+  
+  /* flag to indicate if only partial buffer manager memory is available for further processing */
+  private boolean limit_memory_usage = false;
   
   
   /** Factor out the common code for the two versions of Flush 
@@ -495,32 +521,33 @@ public class BufMgr implements GlobalConst{
       boolean bst, bst2; 
       PageId  oldpageNo = new PageId(-1);
       int     needwrite = 0;
-      
+      //System.out.println("page pgid "+ pin_pgid);
       frameNo = hashTable.lookup(pin_pgid);
-      
+      //System.out.println("balah frame no " + frameNo);
       if (frameNo < 0) {           // Not in the buffer pool
-	
-	frameNo = replacer.pick_victim(); // frameNo is pinned
-	if (frameNo < 0) { 
-	  page = null; 
-	  throw new ReplacerException (null, "BUFMGR: REPLACER_ERROR.");  
-	  
-	}
-	
-	if ((frmeTable[frameNo].pageNo.pid != INVALID_PAGE)
-	    && (frmeTable[frameNo].dirty == true) ) {
-	  needwrite = 1;
-	  oldpageNo.pid = frmeTable[frameNo].pageNo.pid;
-	}
-	
-	bst = hashTable.remove(frmeTable[frameNo].pageNo);
-	if (bst != true) {
-	  throw new HashOperationException (null, "BUFMGR: HASH_TABLE_ERROR.");
-	}
+    	  num_pinned_pages++;
+    	  //System.out.println("Pinning a page " + replacer.getNumUnpinnedBuffers());
+    	  frameNo = replacer.pick_victim(); // frameNo is pinned
+    	  if (frameNo < 0) { 
+    		  page = null; 
+    		  throw new ReplacerException (null, "BUFMGR: REPLACER_ERROR.");
+    	  }
+			
+    	  if ((frmeTable[frameNo].pageNo.pid != INVALID_PAGE)
+			  && (frmeTable[frameNo].dirty == true) ) {
+    		  needwrite = 1;
+			  oldpageNo.pid = frmeTable[frameNo].pageNo.pid;
+    	  }
+    	  //System.out.println("---frame "+ frameNo + " pid "+ frmeTable[frameNo].pageNo.pid);
+    	  bst = hashTable.remove(frmeTable[frameNo].pageNo);
+    	  if (bst != true) {
+    		  throw new HashOperationException (null, "BUFMGR: HASH_TABLE_ERROR.");
+    	  }
 	
 	frmeTable[frameNo].pageNo.pid = INVALID_PAGE; // frame is empty
 	frmeTable[frameNo].dirty = false;             // not dirty
 	
+	//System.out.println("inserting frame no "+ frameNo);
 	bst2 = hashTable.insert(pin_pgid,frameNo);
 	
 	(frmeTable[frameNo].pageNo).pid = pin_pgid.pid;
@@ -570,6 +597,8 @@ public class BufMgr implements GlobalConst{
 	
 	page.setpage(bufPool[frameNo]);
 	replacer.pin(frameNo);
+	num_pinned_pages++;
+	//System.out.println("Page already in buffer " + replacer.getNumUnpinnedBuffers());
 	
       }
     }
@@ -613,8 +642,9 @@ public class BufMgr implements GlobalConst{
       }
       
       if (dirty == true)
-	frmeTable[frameNo].dirty = dirty;
-      
+    	  frmeTable[frameNo].dirty = dirty;
+      //num_pinned_pages--;
+      //System.out.println("Unpinning the page " + (replacer.getNumUnpinnedBuffers()) );
     }
   
   
@@ -809,6 +839,10 @@ public class BufMgr implements GlobalConst{
       return replacer.getNumUnpinnedBuffers();
     }
   
+  private void setNumBuff(int n_pages) {
+	  numBuffers = n_pages;
+  }
+  
   /** A few routines currently need direct access to the FrameTable. */
   public   FrameDesc[] frameTable() { return frmeTable; }
   
@@ -823,6 +857,45 @@ public class BufMgr implements GlobalConst{
     }
     
   } // end of write_page
+  
+  /** 
+   * This function will clear the buffer manager data and reduce the allowed limit of pages to specified number
+   *
+   * @param operation boolean to enable and disable this feature
+   * @param n_pages number of pages to allowed for the buffer manager operations from now on
+   */
+  public void limit_memory_usage(boolean operation, int n_pages) {
+	  if ( operation == true ) {
+		  /* initialise the buffer manager variables 
+		   * Make sure that all the pages are unpinned annd flushed before calling this function
+		   */
+
+		  clean_buffer_allocation();
+	      /* enabling it without disabling it */
+		  if ( limit_memory_usage == false )
+		  {
+			  restore_num_buf = numBuffers;
+		  }
+		  numBuffers = n_pages;
+		  limit_memory_usage = true;
+		  System.out.println("Number of buffer manager pages to be used now onwards: "+ numBuffers);
+		  System.out.println("Total number of buffer manager pages: "+ restore_num_buf);
+		  hashTable.initer();
+	  }
+	  else
+	  {
+		  /* disable the feature and let buffer manager function normally with total number of pages */
+		  limit_memory_usage = false;
+		  numBuffers = restore_num_buf;
+	  }
+  }
+  
+  private void clean_buffer_allocation() {
+	  frmeTable = new FrameDesc[numBuffers];
+      bufPool = new byte[numBuffers][MAX_SPACE];
+      for (int i=0; i<numBuffers; i++)  // initialize frameTable
+    		frmeTable[i] = new FrameDesc();
+  }
 
   private void read_page (PageId pageno, Page page)
     throws BufMgrException {

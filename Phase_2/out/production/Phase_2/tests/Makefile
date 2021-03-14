@@ -70,6 +70,14 @@ SortTest:SortTest.java
 sorttest: SortTest
 	$(JAVA) tests.SortTest
 
+# test sort based on preference attributes
+
+SortPrefTest:SortPrefTest.java
+	$(JAVAC) TestDriver.java SortPrefTest.java
+
+sortpreftest: SortPrefTest
+	$(JAVA) tests.SortPrefTest
+
 # test sortMerge
 
 SMJoin:SM_JoinTest.java
@@ -77,6 +85,22 @@ SMJoin:SM_JoinTest.java
 
 sortmerge: SMJoin
 	$(JAVA) tests.SM_JoinTest
+
+# test sorted first sky
+
+SortFirstSkyTest:SortFirstSkyTest.java
+	$(JAVAC) TestDriver.java SortFirstSkyTest.java
+
+sortfirstskytest: SortFirstSkyTest
+	$(JAVA) tests.SortFirstSkyTest
+
+# test nested loop sky
+
+NestedLoopSkyTest:NestedLoopSkyTest.java
+	$(JAVAC) TestDriver.java NestedLoopSkyTest.java
+
+nestedloopskytest: NestedLoopSkyTest
+	$(JAVA) tests.NestedLoopSkyTest
 
 
 

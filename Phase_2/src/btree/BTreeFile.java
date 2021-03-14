@@ -213,7 +213,7 @@ public class BTreeFile extends IndexFile
       headerPageId=get_file_entry(filename);
       if( headerPageId==null) //file not exist
 	{
-	  headerPage= new  BTreeHeaderPage(); 
+	  headerPage= new  BTreeHeaderPage();
 	  headerPageId= headerPage.getPageId();
 	  add_file_entry(filename, headerPageId);
 	  headerPage.set_magic0(MAGIC0);
@@ -224,11 +224,10 @@ public class BTreeFile extends IndexFile
 	  headerPage.setType(NodeType.BTHEAD);
 	}
       else {
-	headerPage = new BTreeHeaderPage( headerPageId );  
+	headerPage = new BTreeHeaderPage( headerPageId );
       }
       
       dbname=new String(filename);
-      
     }
   
   /** Close the B+ tree file.  Unpin header page.

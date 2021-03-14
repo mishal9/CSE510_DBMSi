@@ -38,7 +38,7 @@ db:
 	make -C index
 	make -C iterator
 	make -C driver
-	
+
 doc:
 	$(JAVADOC) $(DOCFILES)
 

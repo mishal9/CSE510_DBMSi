@@ -8,10 +8,8 @@ import index.*;
 import java.io.*;
 import java.util.*;
 import java.lang.*;
-import diskmgr.*;
-import bufmgr.*;
-import btree.*; 
-import catalog.*;
+
+import btree.*;
 
 /**
    Here is the implementation for the tests. There are N tests performed.
@@ -950,9 +948,9 @@ class JoinsDriver implements GlobalConst {
     }
     
     TupleOrder ascending = new TupleOrder(TupleOrder.Ascending);
-    Sort sort_names = null;
+    SortPref sort_names = null;
     try {
-      sort_names = new Sort (JJtype,(short)1, JJsize,
+      sort_names = new SortPref(JJtype,(short)1, JJsize,
 			     (iterator.Iterator) nlj2, 1, ascending, JJsize[0], 10);
     }
     catch (Exception e) {
@@ -1627,9 +1625,9 @@ class JoinsDriver implements GlobalConst {
       System.out.print( "After nested loop join R.bid|><|B.bid AND B.color=red.\n");
       
       TupleOrder ascending = new TupleOrder(TupleOrder.Ascending);
-      Sort sort_names = null;
+      SortPref sort_names = null;
       try {
-	sort_names = new Sort (JJtype,(short)1, JJsize,
+	sort_names = new SortPref(JJtype,(short)1, JJsize,
 			       (iterator.Iterator) nlj, 1, ascending, JJsize[0], 10);
       }
       catch (Exception e) {
