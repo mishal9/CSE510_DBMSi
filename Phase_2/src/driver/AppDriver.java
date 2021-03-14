@@ -151,7 +151,7 @@ class Driver extends TestDriver implements GlobalConst
 		try {
 			System.out.println("Reading file: "+dataFile);
 			readDataIntoHeap(dataFile);
-			//BtreeGeneratorUtil.generateAllBtreesForHeapfile(hFile, f, attrType, attrSize);
+			BtreeGeneratorUtil.generateAllBtreesForHeapfile(hFile, f, attrType, attrSize);
 			individualBTreeIndexesCreated = true;
 			System.out.println("DATABASE CREATED");
 		} catch (Exception e) {
