@@ -175,7 +175,7 @@ public class BlockNestedLoopsSky extends Iterator implements GlobalConst
         try {
         	this._window_size = ((int)(MINIBASE_PAGESIZE/this._tuple_size))*(this._n_pages - buffer_pages);
         	System.out.println("Number of pages reserved for the window are "+ (this._n_pages - buffer_pages) );
-			compute_syline();
+			compute_skyline();
 		} catch (JoinsException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -223,7 +223,7 @@ public class BlockNestedLoopsSky extends Iterator implements GlobalConst
      *@exception FieldNumberOutOfBoundException array out of bounds
      *@exception WrongPermat exception for wrong FldSpec argument
      */
-    public void compute_syline()
+    public void compute_skyline()
             throws JoinsException,
             IOException,
             InvalidTupleSizeException,
@@ -248,10 +248,7 @@ public class BlockNestedLoopsSky extends Iterator implements GlobalConst
             	this._outer_scan.closescan();
                 break;
             }
-            //outer_candidate1.print(this._in1);
             outer_candidate.tupleCopy(outer_candidate_temp);
-            //System.out.print("outer element: ");
-            //outer_candidate.print(_in1);
             /* open a scan on the heapfile/relationname for inner loop */
             if ( this._status == true )
             {

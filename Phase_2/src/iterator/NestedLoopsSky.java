@@ -96,7 +96,7 @@ public class NestedLoopsSky extends Iterator
         this._pref_list_length = pref_list_length;
         this._n_pages = n_pages;
         this._inner_scan = null;
-       // SystemDefs.JavabaseBM.limit_memory_usage(true, this._n_pages);
+        SystemDefs.JavabaseBM.limit_memory_usage(true, this._n_pages);
         try {
         	/* open the data heap file */
         	this._heap_file = new Heapfile(this._relation_name);
