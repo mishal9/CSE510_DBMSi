@@ -536,6 +536,7 @@ class Driver extends TestDriver implements GlobalConst
         }
         attrType_for_sort[COLS] = new AttrType(AttrType.attrReal);
 
+
         Sort sort = null;
         try {
             sort = new Sort(attrType_for_sort, (short) (COLS+1), attrSize, fscan, (COLS+1), new TupleOrder(TupleOrder.Descending), 32, 900);
@@ -559,12 +560,21 @@ class Driver extends TestDriver implements GlobalConst
                     _pref_list.length,
                     _n_pages);
 
-            /*
-            while(sortFirstSky.hasNext()) {
-                System.out.println("Skyline object: ");
-                sortFirstSky.get_next().print(attrType);
+            System.out.println("Skyline object: ");
+            Tuple temp;
+            int numSkyEle = 0;
+            try {
+                temp = sortFirstSky.get_next();
+                while (temp!=null) {
+                    temp.print(attrType_for_sort);
+                    numSkyEle++;
+                    temp = sortFirstSky.get_next();
+                }
+
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-            */
+
 
         } catch (Exception e) {
             e.printStackTrace();

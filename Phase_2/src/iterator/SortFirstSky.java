@@ -33,7 +33,7 @@ public class SortFirstSky extends Iterator implements GlobalConst {
     //private static LinkedHashSet<Tuple> _window;
     private static Tuple[] _window;
     private static short _tuple_size;
-    public static int counter;
+    private int counter;
     private BlockNestedLoopsSky bnls;
 
     public SortFirstSky(AttrType[] in1, int len_in1, short[] t1_str_sizes,
@@ -41,12 +41,12 @@ public class SortFirstSky extends Iterator implements GlobalConst {
                                 relationName, int[] pref_list, int pref_list_length,
                         int n_pages) throws Exception {
 
+
         _in = in1;
         _len_in = (short)len_in1;
         _str_sizes = t1_str_sizes;
         _tuple_size = tuple_size;
-
-
+        this.counter = 0;
 
         _attrType = new AttrType[_len_in];
         _attrSize = new short[_len_in];
@@ -60,8 +60,8 @@ public class SortFirstSky extends Iterator implements GlobalConst {
         _pref_list_length = pref_list_length;
         _n_pages = n_pages-1; // (let one out for spare in case of temp heap)
         // _window = new LinkedHashSet<Tuple>(_n_pages);
-        _window = new Tuple[(MINIBASE_PAGESIZE / _tuple_size) * _n_pages];
-
+        _window = new Tuple[(MINIBASE_PAGESIZE / _tuple_size) * (_n_pages/2)];
+        //_window = new Tuple[1];
         // Sort "test1sortPref.in"
         /*
         try {
@@ -107,13 +107,26 @@ public class SortFirstSky extends Iterator implements GlobalConst {
     }
 
     @Override
-    public Tuple get_next() throws IOException, JoinsException, IndexException, InvalidTupleSizeException, InvalidTypeException, PageNotReadException, TupleUtilsException, PredEvalException, SortException, LowMemException, UnknowAttrType, UnknownKeyTypeException, Exception {
-        System.out.println("Counter "+counter);
-        if(counter < _window.length && _window[counter] != null){
-            return _window[counter++];
-        }else{
-            return null;
+    public Tuple get_next() throws IOException, JoinsException, IndexException, InvalidTupleSizeException,
+            InvalidTypeException, PageNotReadException, TupleUtilsException, PredEvalException, SortException,
+            LowMemException, UnknowAttrType, UnknownKeyTypeException, Exception {
+        // TODO Auto-generated method stub
+        if ( this.counter < _window.length ) {
+            Tuple skl = _window[counter];
+            counter++;
+
+            if ( skl != null ) {
+                return skl;
+            }
         }
+        if ( this.temp.getRecCnt() != 0 ) {
+            Tuple skl = bnls.get_next();
+            if ( skl != null ) {
+                return skl;
+            }
+        }
+        counter = _window.length;
+        return null;
     }
 
     public boolean hasNext(){
@@ -124,7 +137,21 @@ public class SortFirstSky extends Iterator implements GlobalConst {
 
     @Override
     public void close() throws IOException, JoinsException, SortException, IndexException {
-        _sort.close();
+        try {
+            if(temp.getRecCnt() > 0)
+                bnls.close();
+                temp.deleteFile();
+        } catch (InvalidSlotNumberException e) {
+            e.printStackTrace();
+        } catch (InvalidTupleSizeException e) {
+            e.printStackTrace();
+        } catch (HFDiskMgrException e) {
+            e.printStackTrace();
+        } catch (HFBufMgrException e) {
+            e.printStackTrace();
+        } catch (FileAlreadyDeletedException e) {
+            e.printStackTrace();
+        }
     }
 
     public void computeSkylines(Sort sort, Tuple[] window) throws Exception {
@@ -295,19 +322,23 @@ public class SortFirstSky extends Iterator implements GlobalConst {
                 e.printStackTrace();
             }
         }
-
+        /*
         System.out.println("=====Window Skyline Tuples=====");
 
         for(int i=0; i<window.length; i++){
             if(window[i] != null)
                 window[i].print(_in);
         }
-
+        */
         System.out.println("record count in temporary file: "+temp.getRecCnt());
         if( temp.getRecCnt() == 0)
             return;
 
+        sort.close();
+
         // TODO: Run the bnl algorithm on the temp heap tuples
+        SystemDefs.JavabaseBM.flushAllPages();
+
         bnls = new BlockNestedLoopsSky(
                 _in,
                 _in.length,
@@ -321,9 +352,21 @@ public class SortFirstSky extends Iterator implements GlobalConst {
 
 
         System.out.println("=====Temp heap Skyline Tuples=====");
+        /*
+        Tuple skl;
+        try {
+            skl = bnls.get_next();
+            while (skl!=null) {
+                skl.print(_in);
+                skl = bnls.get_next();
+            }
 
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        */
+        //bnls.close();
 
-        //sort.close();
         return;
     }
 
