@@ -59,7 +59,7 @@ class SortFirstSkyDriver extends TestDriver
 
         System.out.println ("\n" + "Running " + testName() + " tests...." + "\n");
         // We will define the bufpoolsize and num_pgs params ; whereas BUFF_SIZE determined by user input
-        SystemDefs sysdef = new SystemDefs( dbpath, 3000, 3000, "Clock" );
+        SystemDefs sysdef = new SystemDefs( dbpath, 3000, 6000, "Clock" );
 
         // Kill anything that might be hanging around
         String newdbpath;
@@ -299,7 +299,7 @@ class SortFirstSkyDriver extends TestDriver
         boolean status = OK;
 
         // Read data and construct tuples
-        File file = new File("../../data/subset3.txt");
+        File file = new File("../../data/data3.txt");
         Scanner sc = new Scanner(file);
 
         int COLS = sc.nextInt();
@@ -405,8 +405,8 @@ class SortFirstSkyDriver extends TestDriver
                                             fscan,
                                             (short) t_size,
                                             hfileName,
-                                            new int[]{1,2},
-                                           2,
+                                            new int[]{1,2,3,4,5},
+                                           5,
                                             BUFF_SIZE);
 
             while(sortFirstSky.get_next() != null) {
@@ -571,8 +571,8 @@ class SortFirstSkyDriver extends TestDriver
                     fscan,
                     (short) t_size,
                     hfileName,
-                    new int[]{1,2},
-                    2,
+                    new int[]{1},
+                    1,
                     BUFF_SIZE);
 
             while(sortFirstSky.hasNext()) {

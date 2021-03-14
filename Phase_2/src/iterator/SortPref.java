@@ -68,8 +68,12 @@ public class SortPref extends Iterator implements GlobalConst {
             SortException,
             Exception {
         // don't know what will happen if n_R_runs > _n_pages
-        if (n_R_runs > _n_pages)
+        System.out.println("Runs: "+n_R_runs);
+        System.out.println("N pageS: "+_n_pages);
+        if (n_R_runs > _n_pages) {
+
             throw new LowMemException("Sort.java: Not enough memory to sort in two passes.");
+        }
 
         int i;
         pnode cur_node;  // need pq_defs.java
@@ -140,6 +144,7 @@ public class SortPref extends Iterator implements GlobalConst {
             Exception {
         Tuple tuple;
         pnode cur_node;
+        System.out.println("Max elemtns "+max_elems);
         pnodeSplayPQ Q1 = new pnodeSplayPQ(_sort_fld, sortFldType, order);
         pnodeSplayPQ Q2 = new pnodeSplayPQ(_sort_fld, sortFldType, order);
         pnodeSplayPQ pcurr_Q = Q1;
@@ -631,7 +636,7 @@ public class SortPref extends Iterator implements GlobalConst {
         o_buf.init(bufs, _n_pages, tuple_size, temp_files[0], false);
         //    output_tuple = null;
 
-        max_elems_in_heap = 2000;
+        max_elems_in_heap = 100;
         sortFldLen = 32;
 
         Q = new pnodeSplayPQ(_sort_fld, in[_sort_fld - 1], order);
@@ -667,10 +672,9 @@ public class SortPref extends Iterator implements GlobalConst {
         if (first_time) {
             // first get_next call to the sort routine
             first_time = false;
-
             // generate runs
             Nruns = generate_runs(max_elems_in_heap, _in[_sort_fld - 1], sortFldLen);
-            //      System.out.println("Generated " + Nruns + " runs");
+            System.out.println("Generated " + Nruns + " runs");
 
             // setup state to perform merge of runs.
             // Open input buffers for all the input file
@@ -726,6 +730,7 @@ public class SortPref extends Iterator implements GlobalConst {
                     temp_files[i] = null;
                 }
             }
+
             closeFlag = true;
         }
     }

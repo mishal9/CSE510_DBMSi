@@ -78,6 +78,12 @@ SortPrefTest:SortPrefTest.java
 sortpreftest: SortPrefTest
 	$(JAVA) tests.SortPrefTest
 
+NewSortTest:NewSortTest.java
+	$(JAVAC) TestDriver.java NewSortTest.java
+
+newsorttest: NewSortTest
+	$(JAVA) tests.NewSortTest
+
 # test sortMerge
 
 SMJoin:SM_JoinTest.java
