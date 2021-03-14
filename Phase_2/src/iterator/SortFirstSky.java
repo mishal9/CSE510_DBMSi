@@ -40,7 +40,7 @@ public class SortFirstSky extends Iterator implements GlobalConst {
     public SortFirstSky(AttrType[] in1, int len_in1, short[] t1_str_sizes,
                         Iterator am1, short tuple_size, java.lang.String
                                 relationName, int[] pref_list, int pref_list_length,
-                        int n_pages) throws IOException, TupleUtilsException, UnknowAttrType, FieldNumberOutOfBoundException, InvalidTupleSizeException, HFBufMgrException, InvalidSlotNumberException, HFDiskMgrException {
+                        int n_pages) throws IOException, TupleUtilsException, UnknowAttrType, FieldNumberOutOfBoundException, InvalidTupleSizeException, HFBufMgrException, InvalidSlotNumberException, HFDiskMgrException, SortException {
 
         _in = in1;
         _len_in = (short)len_in1;
@@ -76,7 +76,7 @@ public class SortFirstSky extends Iterator implements GlobalConst {
 
         // Sort "test1sortPref.in"
         try {
-            _sort = new SortPref(_attrType, (short) _len_in, _attrSize, _fscan,  new TupleOrder(TupleOrder.Descending), _pref_list, _pref_list_length, 2);
+            _sort = new SortPref(_attrType, (short) _len_in, _attrSize, _fscan,  new TupleOrder(TupleOrder.Descending), _pref_list, _pref_list_length, 900);
         }
         catch (Exception e) {
             status = FAIL;
@@ -135,7 +135,7 @@ public class SortFirstSky extends Iterator implements GlobalConst {
         _fscan.close();
     }
 
-    public void computeSkylines(SortPref sort, Tuple[] window) throws IOException, TupleUtilsException, UnknowAttrType, FieldNumberOutOfBoundException, HFBufMgrException, HFDiskMgrException, InvalidSlotNumberException, InvalidTupleSizeException {
+    public void computeSkylines(SortPref sort, Tuple[] window) throws IOException, TupleUtilsException, UnknowAttrType, FieldNumberOutOfBoundException, HFBufMgrException, HFDiskMgrException, InvalidSlotNumberException, InvalidTupleSizeException, SortException {
 
         /*
         SORT FIRST SKY(heap, window):
@@ -231,6 +231,12 @@ public class SortFirstSky extends Iterator implements GlobalConst {
             }
         }
 
+        System.out.println("=====Skyline Tuples=====");
+        for(int i=0; i<window.length; i++){
+            window[i].print(_attrType);
+        }
+
+        sort.close();
         return;
     }
 }

@@ -31,7 +31,7 @@ public class BtreeGeneratorUtil {
 
 		
 		int COLS =attrType.length;
-		BTreeFile[] btreeFileArray = new BTreeFile[COLS ];
+		BTreeFile[] btreeFileArray = new BTreeFile[COLS];
 		
 		for(int i =0;i<COLS;i++) {
 			String btreename = "BTreeIndex"+(i+1);

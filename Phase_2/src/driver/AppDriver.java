@@ -151,7 +151,7 @@ class Driver extends TestDriver implements GlobalConst
 		try {
 			System.out.println("Reading file: "+dataFile);
 			readDataIntoHeap(dataFile);
-			//BtreeGeneratorUtil.generateAllBtreesForHeapfile(hFile, f, attrType, attrSize);
+			BtreeGeneratorUtil.generateAllBtreesForHeapfile(hFile, f, attrType, attrSize);
 			individualBTreeIndexesCreated = true;
 			System.out.println("DATABASE CREATED");
 		} catch (Exception e) {
@@ -459,6 +459,7 @@ class Driver extends TestDriver implements GlobalConst
         System.out.println("Pref list length: "+_pref_list.length);
 
         FileScan fscan = null;
+        PCounter.initialize();
 
         try {
             fscan = new FileScan(hFile, attrType, attrSize, (short) COLS, COLS, projlist, null);
@@ -479,10 +480,14 @@ class Driver extends TestDriver implements GlobalConst
                 _pref_list,
                 _pref_list.length,
                 _n_pages);
+
+            /*
             while(sortFirstSky.hasNext()) {
                 System.out.println("Skyline object: ");
                 sortFirstSky.get_next().print(attrType);
             }
+
+             */
             
         } catch (Exception e) {
             e.printStackTrace();
@@ -497,6 +502,11 @@ class Driver extends TestDriver implements GlobalConst
                 e.printStackTrace();
             }
         }
+
+        System.out.println("Number of Disk reads: "+ PCounter.get_rcounter());
+        System.out.println("Number of Disk writes: "+ PCounter.get_wcounter());
+        PCounter.initialize();
+
     }
 
 	private void runBtreeSky() throws Exception {
