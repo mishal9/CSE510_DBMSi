@@ -304,6 +304,7 @@ public class BlockNestedLoopsSky extends Iterator implements GlobalConst
             }
             this._scan.closescan();
         }
+        this._scan = this._temp_heap_file.openScan();
     }
     
     public boolean can_be_added_to_queue(Tuple candidate)

@@ -870,12 +870,12 @@ public class BufMgr implements GlobalConst{
 		   * Make sure that all the pages are unpinned annd flushed before calling this function
 		   */
 
-
+		  clean_buffer_allocation();
 	      /* enabling it without disabling it */
-		  if ( limit_memory_usage == false ){
-              clean_buffer_allocation();
-              restore_num_buf = numBuffers;
-          }
+		  if ( limit_memory_usage == false )
+		  {
+			  restore_num_buf = numBuffers;
+		  }
 		  numBuffers = n_pages;
 		  limit_memory_usage = true;
 		  System.out.println("Number of buffer manager pages to be used now onwards: "+ numBuffers);
