@@ -6,6 +6,7 @@ import java.util.*;
 
 import btree.*;
 import bufmgr.*;
+import chainexception.ChainException;
 import diskmgr.PCounter;
 import heap.*;
 import global.*;
@@ -347,13 +348,30 @@ class Driver extends TestDriver implements GlobalConst
 
 
             }
-            catch(Exception e) {
-                e.printStackTrace();
-                System.out.println("       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-                System.out.println("       !!         Something is wrong                    !!");
-                System.out.println("       !!     Is your DB full? then exit. rerun it!     !!");
-                System.out.println("       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+            catch (Exception e) {
+            	//checking for buffer full exception, then dont print full stack trace
+            	boolean caught = false;
+            	if (e instanceof ChainException) {
+            		ChainException temp = (ChainException) e;
+            		while (caught == false && temp != null) {
+            			if (temp instanceof bufmgr.BufferPoolExceededException) {
+            				caught = true;
+            				System.err.println(temp.getMessage());
+            				System.err.println(
+            						"BufferPoolExceededException, insufficient buffer memory for this operation ");
+            			}
+            			System.err.println(temp.getMessage());
+            			temp = (ChainException) temp.prev;
+            		}
+            	}
 
+            	if (!caught) {
+            		System.out.println("       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+            		System.out.println("       !!         Something is wrong                    !!");
+            		System.out.println("       !!     Is your DB full? then exit. rerun it!     !!");
+            		System.out.println("       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+            		e.printStackTrace();
+            	}
             }
         }
 

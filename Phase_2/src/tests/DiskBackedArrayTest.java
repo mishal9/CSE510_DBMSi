@@ -12,7 +12,7 @@ public class DiskBackedArrayTest {
 		try {
 			String dbpath = "bla.db";
 			SystemDefs sysdef = new SystemDefs(dbpath, 300, 300, "Clock");
-			DiskBackedArray thiss = new DiskBackedArray();
+			DiskBackedArray thiss = new DiskBackedArray("temp");
 
 			for (int i = 0; i < 100; i++) {
 				RID a = new RID(new PageId(i), i + 1);
