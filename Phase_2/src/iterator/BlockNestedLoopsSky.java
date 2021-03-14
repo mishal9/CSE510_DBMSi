@@ -121,13 +121,14 @@ public class BlockNestedLoopsSky extends Iterator implements GlobalConst
         this._temp_heap_file_name = System.currentTimeMillis() + "temp_block_nested_loop.in";
         this._queue = new LinkedList<>();
         this._counter = 0;
-
+        int buffer_pages = n_pages;
         /* In this algorithm we will be allocating n_pages/2 pages to the buffer manager and rest
          * to the window used to store tuples in main memory.
          */
         try {
         	/* limit the memory usage of BM to calculated pages */
-        	SystemDefs.JavabaseBM.limit_memory_usage(true, this._n_pages/2);
+        	buffer_pages = this._n_pages/2;
+        	SystemDefs.JavabaseBM.limit_memory_usage(true, buffer_pages);
         	this._heap_file = new Heapfile(this._relation_name);
         	System.out.println("BNL heapfile size "+_heap_file.getRecCnt());
         	this._temp_heap_file = new Heapfile(this._temp_heap_file_name);
@@ -172,7 +173,8 @@ public class BlockNestedLoopsSky extends Iterator implements GlobalConst
         
         /* calculate the window size and start computing the skyline */
         try {
-        	this._window_size = ((int)(MINIBASE_PAGESIZE/this._tuple_size))*(this._n_pages/2);
+        	this._window_size = ((int)(MINIBASE_PAGESIZE/this._tuple_size))*(this._n_pages - buffer_pages);
+        	System.out.println("Number of pages reserved for the window are "+ (this._n_pages - buffer_pages) );
 			compute_syline();
 		} catch (JoinsException e) {
 			// TODO Auto-generated catch block
@@ -440,14 +442,8 @@ public class BlockNestedLoopsSky extends Iterator implements GlobalConst
 				{
 					// we need to delete the heap element
 					try {
-						//System.out.println("deleting record");
 						this._scan.closescan();
-						//System.out.println("Number of Disk reads: "+ PCounter.get_rcounter());
-			            //System.out.println("Number of Disk writes: "+ PCounter.get_wcounter());
 						this._temp_heap_file.deleteRecord(_temp);
-						//System.out.println("Record deleted from heapfile");
-						//System.out.println("Number of Disk reads: "+ PCounter.get_rcounter());
-			            //System.out.println("Number of Disk writes: "+ PCounter.get_wcounter());
 						this._scan = this._temp_heap_file.openScan();
 					} catch (InvalidSlotNumberException e) {
 						// TODO Auto-generated catch block
