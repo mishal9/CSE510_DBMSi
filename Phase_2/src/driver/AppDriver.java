@@ -553,6 +553,9 @@ class Driver extends TestDriver implements GlobalConst
         System.out.println("Pref list length: "+_pref_list.length);
 
         //limiting buffer pages in BufMgr
+        System.out.println("No of buffers "+SystemDefs.JavabaseBM.getNumBuffers());
+        System.out.println("No of unpinned buffers "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
+
         SystemDefs.JavabaseBM.limit_memory_usage(true, this._n_pages);
 
         GenerateIndexFiles obj = new GenerateIndexFiles();
@@ -582,6 +585,8 @@ class Driver extends TestDriver implements GlobalConst
         BTreeSortedSky btree = new BTreeSortedSky(attrType, _pref_list.length, Ssizes, 0, null, "heap_AAA", _pref_list, _pref_list.length, indexFile, 2 );
 
         btree.computeSkylines();
+
+
     }
 }
 

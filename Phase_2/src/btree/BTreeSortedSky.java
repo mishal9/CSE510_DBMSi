@@ -96,7 +96,7 @@ public class BTreeSortedSky implements GlobalConst {
 	public void computeSkylines() throws InvalidSlotNumberException, InvalidTupleSizeException, Exception {
 
 		Heapfile hf = new Heapfile("heap_" + "AAA");
-		temp = new Heapfile("sortFirstSkyTemp.in");
+		temp = new Heapfile("BtreeSortSkyTemp.in");
 		
 		BTFileScan scan = ((BTreeFile) index_file).new_scan(null, null);
 		KeyDataEntry entry;
@@ -104,9 +104,9 @@ public class BTreeSortedSky implements GlobalConst {
 		
 		Tuple t = getEmptyTuple();
 
-		System.out.println("SIZE: " + (MINIBASE_PAGESIZE / t.size()) * n_pages);
+		System.out.println("SIZE: " + ((MINIBASE_PAGESIZE / t.size()) * n_pages)/2);
 
-		_window = new Tuple[(MINIBASE_PAGESIZE / t.size()) * n_pages];
+		_window = new Tuple[((MINIBASE_PAGESIZE / t.size()) * n_pages)/2];
 		
 	    entry = scan.get_next();
 	    
@@ -168,19 +168,23 @@ public class BTreeSortedSky implements GlobalConst {
             }
         }
         
-        scan.DestroyBTreeFileScan();        
+        scan.DestroyBTreeFileScan();
+
+        System.out.println("Temp records count "+temp.getRecCnt());
         
         if(temp.getRecCnt() == 0) return;
+
+        SystemDefs.JavabaseBM.flushAllPages();
         
         BlockNestedLoopsSky bnls = new BlockNestedLoopsSky(
         		attrType, 
         		attr_len,
         		t1_str_sizes,
         		am1,
-        		"sortFirstSkyTemp.in",
+        		"BtreeSortSkyTemp.in",
         		pref_list,
         		pref_list_length,
-        		n_pages
+        		n_pages/2
         		);
         
         Tuple res = bnls.get_next();
