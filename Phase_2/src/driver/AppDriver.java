@@ -572,9 +572,24 @@ class Driver extends TestDriver implements GlobalConst
         t = new Tuple(size);
         t.setHdr((short)_pref_list.length, attrType, Ssizes);
 
+        PCounter.initialize();
+        int numSkyEle = 0;
         BTreeSortedSky btree = new BTreeSortedSky(attrType, _pref_list.length, Ssizes, 0, null, "heap_AAA", _pref_list, _pref_list.length, indexFile, _n_pages );
-
         btree.computeSkylines();
+        System.out.println("Printing the Btree sorted Skyline");
+        Tuple temp;
+        temp = btree.get_next();
+        while (temp!=null) {
+        	temp.print(attrType);
+        	numSkyEle++;
+        	temp = btree.get_next();
+        }
+        System.out.println("Skyline Length: "+numSkyEle);
+        System.out.println("Number of Disk reads: "+ PCounter.get_rcounter());
+        System.out.println("Number of Disk writes: "+ PCounter.get_wcounter());
+        PCounter.initialize();
+        btree.close();
+        
     }
 }
 

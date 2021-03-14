@@ -14,6 +14,7 @@ import global.RID;
 import global.SystemDefs;
 import btree.*;
 import heap.FieldNumberOutOfBoundException;
+import heap.FileAlreadyDeletedException;
 import heap.HFBufMgrException;
 import heap.HFDiskMgrException;
 import heap.HFException;
@@ -54,7 +55,7 @@ import iterator.BlockNestedLoopsSky;
  *
  */
 
-public class BTreeSortedSky implements GlobalConst {
+public class BTreeSortedSky extends Iterator implements GlobalConst {
 	
 	private AttrType[] attrType;
 	private int attr_len;
@@ -66,17 +67,22 @@ public class BTreeSortedSky implements GlobalConst {
 	private IndexFile index_file;
 	private int n_pages;
 	private int amt_of_mem;
-
+	
+	private int window_size;
 	boolean status = OK;
 	private static Tuple[] _window;
+	private int counter;
 	
 	private Heapfile temp;
+	private int temp_rcrd_count;
+	
+	private BlockNestedLoopsSky bnls;
 
 	public BTreeSortedSky(AttrType[] attrType, int attr_len, short[] t1_str_sizes, int amt_of_mem, Iterator am1,
 			String relationName, int[] pref_list, int pref_list_length, IndexFile index_file,
 			int n_pages) throws Exception {
 
-
+		this.counter = 0;
 		this.relationName = relationName;
 		this.index_file = (BTreeFile) index_file;
 		this.attrType = attrType;
@@ -102,7 +108,7 @@ public class BTreeSortedSky implements GlobalConst {
 		
 		Tuple t = getEmptyTuple();
 		System.out.println("Number of pages "+n_pages);
-		int window_size = ((int)(MINIBASE_PAGESIZE/t.size()))*(n_pages/2);
+		this.window_size = ((int)(MINIBASE_PAGESIZE/t.size()))*(n_pages/2);
 		System.out.println("Tuple size "+t.size());
 		System.out.println("SIZE: " + window_size);
 
@@ -158,20 +164,14 @@ public class BTreeSortedSky implements GlobalConst {
                 } 
               entry = scan.get_next();
         }
-        
-        System.out.println("******************** SKYLINE TUPLES ********************");
-        for(int i=0; i<_window.length; i++){
-            if(_window[i] != null) {
-               _window[i].print(attrType);
-            }
-        }
         ((BTreeFile) index_file).close();
         scan.DestroyBTreeFileScan();
         SystemDefs.JavabaseBM.flushAllPages();
         System.out.println("record count in temporary file: "+temp.getRecCnt());
-        if(temp.getRecCnt() == 0) return;
+        this.temp_rcrd_count = temp.getRecCnt();
+        if( temp_rcrd_count == 0) return;
         
-        BlockNestedLoopsSky bnls = new BlockNestedLoopsSky(
+        bnls = new BlockNestedLoopsSky(
         		attrType, 
         		attr_len,
         		t1_str_sizes,
@@ -181,17 +181,6 @@ public class BTreeSortedSky implements GlobalConst {
         		pref_list_length,
         		n_pages/2
         		);
-        
-        Tuple res = bnls.get_next();
-
-        while(res != null) {
-        	res.print(attrType);
-        	res = bnls.get_next();
-        }
-        bnls.close();
-        temp.deleteFile();
-        System.out.println("**************** THE END ***************");
-        
         return;
     }
 	
@@ -215,6 +204,60 @@ public class BTreeSortedSky implements GlobalConst {
 		t = new Tuple(size);
 		t.setHdr((short) attrType.length, attrType, t1_str_sizes);
 		return t;
+	}
+
+
+
+	@Override
+	public Tuple get_next() throws IOException, JoinsException, IndexException, InvalidTupleSizeException,
+			InvalidTypeException, PageNotReadException, TupleUtilsException, PredEvalException, SortException,
+			LowMemException, UnknowAttrType, UnknownKeyTypeException, Exception {
+		// TODO Auto-generated method stub
+		if ( this.counter < this.window_size ) {
+			Tuple skl = _window[counter];
+			counter++;
+			
+			if ( skl != null ) {
+				return skl;
+			}
+		}
+		if ( this.temp.getRecCnt() != 0 ) {
+			Tuple skl = bnls.get_next();
+			if ( skl != null ) {
+				return skl;
+			}
+		}
+		counter = this.window_size;
+		return null;
+	}
+
+
+
+	@Override
+	public void close() throws IOException, JoinsException, SortException, IndexException {
+		// TODO Auto-generated method stub
+		bnls.close();
+        try {
+			temp.deleteFile();
+		} catch (InvalidSlotNumberException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (FileAlreadyDeletedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InvalidTupleSizeException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (HFBufMgrException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (HFDiskMgrException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 }
