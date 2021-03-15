@@ -41,6 +41,7 @@ class Driver extends TestDriver implements GlobalConst
     private static boolean individualBTreeIndexesCreated;
     private static int _t_size;
     static String dataFile = "";
+    private int numberOfDimensions = 0;
 
     public Driver(){
         super("main");
@@ -137,12 +138,15 @@ class Driver extends TestDriver implements GlobalConst
          switch(choice) {
          case 1:
         	 dataFile = OS.indexOf("mac") >= 0 ? "../../data/data2.txt" : "data/data2.txt";
+        	 numberOfDimensions = 5;
         	 break;
          case 2:
         	 dataFile = OS.indexOf("mac") >= 0 ? "../../data/data3.txt" : "data/data3.txt";
+        	 numberOfDimensions = 5;
         	 break;
          case 3:
         	 dataFile = OS.indexOf("mac") >= 0 ? "../../data/data_large_skyline.txt" : "data/data_large_skyline.txt";
+        	 numberOfDimensions = 2;
         	 break;
          default:
         	 System.err.println("Invalid Choice");
@@ -665,8 +669,19 @@ class Driver extends TestDriver implements GlobalConst
 	private void runBtreeSortSky() throws Exception {
         System.out.println("Will run btree sort sky with params: ");
         System.out.println("N pages: "+_n_pages);
-        System.out.println("Pref list: "+Arrays.toString(_pref_list));
-        System.out.println("Pref list length: "+_pref_list.length);
+
+        int [] pref_list = new int[numberOfDimensions];
+        
+        for(int i = 0; i < _pref_list.length; i++) {
+        	pref_list[ _pref_list[i] - 1 ] = 1;
+        }
+        
+        for(int i = 0; i < numberOfDimensions; i++) {
+        	if(pref_list[i] != 1) pref_list[i] = 0;
+        }
+        
+        System.out.println("Pref list: "+Arrays.toString(pref_list));
+        System.out.println("Pref list length: "+numberOfDimensions);
 
         //limiting buffer pages in BufMgr
         System.out.println("No of buffers "+SystemDefs.JavabaseBM.getNumBuffers());
@@ -676,25 +691,25 @@ class Driver extends TestDriver implements GlobalConst
 
 
         GenerateIndexFiles obj = new GenerateIndexFiles();
-        IndexFile indexFile = obj.createCombinedBTreeIndex(dataFile,_pref_list, _pref_list.length);
+        IndexFile indexFile = obj.createCombinedBTreeIndex(dataFile,pref_list, pref_list.length);
         System.out.println("Index created! ");
         Tuple t = new Tuple();
         short [] Ssizes = null;
 
-        AttrType [] attrType = new AttrType[_pref_list.length];
-        for(int i=0;i<_pref_list.length;i++){
+        AttrType [] attrType = new AttrType[pref_list.length];
+        for(int i=0;i<pref_list.length;i++){
             attrType[i] = new AttrType (AttrType.attrReal);
         }
 
-        t.setHdr((short)_pref_list.length, attrType, Ssizes);
+        t.setHdr((short)pref_list.length, attrType, Ssizes);
         int size = t.size();
 
         t = new Tuple(size);
-        t.setHdr((short)_pref_list.length, attrType, Ssizes);
+        t.setHdr((short)pref_list.length, attrType, Ssizes);
 
         PCounter.initialize();
         int numSkyEle = 0;
-        BTreeSortedSky btree = new BTreeSortedSky(attrType, _pref_list.length, Ssizes, 0, null, "heap_AAA", _pref_list, _pref_list.length, indexFile, _n_pages );
+        BTreeSortedSky btree = new BTreeSortedSky(attrType, pref_list.length, Ssizes, 0, null, "heap_AAA", _pref_list, _pref_list.length, indexFile, _n_pages );
         btree.computeSkylines();
 
         System.out.println("Printing the Btree sorted Skyline");
