@@ -493,8 +493,10 @@ public void setHdr (short numFlds,  AttrType types[], short strSizes[])
    case AttrType.attrSymbol:
      break;
    }
-   System.out.print(", ");
- } 
+    System.out.print(", ");
+ }
+
+
 
  switch(type[fldCnt-1].attrType) {
 
@@ -521,6 +523,76 @@ public void setHdr (short numFlds,  AttrType types[], short strSizes[])
    System.out.println("]");
 
  }
+
+
+    /**
+     * Print out the sort first sky tuple
+     * @param type  the types in the tuple
+     * @Exception IOException I/O exception
+     */
+    public void printTuple(AttrType type[])
+            throws IOException
+    {
+        int i, val;
+        float fval;
+        String sval;
+
+        System.out.print("[");
+        for (i=0; i< fldCnt-2; i++)
+        {
+            switch(type[i].attrType) {
+
+                case AttrType.attrInteger:
+                    val = Convert.getIntValue(fldOffset[i], data);
+                    System.out.print(val);
+                    break;
+
+                case AttrType.attrReal:
+                    fval = Convert.getFloValue(fldOffset[i], data);
+                    System.out.print(fval);
+                    break;
+
+                case AttrType.attrString:
+                    sval = Convert.getStrValue(fldOffset[i], data,fldOffset[i+1] - fldOffset[i]);
+                    System.out.print(sval);
+                    break;
+
+                case AttrType.attrNull:
+                case AttrType.attrSymbol:
+                    break;
+            }
+            System.out.print(", ");
+        }
+
+
+
+        switch(type[fldCnt-2].attrType) {
+
+            case AttrType.attrInteger:
+                val = Convert.getIntValue(fldOffset[i], data);
+                System.out.print(val);
+                break;
+
+            case AttrType.attrReal:
+                fval = Convert.getFloValue(fldOffset[i], data);
+                System.out.print(fval);
+                break;
+
+            case AttrType.attrString:
+                sval = Convert.getStrValue(fldOffset[i], data,fldOffset[i+1] - fldOffset[i]);
+                System.out.print(sval);
+                break;
+
+            case AttrType.attrNull:
+            case AttrType.attrSymbol:
+                break;
+        }
+
+        System.out.println("]");
+
+    }
+
+
 
     @Override
     public boolean equals(Object obj) {
