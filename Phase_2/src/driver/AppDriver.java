@@ -136,15 +136,15 @@ class Driver extends TestDriver implements GlobalConst
         int choice= GetStuff.getChoice();
          switch(choice) {
          case 1:
-        	 dataFile = OS.indexOf("mac") >= 0 ? "/Users/kunjpatel/Desktop/CSE510_DBMSi/Phase_2/data/data2.txt" : "data/data2.txt";
+        	 dataFile = OS.indexOf("mac") >= 0 ? "../../data/data2.txt" : "data/data2.txt";
         	 numberOfDimensions = 5;
         	 break;
          case 2:
-        	 dataFile = OS.indexOf("mac") >= 0 ? "/Users/kunjpatel/Desktop/CSE510_DBMSi/Phase_2/data/data3.txt" : "data/data3.txt";
+        	 dataFile = OS.indexOf("mac") >= 0 ? "../../data/data3.txt" : "data/data3.txt";
         	 numberOfDimensions = 5;
         	 break;
          case 3:
-        	 dataFile = OS.indexOf("mac") >= 0 ? "/Users/kunjpatel/Desktop/CSE510_DBMSi/Phase_2/data/data_large_skyline.txt" : "data/data_large_skyline.txt";
+        	 dataFile = OS.indexOf("mac") >= 0 ? "../../data/data_large_skyline.txt" : "data/data_large_skyline.txt";
         	 numberOfDimensions = 2;
         	 break;
          default:
