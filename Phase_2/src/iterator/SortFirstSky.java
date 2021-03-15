@@ -58,7 +58,7 @@ public class SortFirstSky extends Iterator implements GlobalConst {
         _relationName = relationName;
         _pref_list = pref_list;
         _pref_list_length = pref_list_length;
-        _n_pages = n_pages-1; // (let one out for spare in case of temp heap)
+        _n_pages = n_pages; // (let one out for spare in case of temp heap)
         // _window = new LinkedHashSet<Tuple>(_n_pages);
         _window = new Tuple[(MINIBASE_PAGESIZE / _tuple_size) * (_n_pages/2)];
         //_window = new Tuple[1];
@@ -83,7 +83,7 @@ public class SortFirstSky extends Iterator implements GlobalConst {
             status = FAIL;
             e.printStackTrace();
         }
-
+        /*
         System.out.println("----------   SORT FIRST SKY INIT VARS   -------------");
         System.out.println("Attributes length: "+_len_in);
         System.out.println("Relation name: "+_relationName);
@@ -92,7 +92,7 @@ public class SortFirstSky extends Iterator implements GlobalConst {
         System.out.println("Size of each tuple: "+_tuple_size);
         System.out.println("Length of the buffer: "+_window.length);
         System.out.println("-----------------------------------------------------");
-
+        */
         if ( status == OK ) {
             computeSkylines(_sort, _window);
 
@@ -150,6 +150,8 @@ public class SortFirstSky extends Iterator implements GlobalConst {
         } catch (FileAlreadyDeletedException e) {
             e.printStackTrace();
         }
+        SystemDefs.JavabaseBM.limit_memory_usage(false, _n_pages);
+
     }
 
     public void computeSkylines(Sort sort, Tuple[] window) throws Exception {
