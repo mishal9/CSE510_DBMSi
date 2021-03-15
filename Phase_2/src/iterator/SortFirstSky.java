@@ -84,9 +84,7 @@ public class SortFirstSky extends Iterator implements GlobalConst {
             e.printStackTrace();
         }
 
-
         System.out.println("----------   SORT FIRST SKY INIT VARS   -------------");
-        System.out.println("Attributes: "+Arrays.toString(_in));
         System.out.println("Attributes length: "+_len_in);
         System.out.println("Relation name: "+_relationName);
         System.out.println("Preferences list: "+ Arrays.toString(_pref_list));
@@ -260,11 +258,14 @@ public class SortFirstSky extends Iterator implements GlobalConst {
                     if (TupleUtils.Dominates(window[i], _attrType, outer_tuple, _attrType, _len_in, _str_sizes, _pref_list, _pref_list_length)) {
                         // If tuple in heap file is dominated by at least one in main memory - simply move to the next element
                         isDominatedBy = true;
+                        /*
                         System.out.println("Heap tuple");
                         outer_tuple.print(_in);
                         System.out.println("Dominated by ");
                         window[i].print(_in);
                         System.out.println(" ");
+
+                         */
                         break;
                     }
                 }
@@ -294,11 +295,14 @@ public class SortFirstSky extends Iterator implements GlobalConst {
                     if (TupleUtils.Dominates(window[i], _attrType, htuple, _attrType, _len_in, _str_sizes, _pref_list, _pref_list_length)) {
                         // If tuple in heap file is dominated by at least one in main memory - simply move to the next element
                         isDominatedBy = true;
+                        /*
                         System.out.println("Heap tuple");
                         htuple.print(_in);
                         System.out.println("Dominated by ");
                         window[i].print(_in);
                         System.out.println(" ");
+
+                         */
                         break;
                     }
                 }
@@ -330,7 +334,6 @@ public class SortFirstSky extends Iterator implements GlobalConst {
                 window[i].print(_in);
         }
         */
-        System.out.println("record count in temporary file: "+temp.getRecCnt());
         if( temp.getRecCnt() == 0)
             return;
 

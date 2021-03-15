@@ -236,7 +236,19 @@ public class BTreeSortedSky extends Iterator implements GlobalConst {
 	@Override
 	public void close() throws IOException, JoinsException, SortException, IndexException {
 		// TODO Auto-generated method stub
-		this.bnls.close();
+		try {
+			if(temp.getRecCnt() > 0) {
+				this.bnls.close();
+			}
+		} catch (InvalidSlotNumberException e) {
+			e.printStackTrace();
+		} catch (InvalidTupleSizeException e) {
+			e.printStackTrace();
+		} catch (HFDiskMgrException e) {
+			e.printStackTrace();
+		} catch (HFBufMgrException e) {
+			e.printStackTrace();
+		}
 		try {
 			temp.deleteFile();
 		} catch (InvalidSlotNumberException e) {

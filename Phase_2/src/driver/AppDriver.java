@@ -584,7 +584,7 @@ class Driver extends TestDriver implements GlobalConst
             try {
                 temp = sortFirstSky.get_next();
                 while (temp!=null) {
-                    temp.print(attrType_for_sort);
+                    temp.printTuple(attrType_for_proj);
                     numSkyEle++;
                     temp = sortFirstSky.get_next();
                 }
