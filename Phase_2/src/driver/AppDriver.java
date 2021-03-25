@@ -52,7 +52,7 @@ class Driver extends TestDriver implements GlobalConst
         dbpath = "MINIBASE.minibase-db";
 		logpath = "MINIBASE.minibase-log";
         // Each page can handle at most 25 tuples on original data => 7308 / 25 = 292
-        SystemDefs sysdef = new SystemDefs(dbpath,80000, 3000,"Clock");
+        SystemDefs sysdef = new SystemDefs(dbpath,160000, 50,"Clock");
 
         // Kill anything that might be hanging around
         String newdbpath;
@@ -482,51 +482,6 @@ class Driver extends TestDriver implements GlobalConst
 
         PCounter.initialize();
 
-        /*
-        try {
-            fscan = new FileScan(hFile, attrType, attrSize, (short) COLS, COLS, projlist, null);
-        }
-        catch (Exception e) {
-            status = FAIL;
-            e.printStackTrace();
-        }
-
-        SortFirstSky sortFirstSky = null;
-        try {
-            sortFirstSky = new SortFirstSky(attrType,
-                (short) COLS,
-                attrSize,
-                fscan,
-                (short)_t_size,
-                hFile,
-                _pref_list,
-                _pref_list.length,
-                _n_pages);
-
-
-            while(sortFirstSky.hasNext()) {
-                System.out.println("Skyline object: ");
-                sortFirstSky.get_next().print(attrType);
-            }
-
-
-            
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            status = OK;
-            // clean up
-            try {
-                sortFirstSky.close();
-            }
-            catch (Exception e) {
-                status = FAIL;
-                e.printStackTrace();
-            }
-        }
-
-         */
-
         FldSpec[] projlist = new FldSpec[COLS+1];
         RelSpec rel = new RelSpec(RelSpec.outer);
         for(int i=0;i<COLS;i++)
@@ -684,9 +639,6 @@ class Driver extends TestDriver implements GlobalConst
         System.out.println("Pref list: "+Arrays.toString(pref_list));
         System.out.println("Pref list length: "+numberOfDimensions);
 
-        //limiting buffer pages in BufMgr
-        System.out.println("No of buffers "+SystemDefs.JavabaseBM.getNumBuffers());
-        System.out.println("No of unpinned buffers "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
 
         SystemDefs.JavabaseBM.limit_memory_usage(true, this._n_pages);
 

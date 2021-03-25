@@ -101,7 +101,7 @@ public class BTreeSortedSky extends Iterator implements GlobalConst {
 
 	public void computeSkylines() throws  Exception {
 		Heapfile hf = new Heapfile("heap_" + "AAA");
-		temp = new Heapfile("sortFirstSkyTemp.in");
+		temp = new Heapfile("BtreeSortSkyTemp.in");
 		BTFileScan scan = ((BTreeFile) index_file).new_scan(null, null);
 		KeyDataEntry entry;
 		RID rid;
@@ -176,7 +176,7 @@ public class BTreeSortedSky extends Iterator implements GlobalConst {
 				attr_len,
 				t1_str_sizes,
 				am1,
-				"sortFirstSkyTemp.in",
+				"BtreeSortSkyTemp.in",
 				pref_list,
 				pref_list_length,
 				n_pages/2
