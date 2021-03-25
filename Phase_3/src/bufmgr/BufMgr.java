@@ -284,6 +284,7 @@ class Clock extends Replacer {
     			  state_bit[temp_head].state = Available;
     			  temp_head++;
     		  }
+    		  System.out.println("limit memory usage hit"+numBuffers);
     		  mgr.limit_memory_usage(false, 0);
     		  throw new BufferPoolExceededException (null, "BUFMGR: BUFFER_EXCEEDED.");
 	  
@@ -627,7 +628,8 @@ public class BufMgr implements GlobalConst{
       int frameNo;
       
       frameNo=hashTable.lookup(PageId_in_a_DB);
-      
+      //System.out.println("Frame number "+frameNo);
+      //System.out.println("Frame pin count "+frameTable()[frameNo].pin_cnt);
       if (frameNo<0){
 	throw new HashEntryNotFoundException (null, "BUFMGR: HASH_NOT_FOUND.");
       }
@@ -646,7 +648,19 @@ public class BufMgr implements GlobalConst{
       //num_pinned_pages--;
       //System.out.println("Unpinning the page " + (replacer.getNumUnpinnedBuffers()) );
     }
-  
+
+  public boolean isPagePinned(PageId PageId_in_a_DB)
+  {
+	  
+	  int frameNo;
+      
+      frameNo=hashTable.lookup(PageId_in_a_DB);
+      
+      if (frameNo<0){
+    	  return false;
+      }
+      return true;
+  }
   
   /** Call DB object to allocate a run of new pages and 
    * find a frame in the buffer pool for the first page
@@ -869,24 +883,30 @@ public class BufMgr implements GlobalConst{
 		  /* initialise the buffer manager variables 
 		   * Make sure that all the pages are unpinned annd flushed before calling this function
 		   */
-
-		  clean_buffer_allocation();
+		  
+		  
 	      /* enabling it without disabling it */
 		  if ( limit_memory_usage == false )
 		  {
 			  restore_num_buf = numBuffers;
 		  }
 		  numBuffers = n_pages;
+		  clean_buffer_allocation();
 		  limit_memory_usage = true;
 		  System.out.println("Number of buffer manager pages to be used now onwards: "+ numBuffers);
 		  System.out.println("Total number of buffer manager pages: "+ restore_num_buf);
 		  hashTable.initer();
+		  replacer.setBufferManager(this);
 	  }
 	  else
 	  {
 		  /* disable the feature and let buffer manager function normally with total number of pages */
 		  limit_memory_usage = false;
 		  numBuffers = restore_num_buf;
+		  System.out.println("Number of buffer manager pages to be used now onwards: "+ numBuffers);
+		  hashTable.initer();
+		  replacer.setBufferManager(this);
+		  clean_buffer_allocation();
 	  }
   }
   

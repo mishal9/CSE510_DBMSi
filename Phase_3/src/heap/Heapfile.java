@@ -952,6 +952,7 @@ public class Heapfile implements Filetype,  GlobalConst {
     throws HFBufMgrException {
     
     try {
+    	//System.out.println("Pinning the page in heapfile");
       SystemDefs.JavabaseBM.pinPage(pageno, page, emptyPage);
     }
     catch (Exception e) {
@@ -971,6 +972,7 @@ public class Heapfile implements Filetype,  GlobalConst {
       SystemDefs.JavabaseBM.unpinPage(pageno, dirty);
     }
     catch (Exception e) {
+    	//System.out.println("Unpinning the page in heapfile");
       throw new HFBufMgrException(e,"Heapfile.java: unpinPage() failed");
     }
 
