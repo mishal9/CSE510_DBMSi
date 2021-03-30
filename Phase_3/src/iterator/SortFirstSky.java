@@ -2,6 +2,7 @@ package iterator;
 
 import btree.LeafData;
 import bufmgr.*;
+import diskmgr.PCounter;
 import global.*;
 import heap.*;
 import index.IndexException;
@@ -180,8 +181,14 @@ public class SortFirstSky extends Iterator implements GlobalConst {
         Tuple t = new Tuple();
 
         try {
+        	System.out.println("Number of Disk reads: "+ PCounter.get_rcounter());
+            System.out.println("Number of Disk writes: "+ PCounter.get_wcounter());
+            PCounter.initialize();
             // check if there's atleast one tuple
             t = sort.get_next();
+            System.out.println("Number of Disk reads sorted: "+ PCounter.get_rcounter());
+            System.out.println("Number of Disk writes: "+ PCounter.get_wcounter());
+            PCounter.initialize();
         }
         catch (Exception e) {
             status = FAIL;
@@ -247,7 +254,9 @@ public class SortFirstSky extends Iterator implements GlobalConst {
         }
 
          */
-
+        System.out.println("Number of Disk reads: "+ PCounter.get_rcounter());
+        System.out.println("Number of Disk writes: "+ PCounter.get_wcounter());
+        PCounter.initialize();
         while (t != null && count < window.length) {
 
             Tuple outer_tuple = new Tuple(t);
@@ -285,7 +294,9 @@ public class SortFirstSky extends Iterator implements GlobalConst {
                 e.printStackTrace();
             }
         }
-
+        System.out.println("Number of Disk reads: "+ PCounter.get_rcounter());
+        System.out.println("Number of Disk writes: "+ PCounter.get_wcounter());
+        PCounter.initialize();
         while (t != null) {
             boolean isDominatedBy = false;
             Tuple htuple = new Tuple(t);
@@ -328,6 +339,9 @@ public class SortFirstSky extends Iterator implements GlobalConst {
                 e.printStackTrace();
             }
         }
+        System.out.println("Number of Disk reads: "+ PCounter.get_rcounter());
+        System.out.println("Number of Disk writes: "+ PCounter.get_wcounter());
+        PCounter.initialize();
         /*
         System.out.println("=====Window Skyline Tuples=====");
 

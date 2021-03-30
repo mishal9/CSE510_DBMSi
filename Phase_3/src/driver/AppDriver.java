@@ -137,8 +137,8 @@ class Driver extends TestDriver implements GlobalConst
         int choice= GetStuff.getChoice();
          switch(choice) {
          case 1:
-        	 dataFile = OS.indexOf("mac") >= 0 ? "data/data2.txt" : "data/data2.txt";
-        	 numberOfDimensions = 5;
+        	 dataFile = OS.indexOf("mac") >= 0 ? "data/demo_data/nc_2_3000_single.txt" : "data/data2.txt";
+        	 numberOfDimensions = 2;
         	 break;
          case 2:
         	 dataFile = OS.indexOf("mac") >= 0 ? "data/data3.txt" : "data/data3.txt";
@@ -568,7 +568,9 @@ class Driver extends TestDriver implements GlobalConst
             status = FAIL;
             e.printStackTrace();
         }
-
+        System.out.println("Number of Disk reads: "+ PCounter.get_rcounter());
+        System.out.println("Number of Disk writes: "+ PCounter.get_wcounter());
+        PCounter.initialize();
         // pass this sort object to the sortfirstsky
 
         SortFirstSky sortFirstSky = null;
