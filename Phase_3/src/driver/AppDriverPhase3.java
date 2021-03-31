@@ -58,8 +58,11 @@ class DriverPhase3 extends TestDriver implements GlobalConst
     /* sysdef object */
     SystemDefs sysdef;
     
+    /* query currently under processing */
+    private String query;
+    
     /* query tokens */
-    String[] tokens;
+    private String[] tokens;
     
     public DriverPhase3(){
         super("main");
@@ -72,7 +75,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
     }
     
     /* function to handle open DB and close DB calls */
-    private void handleOpenDB( String query, boolean close_db ) {
+    private void handleOpenDB(boolean close_db ) {
     	if ( close_db ) {
     		//TBD close the db properly
     		/*if any db is open, flush it and close it */
@@ -192,11 +195,34 @@ class DriverPhase3 extends TestDriver implements GlobalConst
     	return true;
     }
     
+    /* parses the create_index query for the exact structure 
+     * part of task 1/2
+     * structure: create_index BTREE/HASH ATT_NO TABLENAME
+     * */
+    public void parse_create_index() {
+    	boolean btree_type_index = query.contains("BTREE");
+    	boolean hash_type_index = query.contains("HASH");
+    	if ( validate_token_length(4, "create_index") == false ) {
+			return;
+		}
+    	int index_att_no = Integer.parseInt(tokens[2]);
+    	String tablename = tokens[3];
+
+		if ( btree_type_index ) {
+			System.out.println("Creating an unclustered btree index on table "+tablename+" on attribute "+index_att_no);
+			//TBD create UNCLUSTERED BTREE INDEX on attribute
+		}
+		else if ( hash_type_index ) {
+			System.out.println("Creating an unclustered hash index on table "+tablename+" on attribute "+index_att_no);
+			//TBD create UNCLUSTERED HASH INDEX on attribute
+		}
+    }
+    
     /* parses the create_table query for the exact structure 
-     * part of task 1
+     * part of task 1/2
      * structure: create_table [CLUSTERED BTREE/HASH ATT_NO] FILENAME
      * */
-    public void parse_create_table( String query ) {
+    public void parse_create_table() {
     	boolean is_index_required = query.contains("CLUSTERED");
     	boolean btree_type_index = query.contains("BTREE");
     	boolean hash_type_index = query.contains("HASH");
@@ -228,11 +254,136 @@ class DriverPhase3 extends TestDriver implements GlobalConst
     	}
     }
     
+    /* parses the insert_data query for the exact structure 
+     * part of task 
+     * structure: insert_data TABLENAME FILENAME
+     * */
+    public void parse_insert_data() {
+    	if ( validate_token_length(3, "insert_data") == false ) {
+			return;
+		}
+    	String filename = tokens[2];
+    	String tablename = tokens[1];
+    	System.out.println("Inserting data from file "+filename+" to table "+tablename);
+    	//TBD insert the data into mentioned table and update the index structures accordingly
+    }
+    
+    /* parses the delete_data query for the exact structure 
+     * part of task 
+     * structure: delete_data TABLENAME FILENAME 
+     * */
+    public void parse_delete_data() {
+    	if ( validate_token_length(3, "delete_data") == false ) {
+			return;
+		}
+    	String filename = tokens[2];
+    	String tablename = tokens[1];
+    	System.out.println("Deleting data of file "+filename+" from table "+tablename);
+    	//TBD delete the data from the mentioned table and update the index structures accordingly
+    }
+    
+    /* parses the output_table query for the exact structure 
+     * part of task 
+     * structure: output_table TABLENAME
+     * */
+    public void parse_output_table() {
+    	if ( validate_token_length(2, "output_table") == false ) {
+			return;
+		}
+    	String tablename = tokens[1];
+    	System.out.println("Printing the table "+tablename);
+    	//TBD print the mentioned table properly
+    }
+    
+    /* parses the output_index query for the exact structure 
+     * part of task 
+     * structure: output_index TABLENAME ATT_NO
+     * */
+    public void parse_output_index() {
+    	if ( validate_token_length(3, "output_index") == false ) {
+			return;
+		}
+    	String tablename = tokens[1];
+    	int index_att_no = Integer.parseInt(tokens[2]);
+    	System.out.println("Printing the indices on attribute "+index_att_no+" on table "+tablename);
+    	//TBD print all the indices on table specified
+    }
+    
+    /* parses the skyline query for the exact structure 
+     * part of phase 2
+     * structure: skyline NLS/BNLS/SFS/BTS/BTSS {ATT_NO1, ...ATT_NOh} TABLENAME NPAGES [MATER OUTTABLENAME]
+     * */
+    public void parse_skyline() {
+    	/* ----------------------which skyline needs to be calculated ------------------------------------*/
+    	String skyline_algo = tokens[1];
+    	
+    	/* --------------------------extract the preference list and n pages from the query------------ */
+    	String temp_query = String.valueOf(query);
+    	temp_query = temp_query.replaceAll("[^\\d]", " ");
+    	temp_query = temp_query.trim();
+    	temp_query = temp_query.replaceAll(" +", " ");
+    	String[] temp_tokens = temp_query.split(" ");
+    	/*------------------------ the last digit in the query is the n_pages---------------------- */
+    	int skyline_n_pages = Integer.parseInt(temp_tokens[temp_tokens.length-1]);
+    	int[] skyline_preference_list = new int[temp_tokens.length-1];
+    	
+    	/* -----------------------extract the preference list form the token array------------- */
+    	for ( int pref_count = 0; pref_count < skyline_preference_list.length; pref_count++ ) {
+    		skyline_preference_list[pref_count] = Integer.parseInt(temp_tokens[pref_count]);
+    	}
+    	
+    	/*---------------------extract tablename and outtablename--------------------------*/
+    	boolean is_output_saved = query.contains("MATER");
+    	int index_mater = -1;
+    	String skyline_tablename;
+    	String out_tablename = "";
+    	if ( is_output_saved ) {
+    		index_mater = Arrays.asList(tokens).indexOf("MATER");
+    		out_tablename = tokens[index_mater+1];
+    		skyline_tablename = tokens[index_mater-2];
+    	}
+    	else {
+    		index_mater = Arrays.asList(tokens).indexOf(Integer.toString(skyline_n_pages));
+    		skyline_tablename = tokens[index_mater-1];
+    	}
+    	
+    	if ( is_output_saved ) {
+    		System.out.println(" calculating "+skyline_algo+" skyline on table "+ skyline_tablename+" on attributes "+Arrays.toString(skyline_preference_list)+
+    				" with buffer pages: "+skyline_n_pages+". Saving the output table to "+out_tablename);
+    	}
+    	else {
+    		System.out.println(" calculating "+skyline_algo+" skyline on table "+ skyline_tablename+" on attributes "+Arrays.toString(skyline_preference_list)+
+    				" with buffer pages: "+skyline_n_pages);
+    	}
+    	
+    	/* run the appropriate skyline algorithm */
+    	switch ( skyline_algo ) {
+    		case "NLS":
+    			//TBD run NLS with proper params
+    			break;
+    		case "BNLS":
+    			//TBD run BNLS with proper params
+    			break;
+    		case "SFS":
+    			//TBD run SFS with proper params
+    			break;
+    		case "BTS":
+    			//TBD run btree sky with proper params
+    			break;
+    		case "BTSS":
+    			//TBD run btree sorted sky with proper params
+    			break;
+    		default:
+    			validate_token_length(0, "skyline");
+    			break;
+    	}
+    }
+    
     /* This function runs the main query interface which reads and processes all the queries */
     public void startQueryInterface() {
     	boolean exit_interface = false;
     	while (!exit_interface) {
-    		String query = readNextCommand();
+    		query = readNextCommand();
     		tokens = query.split(" ");
     		switch (tokens[0]) {
     			case "exit":
@@ -245,37 +396,55 @@ class DriverPhase3 extends TestDriver implements GlobalConst
     				/* open new or already existing database 
     				 * open_database dbname
     				 */
-    				handleOpenDB(query, false);
+    				handleOpenDB(false);
     				break;
     			case "create_table":
     				/* need to create a simple or a clustered index table here
     				 * create_table [CLUSTERED BTREE/HASH ATT_NO] FILENAME
     				 */
-    				parse_create_table(query);
+    				parse_create_table();
     				break;
     			case "close_database":
     				/*need to close the existing db and dump all the file on the disk
     				 * close_database
     				 */
-    				handleOpenDB(query, true);
+    				handleOpenDB(true);
     				break;
     			case "create_index":
-    				//need to create an unclustered index as specified
+    				/*need to create an unclustered index as specified
+    				 * create_index BTREE/HASH ATT_NO TABLENAME
+    				 */
+    				parse_create_index();
     				break;
     			case "insert_data":
-    				//insert data to the file
+    				/*insert data to the file
+    				 * insert_data TABLENAME FILENAME
+    				 */
+    				parse_insert_data();
     				break;
     			case "delete_data":
-    				//delete the elements from the given file 
+    				/*delete the elements from the given file
+    				 * delete_data TABLENAME FILENAME 
+    				 */
+    				parse_delete_data();
     				break;
     			case "output_table":
-    				//print the entire table specified
+    				/*print the entire table specified
+    				 * output_table TABLENAME
+    				 */
+    				parse_output_table();
     				break;
     			case "output_index":
-    				//outputs the index if available
+    				/*outputs the index if available
+    				 * output_index TABLENAME ATT_NO
+    				 */
+    				parse_output_index();
     				break;
     			case "skyline":
-    				//computes the skyline mentioned
+    				/*computes the skyline mentioned
+    				 * skyline NLS/BNLS/SFS/BTS/BTSS {ATT_NO1, ...ATT_NOh} TABLENAME NPAGES [MATER OUTTABLENAME]
+    				 */
+    				parse_skyline();
     				break;
     			case "groupby":
     				//calculate the group by accordingly
@@ -285,6 +454,9 @@ class DriverPhase3 extends TestDriver implements GlobalConst
     				break;
     			case "topkjoin":
     				//perform the topkjoin as specified
+    				break;
+    			case "help":
+    				printQueryHelper("all");
     				break;
     			default:
     				System.out.println("Query command not recognized "+tokens[0]);
@@ -332,7 +504,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
     			break;
     		case "skyline":
     			System.out.println("Command: skyline NLS/BNLS/SFS/BTS/BTSS {ATT_NO1, ...ATT_NOh} TABLENAME NPAGES [MATER OUTTABLENAME]--> Output the skyline"
-    					+ " of the given table  for the given h attributes. If MATER is specified, then materialize the results by creating a new table with "
+    					+ " of the given table for the given h attributes. If MATER is specified, then materialize the results by creating a new table with "
     					+ " specified outputtable name.\n\n");
     			break;
     		case "groupby":
