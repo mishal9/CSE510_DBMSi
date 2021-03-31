@@ -200,22 +200,26 @@ class DriverPhase3 extends TestDriver implements GlobalConst
      * structure: create_index BTREE/HASH ATT_NO TABLENAME
      * */
     public void parse_create_index() {
-    	boolean btree_type_index = query.contains("BTREE");
-    	boolean hash_type_index = query.contains("HASH");
-    	if ( validate_token_length(4, "create_index") == false ) {
-			return;
-		}
-    	int index_att_no = Integer.parseInt(tokens[2]);
-    	String tablename = tokens[3];
-
-		if ( btree_type_index ) {
-			System.out.println("Creating an unclustered btree index on table "+tablename+" on attribute "+index_att_no);
-			//TBD create UNCLUSTERED BTREE INDEX on attribute
-		}
-		else if ( hash_type_index ) {
-			System.out.println("Creating an unclustered hash index on table "+tablename+" on attribute "+index_att_no);
-			//TBD create UNCLUSTERED HASH INDEX on attribute
-		}
+    	try {
+	    	boolean btree_type_index = query.contains("BTREE");
+	    	boolean hash_type_index = query.contains("HASH");
+	    	if ( validate_token_length(4, "create_index") == false ) {
+				return;
+			}
+	    	int index_att_no = Integer.parseInt(tokens[2]);
+	    	String tablename = tokens[3];
+	
+			if ( btree_type_index ) {
+				System.out.println("Creating an unclustered btree index on table "+tablename+" on attribute "+index_att_no);
+				//TBD create UNCLUSTERED BTREE INDEX on attribute
+			}
+			else if ( hash_type_index ) {
+				System.out.println("Creating an unclustered hash index on table "+tablename+" on attribute "+index_att_no);
+				//TBD create UNCLUSTERED HASH INDEX on attribute
+			}
+    	}catch (ArrayIndexOutOfBoundsException e){
+	        validate_token_length(0, "create_index");
+	    }
     }
     
     /* parses the create_table query for the exact structure 
@@ -314,69 +318,73 @@ class DriverPhase3 extends TestDriver implements GlobalConst
      * structure: skyline NLS/BNLS/SFS/BTS/BTSS {ATT_NO1, ...ATT_NOh} TABLENAME NPAGES [MATER OUTTABLENAME]
      * */
     public void parse_skyline() {
-    	/* ----------------------which skyline needs to be calculated ------------------------------------*/
-    	String skyline_algo = tokens[1];//NLS/BNLS/SFS/BTS/BTSS
+    	try {
+	    	/* ----------------------which skyline needs to be calculated ------------------------------------*/
+	    	String skyline_algo = tokens[1];//NLS/BNLS/SFS/BTS/BTSS
+	    	
+	    	/* --------------------------extract the preference list and n pages from the query------------ */
+	    	String temp_query = String.valueOf(query);
+	    	temp_query = temp_query.replaceAll("[^\\d]", " ");
+	    	temp_query = temp_query.trim();
+	    	temp_query = temp_query.replaceAll(" +", " ");
+	    	String[] temp_tokens = temp_query.split(" ");
+	    	/*------------------------ the last digit in the query is the n_pages---------------------- */
+	    	int skyline_n_pages = Integer.parseInt(temp_tokens[temp_tokens.length-1]);
+	    	int[] skyline_preference_list = new int[temp_tokens.length-1];
+	    	
+	    	/* -----------------------extract the preference list form the token array------------- */
+	    	for ( int pref_count = 0; pref_count < skyline_preference_list.length; pref_count++ ) {
+	    		skyline_preference_list[pref_count] = Integer.parseInt(temp_tokens[pref_count]);
+	    	}
+	    	
+	    	/*---------------------extract tablename and outtablename--------------------------*/
+	    	boolean is_output_saved = query.contains("MATER");
+	    	int index_mater = -1;
+	    	String skyline_tablename;
+	    	String out_tablename = "";
+	    	if ( is_output_saved ) {
+	    		index_mater = Arrays.asList(tokens).indexOf("MATER");
+	    		out_tablename = tokens[index_mater+1];
+	    		skyline_tablename = tokens[index_mater-2];
+	    	}
+	    	else {
+	    		index_mater = Arrays.asList(tokens).indexOf(Integer.toString(skyline_n_pages));
+	    		skyline_tablename = tokens[index_mater-1];
+	    	}
     	
-    	/* --------------------------extract the preference list and n pages from the query------------ */
-    	String temp_query = String.valueOf(query);
-    	temp_query = temp_query.replaceAll("[^\\d]", " ");
-    	temp_query = temp_query.trim();
-    	temp_query = temp_query.replaceAll(" +", " ");
-    	String[] temp_tokens = temp_query.split(" ");
-    	/*------------------------ the last digit in the query is the n_pages---------------------- */
-    	int skyline_n_pages = Integer.parseInt(temp_tokens[temp_tokens.length-1]);
-    	int[] skyline_preference_list = new int[temp_tokens.length-1];
-    	
-    	/* -----------------------extract the preference list form the token array------------- */
-    	for ( int pref_count = 0; pref_count < skyline_preference_list.length; pref_count++ ) {
-    		skyline_preference_list[pref_count] = Integer.parseInt(temp_tokens[pref_count]);
-    	}
-    	
-    	/*---------------------extract tablename and outtablename--------------------------*/
-    	boolean is_output_saved = query.contains("MATER");
-    	int index_mater = -1;
-    	String skyline_tablename;
-    	String out_tablename = "";
-    	if ( is_output_saved ) {
-    		index_mater = Arrays.asList(tokens).indexOf("MATER");
-    		out_tablename = tokens[index_mater+1];
-    		skyline_tablename = tokens[index_mater-2];
-    	}
-    	else {
-    		index_mater = Arrays.asList(tokens).indexOf(Integer.toString(skyline_n_pages));
-    		skyline_tablename = tokens[index_mater-1];
-    	}
-    	
-    	if ( is_output_saved ) {
-    		System.out.println(" calculating "+skyline_algo+" skyline on table "+ skyline_tablename+" on attributes "+Arrays.toString(skyline_preference_list)+
-    				" with buffer pages: "+skyline_n_pages+". Saving the output table to "+out_tablename);
-    	}
-    	else {
-    		System.out.println(" calculating "+skyline_algo+" skyline on table "+ skyline_tablename+" on attributes "+Arrays.toString(skyline_preference_list)+
-    				" with buffer pages: "+skyline_n_pages);
-    	}
-    	
-    	/* run the appropriate skyline algorithm */
-    	switch ( skyline_algo ) {
-    		case "NLS":
-    			//TBD run NLS with proper params
-    			break;
-    		case "BNLS":
-    			//TBD run BNLS with proper params
-    			break;
-    		case "SFS":
-    			//TBD run SFS with proper params
-    			break;
-    		case "BTS":
-    			//TBD run btree sky with proper params
-    			break;
-    		case "BTSS":
-    			//TBD run btree sorted sky with proper params
-    			break;
-    		default:
-    			validate_token_length(0, "skyline");
-    			break;
-    	}
+	    	if ( is_output_saved ) {
+	    		System.out.println(" calculating "+skyline_algo+" skyline on table "+ skyline_tablename+" on attributes "+Arrays.toString(skyline_preference_list)+
+	    				" with buffer pages: "+skyline_n_pages+". Saving the output table to "+out_tablename);
+	    	}
+	    	else {
+	    		System.out.println(" calculating "+skyline_algo+" skyline on table "+ skyline_tablename+" on attributes "+Arrays.toString(skyline_preference_list)+
+	    				" with buffer pages: "+skyline_n_pages);
+	    	}
+	    	
+	    	/* run the appropriate skyline algorithm */
+	    	switch ( skyline_algo ) {
+	    		case "NLS":
+	    			//TBD run NLS with proper params
+	    			break;
+	    		case "BNLS":
+	    			//TBD run BNLS with proper params
+	    			break;
+	    		case "SFS":
+	    			//TBD run SFS with proper params
+	    			break;
+	    		case "BTS":
+	    			//TBD run btree sky with proper params
+	    			break;
+	    		case "BTSS":
+	    			//TBD run btree sorted sky with proper params
+	    			break;
+	    		default:
+	    			validate_token_length(0, "skyline");
+	    			break;
+	    	}
+    	}catch (ArrayIndexOutOfBoundsException e){
+	        validate_token_length(0, "skyline");
+	    }
     }
     
     /* parses the groupby query for the exact structure 
@@ -384,69 +392,75 @@ class DriverPhase3 extends TestDriver implements GlobalConst
      * structure: groupby SORT/HASH MAX/MIN/AGG/SKY G_ATT_NO{ATT_NO1,...ATT_NOh} TABLENAME NPAGES [MATER OUTTABLENAME]
      * */
     public void parse_groupby() {
-    	/* ----------------------which GROUPBY needs to be calculated ------------------------------------*/
-    	String group_algo = tokens[1]; //SORT/HASH
-    	
-    	/* ---------------------which aggregation needs to be used----------------------------------*/
-    	String agg_algo = tokens[2];
-    	
-    	/* --------------------------extract the preference list and n pages from the query------------ */
-    	String temp_query = String.valueOf(query);
-    	temp_query = temp_query.replaceAll("[^\\d]", " ");
-    	temp_query = temp_query.trim();
-    	temp_query = temp_query.replaceAll(" +", " ");
-    	String[] temp_tokens = temp_query.split(" ");
-    	
-    	/*------------------------ the last digit in the query is the n_pages---------------------- */
-    	int groupby_n_pages = Integer.parseInt(temp_tokens[temp_tokens.length-1]);
-    	
-    	/*------------------------extract the groupby attributes ----------------------------*/
-    	int groupby_attribute = Integer.parseInt(temp_tokens[0]);
-    	
-    	/* --------------------------extract the preference list and n pages from the query------------ */
-    	int[] agg_attributes = new int[temp_tokens.length-2];
-    	
-    	/* ------------------extract the aggregation attributes list form the token array------------- */
-    	for ( int pref_count = 0; pref_count < agg_attributes.length; pref_count++ ) {
-    		agg_attributes[pref_count] = Integer.parseInt(temp_tokens[pref_count+1]);
-    	}
-    	
-    	/*---------------------extract tablename and outtablename--------------------------*/
-    	boolean is_output_saved = query.contains("MATER");
-    	int index_mater = -1;
-    	String groupby_tablename;
-    	String out_tablename = "";
-    	if ( is_output_saved ) {
-    		index_mater = Arrays.asList(tokens).indexOf("MATER");
-    		out_tablename = tokens[index_mater+1];
-    		groupby_tablename = tokens[index_mater-2];
-    	}
-    	else {
-    		groupby_tablename = tokens[tokens.length-2];
-    	}
-    	
-    	if ( is_output_saved ) {
-    		System.out.println(" calculating groupby "+group_algo+" on table "+ groupby_tablename+" on attribute "+ groupby_attribute +
-    				" with buffer pages: "+groupby_n_pages+ " and aggregation type "+ agg_algo + " on attributes" + Arrays.toString(agg_attributes) +
-    				". Saving the output table to "+out_tablename);
-    	}
-    	else {
-    		System.out.println(" calculating groupby "+group_algo+" on table "+ groupby_tablename+" on attribute "+ groupby_attribute +
-    				" with buffer pages: "+groupby_n_pages+ " and aggregation type "+ agg_algo + " on attributes" + Arrays.toString(agg_attributes));
-    	}
-    	
-    	/* run the appropriate skyline algorithm */
-    	switch ( group_algo ) {
-    		case "HASH":
-    			//TBD run HASH groupby with proper params
-    			break;
-    		case "SORT":
-    			//TBD run SORT hash with proper params
-    			break;
-    		default:
-    			validate_token_length(0, "groupby");
-    			break;
-    	}
+    	try {
+	    	/* ----------------------which GROUPBY needs to be calculated ------------------------------------*/
+	    	String group_algo = tokens[1]; //SORT/HASH
+	    	
+	    	/* ---------------------which aggregation needs to be used----------------------------------*/
+	    	String agg_algo = tokens[2];
+	    	
+	    	/* --------------------------extract the preference list and n pages from the query------------ */
+	    	String temp_query = String.valueOf(query);
+	    	temp_query = temp_query.replaceAll("[^\\d]", " ");
+	    	temp_query = temp_query.trim();
+	    	temp_query = temp_query.replaceAll(" +", " ");
+	    	String[] temp_tokens = temp_query.split(" ");
+	    	
+	    	/*------------------------ the last digit in the query is the n_pages---------------------- */
+	    	int groupby_n_pages = Integer.parseInt(temp_tokens[temp_tokens.length-1]);
+	    	
+	    	/*------------------------extract the groupby attributes ----------------------------*/
+	    	int groupby_attribute = Integer.parseInt(temp_tokens[0]);
+	    	
+	    	/* --------------------------extract the preference list and n pages from the query------------ */
+	    	int[] agg_attributes = new int[temp_tokens.length-2];
+	    	
+	    	/* ------------------extract the aggregation attributes list form the token array------------- */
+	    	for ( int pref_count = 0; pref_count < agg_attributes.length; pref_count++ ) {
+	    		agg_attributes[pref_count] = Integer.parseInt(temp_tokens[pref_count+1]);
+	    	}
+	    	
+	    	/*---------------------extract tablename and outtablename--------------------------*/
+	    	boolean is_output_saved = query.contains("MATER");
+	    	int index_mater = -1;
+	    	String groupby_tablename;
+	    	String out_tablename = "";
+	    	if ( is_output_saved ) {
+	    		index_mater = Arrays.asList(tokens).indexOf("MATER");
+	    		out_tablename = tokens[index_mater+1];
+	    		groupby_tablename = tokens[index_mater-2];
+	    	}
+	    	else {
+	    		groupby_tablename = tokens[tokens.length-2];
+	    	}
+	    	
+	    	if ( is_output_saved ) {
+	    		System.out.println(" calculating groupby "+group_algo+" on table "+ groupby_tablename+" on attribute "+ groupby_attribute +
+	    				" with buffer pages: "+groupby_n_pages+ " and aggregation type "+ agg_algo + " on attributes" + Arrays.toString(agg_attributes) +
+	    				". Saving the output table to "+out_tablename);
+	    	}
+	    	else {
+	    		System.out.println(" calculating groupby "+group_algo+" on table "+ groupby_tablename+" on attribute "+ groupby_attribute +
+	    				" with buffer pages: "+groupby_n_pages+ " and aggregation type "+ agg_algo + " on attributes" + Arrays.toString(agg_attributes));
+	    	}
+	    	
+	    	/* run the appropriate skyline algorithm */
+	    	switch ( group_algo ) {
+	    		case "HASH":
+	    			//TBD run HASH groupby with proper params
+	    			break;
+	    		case "SORT":
+	    			//TBD run SORT hash with proper params
+	    			break;
+	    		default:
+	    			validate_token_length(0, "groupby");
+	    			break;
+	    	}
+    	}catch (ArrayIndexOutOfBoundsException e){
+	        validate_token_length(0, "groupby");
+	    }catch (NegativeArraySizeException e) {
+	    	validate_token_length(0, "groupby");
+	    }
     }
     
     /* parses the join query for the exact structure 
@@ -454,63 +468,66 @@ class DriverPhase3 extends TestDriver implements GlobalConst
      * structure: join NLJ/SMJ/INLJ/HJ OTABLENAME O_ATT_NO ITABLENAME I_ATT_NO OP NPAGES [MATER OUTTABLENAME]
      * */
     public void parse_join() {
-    	/* ----------------------which join needs to be calculated ------------------------------------*/
-    	String join_algo = tokens[1]; //NLJ/SMJ/INLJ/HJ
-    	
-    	/* ---------------------which is the outer table----------------------------------*/
-    	String outer_table_name = tokens[2];
-    	
-    	/* ---------------------which is the inner table----------------------------------*/
-    	String inner_table_name = tokens[4];
-    	
-    	/*----------------------get the outer nad inner attribute on which to perform the join */
-    	int outer_table_attribute = Integer.parseInt(tokens[3]);
-    	int inner_table_attribute = Integer.parseInt(tokens[5]);
-    	
-    	/*-------------------- operator used for join ----------------------*/
-    	String op = tokens[6];
-    	
-    	/*------------join n_pages----------------------------*/
-    	int join_n_pages = Integer.parseInt(tokens[7]);
-    	
-    	/*---------------------extract tablename and outtablename--------------------------*/
-    	boolean is_output_saved = query.contains("MATER");
-    	int index_mater = -1;
-    	String out_tablename = "";
-    	if ( is_output_saved ) {
-    		out_tablename = tokens[9];
-    	}
-    	
-    	if ( is_output_saved ) {
-    		System.out.println(" calculating "+join_algo+" on outer table "+ outer_table_name+" attribute "+ outer_table_attribute +
-    				" and inner table "+ inner_table_name+" attribute "+ inner_table_attribute +
-    				" with buffer pages: "+join_n_pages+ " and operator type "+op+
-    				". Saving the output table to "+out_tablename);
-    	}
-    	else {
-    		System.out.println(" calculating "+join_algo+" on outer table "+ outer_table_name+" attribute "+ outer_table_attribute +
-    				" and inner table "+ inner_table_name+" attribute "+ inner_table_attribute +
-    				" with buffer pages: "+join_n_pages+ " and operator type "+op);
-    	}
-    	
-    	/* run the appropriate skyline algorithm */
-    	switch ( join_algo ) {
-    		case "NLJ":
-    			//TBD run NLJ with proper params
-    			break;
-    		case "SMJ":
-    			//TBD run SMJ with proper params
-    			break;
-    		case "INLJ":
-    			//TBD run INLJ with proper params
-    			break;
-    		case "HJ":
-    			//TBD run HJ with proper params
-    			break;
-    		default:
-    			validate_token_length(0, "join");
-    			break;
-    	}
+    	try {
+	    	/* ----------------------which join needs to be calculated ------------------------------------*/
+	    	String join_algo = tokens[1]; //NLJ/SMJ/INLJ/HJ
+	    	
+	    	/* ---------------------which is the outer table----------------------------------*/
+	    	String outer_table_name = tokens[2];
+	    	
+	    	/* ---------------------which is the inner table----------------------------------*/
+	    	String inner_table_name = tokens[4];
+	    	
+	    	/*----------------------get the outer nad inner attribute on which to perform the join */
+	    	int outer_table_attribute = Integer.parseInt(tokens[3]);
+	    	int inner_table_attribute = Integer.parseInt(tokens[5]);
+	    	
+	    	/*-------------------- operator used for join ----------------------*/
+	    	String op = tokens[6];
+	    	
+	    	/*------------join n_pages----------------------------*/
+	    	int join_n_pages = Integer.parseInt(tokens[7]);
+	    	
+	    	/*---------------------extract tablename and outtablename--------------------------*/
+	    	boolean is_output_saved = query.contains("MATER");
+	    	String out_tablename = "";
+	    	if ( is_output_saved ) {
+	    		out_tablename = tokens[9];
+	    	}
+	    	
+	    	if ( is_output_saved ) {
+	    		System.out.println(" calculating "+join_algo+" on outer table "+ outer_table_name+" attribute "+ outer_table_attribute +
+	    				" and inner table "+ inner_table_name+" attribute "+ inner_table_attribute +
+	    				" with buffer pages: "+join_n_pages+ " and operator type "+op+
+	    				". Saving the output table to "+out_tablename);
+	    	}
+	    	else {
+	    		System.out.println(" calculating "+join_algo+" on outer table "+ outer_table_name+" attribute "+ outer_table_attribute +
+	    				" and inner table "+ inner_table_name+" attribute "+ inner_table_attribute +
+	    				" with buffer pages: "+join_n_pages+ " and operator type "+op);
+	    	}
+	    	
+	    	/* run the appropriate skyline algorithm */
+	    	switch ( join_algo ) {
+	    		case "NLJ":
+	    			//TBD run NLJ with proper params
+	    			break;
+	    		case "SMJ":
+	    			//TBD run SMJ with proper params
+	    			break;
+	    		case "INLJ":
+	    			//TBD run INLJ with proper params
+	    			break;
+	    		case "HJ":
+	    			//TBD run HJ with proper params
+	    			break;
+	    		default:
+	    			validate_token_length(0, "join");
+	    			break;
+	    	}
+    	}catch (ArrayIndexOutOfBoundsException e){
+	        validate_token_length(0, "join");
+	    }
     }
     
     /* parses the join query for the exact structure 
@@ -518,60 +535,64 @@ class DriverPhase3 extends TestDriver implements GlobalConst
      * structure: topkjoin HASH/NRA K OTABLENAME O_J_ATT_NO O_M_ATT_NO ITABLENAME I_J_ATT_NO I_M_ATT_NO NPAGES [MATER OUTTABLENAME]
      * */
     public void parse_topkjoin() {
-    	/* ----------------------which join needs to be calculated ------------------------------------*/
-    	String join_algo = tokens[1]; //HASH/NRA
-    	
-    	/* ---------------------read K ------------------------------------*/
-    	int join_k = Integer.parseInt(tokens[2]); //K
-    	
-    	/* ---------------------which is the outer table----------------------------------*/
-    	String outer_table_name = tokens[3];
-    	
-    	/*----------------------get the outer nad inner attribute on which to perform the join */
-    	int outer_join_attribute = Integer.parseInt(tokens[4]);
-    	int outer_merge_attribute = Integer.parseInt(tokens[5]);
-    	
-    	/* ---------------------which is the inner table----------------------------------*/
-    	String inner_table_name = tokens[6];
-    	
-    	/*----------------------get the outer nad inner attribute on which to perform the join */
-    	int innerr_join_attribute = Integer.parseInt(tokens[7]);
-    	int inner_merge_attribute = Integer.parseInt(tokens[8]);
-    	
-    	/*------------join n_pages----------------------------*/
-    	int join_n_pages = Integer.parseInt(tokens[9]);
-    	
-    	/*---------------------extract tablename and outtablename--------------------------*/
-    	boolean is_output_saved = query.contains("MATER");
-    	String out_tablename = "";
-    	if ( is_output_saved ) {
-    		out_tablename = tokens[11];
-    	}
-    	
-    	if ( is_output_saved ) {
-    		System.out.println(" calculating top-K-join "+join_algo+" on outer table "+ outer_table_name+" join attribute "+ outer_join_attribute +
-    				" merge attribute "+ outer_merge_attribute +" and inner table "+ inner_table_name+" join attribute "+ innerr_join_attribute +
-    				" merge attribute "+ inner_merge_attribute +" with buffer pages: "+join_n_pages+
-    				". Saving the output table to "+out_tablename);
-    	}
-    	else {
-    		System.out.println(" calculating top-K-join "+join_algo+" on outer table "+ outer_table_name+" join attribute "+ outer_join_attribute +
-    				" merge attribute "+ outer_merge_attribute +" and inner table "+ inner_table_name+" join attribute "+ innerr_join_attribute +
-    				" merge attribute "+ inner_merge_attribute +" with buffer pages: "+join_n_pages);
-    	}
-    	
-    	/* run the appropriate skyline algorithm */
-    	switch ( join_algo ) {
-    		case "HASH":
-    			//TBD run top-K-join HASH with proper params
-    			break;
-    		case "NRA":
-    			//TBD run top-K-join NRA with proper params
-    			break;
-    		default:
-    			validate_token_length(0, "topkjoin");
-    			break;
-    	}
+    	try {
+	    	/* ----------------------which join needs to be calculated ------------------------------------*/
+	    	String join_algo = tokens[1]; //HASH/NRA
+	    	
+	    	/* ---------------------read K ------------------------------------*/
+	    	int join_k = Integer.parseInt(tokens[2]); //K
+	    	
+	    	/* ---------------------which is the outer table----------------------------------*/
+	    	String outer_table_name = tokens[3];
+	    	
+	    	/*----------------------get the outer nad inner attribute on which to perform the join */
+	    	int outer_join_attribute = Integer.parseInt(tokens[4]);
+	    	int outer_merge_attribute = Integer.parseInt(tokens[5]);
+	    	
+	    	/* ---------------------which is the inner table----------------------------------*/
+	    	String inner_table_name = tokens[6];
+	    	
+	    	/*----------------------get the outer nad inner attribute on which to perform the join */
+	    	int innerr_join_attribute = Integer.parseInt(tokens[7]);
+	    	int inner_merge_attribute = Integer.parseInt(tokens[8]);
+	    	
+	    	/*------------join n_pages----------------------------*/
+	    	int join_n_pages = Integer.parseInt(tokens[9]);
+	    	
+	    	/*---------------------extract tablename and outtablename--------------------------*/
+	    	boolean is_output_saved = query.contains("MATER");
+	    	String out_tablename = "";
+	    	if ( is_output_saved ) {
+	    		out_tablename = tokens[11];
+	    	}
+	    	
+	    	if ( is_output_saved ) {
+	    		System.out.println(" calculating top-K-join "+join_algo+" on outer table "+ outer_table_name+" join attribute "+ outer_join_attribute +
+	    				" merge attribute "+ outer_merge_attribute +" and inner table "+ inner_table_name+" join attribute "+ innerr_join_attribute +
+	    				" merge attribute "+ inner_merge_attribute +" with buffer pages: "+join_n_pages+
+	    				". Saving the output table to "+out_tablename+". K = "+join_k);
+	    	}
+	    	else {
+	    		System.out.println(" calculating top-K-join "+join_algo+" on outer table "+ outer_table_name+" join attribute "+ outer_join_attribute +
+	    				" merge attribute "+ outer_merge_attribute +" and inner table "+ inner_table_name+" join attribute "+ innerr_join_attribute +
+	    				" merge attribute "+ inner_merge_attribute +" with buffer pages: "+join_n_pages+". K = "+join_k);
+	    	}
+	    	
+	    	/* run the appropriate skyline algorithm */
+	    	switch ( join_algo ) {
+	    		case "HASH":
+	    			//TBD run top-K-join HASH with proper params
+	    			break;
+	    		case "NRA":
+	    			//TBD run top-K-join NRA with proper params
+	    			break;
+	    		default:
+	    			validate_token_length(0, "topkjoin");
+	    			break;
+	    	}
+    	}catch (ArrayIndexOutOfBoundsException e){
+	        validate_token_length(0, "topkjoin");
+	    }
     }
     
     /* This function runs the main query interface which reads and processes all the queries */
