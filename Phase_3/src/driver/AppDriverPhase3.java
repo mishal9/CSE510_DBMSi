@@ -58,6 +58,9 @@ class DriverPhase3 extends TestDriver implements GlobalConst
     /* sysdef object */
     SystemDefs sysdef;
     
+    /* query tokens */
+    String[] tokens;
+    
     public DriverPhase3(){
         super("main");
         list_db_name = new LinkedList<>();
@@ -74,38 +77,17 @@ class DriverPhase3 extends TestDriver implements GlobalConst
     		//TBD close the db properly
     		/*if any db is open, flush it and close it */
     		if ( is_current_db_open ) {
-    			try {
-					SystemDefs.JavabaseBM.flushAllPages();
-					SystemDefs.JavabaseDB.closeDB();
-				} catch (HashOperationException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (PageUnpinnedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (PagePinnedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (PageNotFoundException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (BufMgrException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+    			close_DB();
+    		}
+    		else {
+    			System.out.println("No DB is open currently");
     		}
     		is_current_db_open = false;
     	}
     	else {
-    		String[] tokens = query.split(" ");
-    		if ( tokens.length != 2 ) {
-				System.out.println("Command not recognized");
-				printQueryHelper("open_database");
-				return;
-			}
+    		if ( validate_token_length(2, "open_database") == false ) {
+    			return;
+    		}
     		if ( is_current_db_open && open_db_name.equals(tokens[1]) ) {
     			System.out.println(tokens[1] + " DB is already open");
     			return;
@@ -121,73 +103,128 @@ class DriverPhase3 extends TestDriver implements GlobalConst
     		}
     		/* close the already opened DB if the new db and old db are not same */
     		if ( is_current_db_open ) {
-    			System.out.println("A db is already open, closing db "+open_db_name );
-    			try {
-					SystemDefs.JavabaseBM.flushAllPages();
-					SystemDefs.JavabaseDB.closeDB();
-					is_current_db_open = false;
-				} catch (HashOperationException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (PageUnpinnedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (PagePinnedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (PageNotFoundException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (BufMgrException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-    			
+    			System.out.print("A DB is already open, ");
+				close_DB();
+				is_current_db_open = false;
     		}
     		//TBD what happened if the DB exists and what happens if it doesn't
     		System.out.println("Loading database "+ tokens[1]);
-    		if ( db_exists ) {
-    			try {
-    				/* open the already existing DB */
-					SystemDefs.JavabaseDB.openDB(tokens[1]);
-				} catch (InvalidPageNumberException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (FileIOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (DiskMgrException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-    		}
-    		else {
-    			/* open a new DB on disk with 5k pages */
-    			try {
-					SystemDefs.JavabaseDB.openDB(tokens[1], 5000);
-					list_db_name.add(tokens[1]);
-				} catch (InvalidPageNumberException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (FileIOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (DiskMgrException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-    		}
+    		open_DB(tokens[1], db_exists);
     		open_db_name = tokens[1];
     		is_current_db_open = true;
+    	}
+    }
+    
+    /* opens a new db */
+    public void open_DB( String db_name, boolean db_exists ) {
+    	if ( db_exists ) {
+    		/* open the already existing DB */
+			try {
+				SystemDefs.JavabaseDB.openDB(db_name);
+			} catch (InvalidPageNumberException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (FileIOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (DiskMgrException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+    	}
+    	else {
+    		try {
+				SystemDefs.JavabaseDB.openDB(db_name, 5000);
+				list_db_name.add(db_name);
+			} catch (InvalidPageNumberException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (FileIOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (DiskMgrException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+    	}
+    }
+    
+    /* closes the DB and flushes all pages to disk */
+    public void close_DB() {
+    	try {
+    		System.out.println("Closing DB "+open_db_name);
+			SystemDefs.JavabaseBM.flushAllPages();
+			SystemDefs.JavabaseDB.closeDB();
+		} catch (HashOperationException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (PageUnpinnedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (PagePinnedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (PageNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (BufMgrException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    }
+    
+    /* This function validates a query and prints appropriate command if wrong */
+    public boolean validate_token_length( int req_length, String command_name ) {
+    	if ( tokens.length != req_length ) {
+    		System.out.println(" Command not recognized");
+    		printQueryHelper(command_name);
+    		return false;
+    	}
+    	return true;
+    }
+    
+    /* parses the create_table query for the exact structure 
+     * part of task 1
+     * structure: create_table [CLUSTERED BTREE/HASH ATT_NO] FILENAME
+     * */
+    public void parse_create_table( String query ) {
+    	boolean is_index_required = query.contains("CLUSTERED");
+    	boolean btree_type_index = query.contains("BTREE");
+    	boolean hash_type_index = query.contains("HASH");
+    	int index_att_no = -1;
+    	String filename;
+    	
+    	if ( is_index_required ) {
+    		if ( validate_token_length(5, "create_table") == false ) {
+    			return;
+    		}
+    		index_att_no = Integer.parseInt(tokens[3]);
+    		filename = tokens[4];
+    		if ( btree_type_index ) {
+    			System.out.println("Creating a table of file "+ filename+" and a clustered btree index on attribute "+index_att_no);
+    			//TBD create CLUSTERED BTREE INDEX on attribute
+    		}
+    		else if ( hash_type_index ) {
+    			System.out.println("Creating a table of file "+ filename+" and a clustered hash index on attribute "+index_att_no);
+    			//TBD create CLUSTERED HASH INDEX on attribute
+    		}
+    	}
+    	else {
+    		if ( validate_token_length(2, "create_table") == false ) {
+    			return;
+    		}
+    		filename = tokens[1];
+    		System.out.println("Creating a table of file "+ filename);
+    		//TBD create just a table and no index 
     	}
     }
     
@@ -196,21 +233,30 @@ class DriverPhase3 extends TestDriver implements GlobalConst
     	boolean exit_interface = false;
     	while (!exit_interface) {
     		String query = readNextCommand();
-    		String[] tokens = query.split(" ");
+    		tokens = query.split(" ");
     		switch (tokens[0]) {
     			case "exit":
     				// TBD need to close the DB and save the open stuff here
+    				close_DB();
     				System.out.println("exiting query interface");
     				exit_interface = true;
     				break;
     			case "open_database":
+    				/* open new or already existing database 
+    				 * open_database dbname
+    				 */
     				handleOpenDB(query, false);
     				break;
     			case "create_table":
-    				//need to create a simple or a clustered index table here
+    				/* need to create a simple or a clustered index table here
+    				 * create_table [CLUSTERED BTREE/HASH ATT_NO] FILENAME
+    				 */
+    				parse_create_table(query);
     				break;
     			case "close_database":
-    				//need to close the existing db and dump all the file on the disk
+    				/*need to close the existing db and dump all the file on the disk
+    				 * close_database
+    				 */
     				handleOpenDB(query, true);
     				break;
     			case "create_index":
