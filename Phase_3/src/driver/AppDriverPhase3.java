@@ -42,34 +42,121 @@ class DriverPhase3 extends TestDriver implements GlobalConst
     private static int _t_size;
     static String dataFile = "";
     private int numberOfDimensions = 0;
-
+    
+    /* current open database */
+    private String open_db_name;
+    
+    /* is the current db open or close */
+    private boolean is_current_db_open;
+    
+    /* list of all the databases created */
+    private Queue<String> list_db_name;
+    
     public DriverPhase3(){
         super("main");
+        list_db_name = new LinkedList<>();
+        is_current_db_open = false;
+        open_db_name = "";
+    }
+    
+    /* function to handle open DB and close DB calls */
+    private void handleOpenDB( String query, boolean close_db ) {
+    	if ( close_db ) {
+    		//TBD close the db properly
+    		/*if any db is open, flush it and close it */
+    		if ( is_current_db_open ) {
+    			try {
+					SystemDefs.JavabaseBM.flushAllPages();
+					SystemDefs.JavabaseDB.closeDB();
+				} catch (HashOperationException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (PageUnpinnedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (PagePinnedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (PageNotFoundException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (BufMgrException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+    		}
+    		is_current_db_open = false;
+    	}
+    	else {
+    		String[] tokens = query.split(" ");
+    		if ( tokens.length != 2 ) {
+				System.out.println("Command not recognized");
+				printQueryHelper("open_database");
+				return;
+			}
+    		boolean db_exists = false;
+    		java.util.Iterator<String> it = list_db_name.iterator();
+    		while ( it.hasNext() ) {
+    			String temp_db_name = it.next();
+    			if ( temp_db_name == tokens[0] ) {
+    				db_exists = true;
+    				break;
+    			}
+    		}
+    		/* close the already opened DB */
+    		if ( is_current_db_open ) {
+    			try {
+					SystemDefs.JavabaseBM.flushAllPages();
+					SystemDefs.JavabaseDB.closeDB();
+				} catch (HashOperationException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (PageUnpinnedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (PagePinnedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (PageNotFoundException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (BufMgrException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+    		}
+    		//TBD what happend if the DB exists and what happens if it doesn't
+    		System.out.println("Loading database "+ tokens[1]);
+    	}
     }
     
     /* This function runs the main query interface which reads and processes all the queries */
     public void startQueryInterface() {
     	boolean exit_interface = false;
     	while (!exit_interface) {
-    		String[] tokens = readNextCommand();
+    		String query = readNextCommand();
+    		String[] tokens = query.split(" ");
     		switch (tokens[0]) {
     			case "exit":
+    				// TBD need to close the DB and save the open stuff here
     				System.out.println("exiting query interface");
     				exit_interface = true;
     				break;
     			case "open_database":
-    				if ( tokens.length != 2 ) {
-    					System.out.println("Command not recognized");
-    					printQueryHelper("open_database");
-    					break;
-    				}
-    				System.out.println("Loading database "+ tokens[1]);
+    				handleOpenDB(query, false);
     				break;
     			case "create_table":
     				//need to create a simple or a clustered index table here
     				break;
     			case "close_database":
-    				//need to close the existing db and dump all the file on the disk 
+    				//need to close the existing db and dump all the file on the disk
+    				handleOpenDB(query, true);
     				break;
     			case "create_index":
     				//need to create an unclustered index as specified
@@ -183,12 +270,11 @@ class DriverPhase3 extends TestDriver implements GlobalConst
     }
     
     /* This function is used to read and parse the next command in the query interface */
-    public String[] readNextCommand() {
+    public String readNextCommand() {
     	System.out.print(">>");
     	Scanner sc = new Scanner(System.in);
     	String input_command = sc.nextLine();
-    	String[] tokens = input_command.split(" ");
-    	return tokens;
+    	return input_command;
     }
     
     public boolean runTests () {
