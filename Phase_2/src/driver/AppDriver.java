@@ -558,10 +558,11 @@ class Driver extends TestDriver implements GlobalConst
         }
         attrType_for_sort[COLS] = new AttrType(AttrType.attrReal);
 
+        SystemDefs.JavabaseBM.limit_memory_usage(true, _n_pages);
 
         Sort sort = null;
         try {
-            sort = new Sort(attrType_for_sort, (short) (COLS+1), attrSize, fscan, (COLS+1), new TupleOrder(TupleOrder.Descending), 32, 900);
+            sort = new Sort(attrType_for_sort, (short) (COLS+1), attrSize, fscan, (COLS+1), new TupleOrder(TupleOrder.Descending), 32, _n_pages/2);
         }
         catch (Exception e) {
             status = FAIL;
