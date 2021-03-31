@@ -7,6 +7,9 @@ import java.util.*;
 import btree.*;
 import bufmgr.*;
 import chainexception.ChainException;
+import diskmgr.DiskMgrException;
+import diskmgr.FileIOException;
+import diskmgr.InvalidPageNumberException;
 import diskmgr.PCounter;
 import heap.*;
 import global.*;
@@ -52,11 +55,17 @@ class DriverPhase3 extends TestDriver implements GlobalConst
     /* list of all the databases created */
     private Queue<String> list_db_name;
     
+    /* sysdef object */
+    SystemDefs sysdef;
+    
     public DriverPhase3(){
         super("main");
         list_db_name = new LinkedList<>();
         is_current_db_open = false;
         open_db_name = "";
+        dbpath = "MINIBASE.minibase-db";
+		logpath = "MINIBASE.minibase-log";
+        sysdef = new SystemDefs(dbpath,160000, 3000,"Clock");
     }
     
     /* function to handle open DB and close DB calls */
@@ -97,20 +106,26 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 				printQueryHelper("open_database");
 				return;
 			}
+    		if ( is_current_db_open && open_db_name.equals(tokens[1]) ) {
+    			System.out.println(tokens[1] + " DB is already open");
+    			return;
+    		}
     		boolean db_exists = false;
     		java.util.Iterator<String> it = list_db_name.iterator();
     		while ( it.hasNext() ) {
     			String temp_db_name = it.next();
-    			if ( temp_db_name == tokens[0] ) {
+    			if ( temp_db_name == tokens[1] ) {
     				db_exists = true;
     				break;
     			}
     		}
-    		/* close the already opened DB */
+    		/* close the already opened DB if the new db and old db are not same */
     		if ( is_current_db_open ) {
+    			System.out.println("A db is already open, closing db "+open_db_name );
     			try {
 					SystemDefs.JavabaseBM.flushAllPages();
 					SystemDefs.JavabaseDB.closeDB();
+					is_current_db_open = false;
 				} catch (HashOperationException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -130,9 +145,49 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
+    			
     		}
-    		//TBD what happend if the DB exists and what happens if it doesn't
+    		//TBD what happened if the DB exists and what happens if it doesn't
     		System.out.println("Loading database "+ tokens[1]);
+    		if ( db_exists ) {
+    			try {
+    				/* open the already existing DB */
+					SystemDefs.JavabaseDB.openDB(tokens[1]);
+				} catch (InvalidPageNumberException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (FileIOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (DiskMgrException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+    		}
+    		else {
+    			/* open a new DB on disk with 5k pages */
+    			try {
+					SystemDefs.JavabaseDB.openDB(tokens[1], 5000);
+					list_db_name.add(tokens[1]);
+				} catch (InvalidPageNumberException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (FileIOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (DiskMgrException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+    		}
+    		open_db_name = tokens[1];
+    		is_current_db_open = true;
     	}
     }
     
@@ -279,10 +334,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
     
     public boolean runTests () {
         System.out.println ("\n" + "Running " + testName() + " tests...." + "\n");
-        dbpath = "MINIBASE.minibase-db";
-		logpath = "MINIBASE.minibase-log";
         // Each page can handle at most 25 tuples on original data => 7308 / 25 = 292
-        SystemDefs sysdef = new SystemDefs(dbpath,160000, 3000,"Clock");
 
         // Kill anything that might be hanging around
         String newdbpath;
