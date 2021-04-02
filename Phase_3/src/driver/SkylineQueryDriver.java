@@ -57,6 +57,7 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
 				break;
 			case "BNLS":
 				//TBD run BNLS with proper params
+				runblockNestedSky();
 				break;
 			case "SFS":
 				//TBD run SFS with proper params
@@ -114,7 +115,45 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
         PCounter.initialize();
     }
 
-    
+    private void runblockNestedSky(){
+    	Table table = SystemDefs.JavabaseDB.get_relation(tablename);
+        BlockNestedLoopsSky blockNestedLoopsSky = null;
+        int numSkyEle = 0;
+        try {
+            blockNestedLoopsSky = new BlockNestedLoopsSky(table.getTable_attr_type(),
+									                    (short)table.getTable_num_attr(),
+									                    table.getTable_attr_size(),
+									                    null,
+									                    table.getTable_heapfile(),
+									                    this.pref_list,
+									                    this.pref_list.length,
+									                    this.n_pages);
+
+            System.out.println("Printing the Block Nested Loop Skyline");
+            Tuple temp;
+            try {
+                temp = blockNestedLoopsSky.get_next();
+                while (temp!=null) {
+                    temp.print(table.getTable_attr_type());
+                    numSkyEle++;
+                    temp = blockNestedLoopsSky.get_next();
+                }
+               
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+       
+        } catch (IOException | FileScanException | TupleUtilsException | InvalidRelation e) {
+            e.printStackTrace();
+        } finally {
+            blockNestedLoopsSky.close();
+        }
+        System.out.println("Skyline Length: "+numSkyEle);
+        System.out.println("Number of Disk reads: "+ PCounter.get_rcounter());
+        System.out.println("Number of Disk writes: "+ PCounter.get_wcounter());
+        PCounter.initialize();
+    }
+
     public void print_attr() {
     	System.out.println("****************************skyline*****************************************");
     	System.out.println("Will run skyline with params: ");
@@ -124,6 +163,7 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
         System.out.println("Pref list length: "+pref_list.length);
         System.out.println("Tablename: "+tablename);
         System.out.println("Outtablename: "+ outtablename);
+        System.out.println("\n");
     }
     
     /* calculates the NLS on tablename */
