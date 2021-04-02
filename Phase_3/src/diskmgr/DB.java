@@ -3,15 +3,148 @@
 package diskmgr;
 
 import java.io.*;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.Queue;
+
+
 import bufmgr.*;
 import global.*;
+import heap.FieldNumberOutOfBoundException;
+import heap.HFBufMgrException;
+import heap.HFDiskMgrException;
+import heap.HFException;
+import heap.Heapfile;
+import heap.InvalidSlotNumberException;
+import heap.InvalidTupleSizeException;
+import heap.InvalidTypeException;
+import heap.Scan;
+import heap.SpaceNotAvailableException;
+import heap.Tuple;
 
 public class DB implements GlobalConst {
 
+	/* list of all the tables in the database */
+	private Queue<Table> tables = new LinkedList<>();
+	
+	/* name of the heapfile in the current contaning the tables relation */
+	private String table_relation;
+	
+	/* attrtype of the table relation 
+	 * TBD update the relation once we have the clustered and unclustered btree and hash indices
+	   * table structure -->
+	   * ______________________________________________________________________________________
+	   *| tablename   | num_attr  | delim_sep_col_names | delim_sep_col_types | table_row_size |
+	   *````````````````````````````````````````````````````````````````````````````````````````
+	   **/
+	private static AttrType[] tables_attr = {new AttrType(AttrType.attrString), //contains the tablename
+											 new AttrType(AttrType.attrInteger),//contains the number of attributes in the table  
+											 new AttrType(AttrType.attrInteger),// contains the size of tuple in the table
+											 new AttrType(AttrType.attrString), //contains a string of comma separated column names
+											 new AttrType(AttrType.attrString)}; // contains a string of comma separated attrtypes
+	private static short[] tables_strsize;
+	
+	private static int table_relation_tuple_size = 928;
+	
+	private static final int bits_per_page = MAX_SPACE * 8;
   
-  private static final int bits_per_page = MAX_SPACE * 8;
   
-  
+	/** Load the relation table in memory
+	   *
+	   *
+	   * @exception IOException I/O errors
+	   * @exception FileIOException file I/O error
+	   * @exception InvalidPageNumberException invalid page number
+	   * @exception DiskMgrException error caused by other layers
+	   * 
+	   * TBD update the relation once we have the clustered and unclustered indices
+	   * table structure -->
+	   * ______________________________________________________________________________________
+	   *| tablename   | num_attr  | delim_sep_col_names | delim_sep_col_types | table_row_size |
+	   *````````````````````````````````````````````````````````````````````````````````````````
+	   */
+	public void read_table_relation() {
+		try {
+			//System.out.println("reading the tables in DB");
+			//System.out.println(table_relation);
+			Heapfile hf = new Heapfile(table_relation);
+			Scan relation_scan = hf.openScan();
+			//System.out.println("Number of tables in the DB "+hf.getRecCnt());
+			Tuple t1 = new Tuple();
+			t1.setHdr( (short)tables_attr.length, tables_attr, tables_strsize);
+			table_relation_tuple_size = t1.size();
+			//System.out.println("tuple size "+table_relation_tuple_size);
+			if ( hf.getRecCnt() > 0 ) {
+				RID rid = new RID();
+				Tuple t, temp_t;
+				t = new Tuple(table_relation_tuple_size);
+				t.setHdr( (short)tables_attr.length, tables_attr, tables_strsize);
+				temp_t = new Tuple(table_relation_tuple_size);
+				temp_t.setHdr( (short)tables_attr.length, tables_attr, tables_strsize);
+				temp_t = relation_scan.getNext(rid);
+				while ( temp_t != null ) {
+					t.tupleCopy(temp_t);
+					
+					/* get the name of the table */
+					String tablename = t.getStrFld(1);
+					//System.out.println(tablename);
+					
+					/* get the number of attributes in the table */
+					int num_attr = t.getIntFld(2);
+					//System.out.println("Number of attributes in table "+num_attr);
+					
+					/* size of the tuple of the table */
+					int tsize = t.getIntFld(3);
+					//System.out.println("Size of the tuple in the table is "+tsize);
+					
+					/* get the column names from the table */
+					String col_string = t.getStrFld(4);
+					String[] col_token = col_string.split(",");
+					//System.out.println(Arrays.toString(col_token));
+					
+					/* get the column types */
+					AttrType[] col_attr = new AttrType[num_attr];
+					String col_attr_str = t.getStrFld(5);
+					String[] col_token_attr_str = col_attr_str.split(",");
+					for ( int i=0; i<num_attr; i++) {
+						col_attr[i] = new AttrType(Integer.parseInt(col_token_attr_str[i]));
+					}
+					//System.out.println("attrtypes "+Arrays.toString(col_token_attr_str));
+					
+					Table relation = new Table(tablename, num_attr, col_attr, col_token, tsize);
+					tables.add(relation);
+					
+					temp_t = relation_scan.getNext(rid);
+				}
+			}
+		} catch (HFException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (HFBufMgrException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (HFDiskMgrException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InvalidTupleSizeException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InvalidTypeException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (FieldNumberOutOfBoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InvalidSlotNumberException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+	}
+	
   /** Open the database with the given name.
    *
    * @param fname DB_name
@@ -28,8 +161,10 @@ public class DB implements GlobalConst {
 	   DiskMgrException {
     
     name = fname;
+    table_relation = fname+"TRkhusmodi.in";
+    read_table_relation();
     
-    // Creaat a random access file
+    // Create a random access file
     fp = new RandomAccessFile(fname, "rw");
     
     PageId pageId = new PageId();
@@ -50,7 +185,12 @@ public class DB implements GlobalConst {
   
   /** default constructor.
    */
-  public DB() { }
+  public DB() {
+	  tables_strsize = new short[tables_attr.length];
+	  for ( int i=0; i<tables_strsize.length; i++ ) {
+		  tables_strsize[i] = STRSIZE;
+	  }
+  }
   
   
   /** DB Constructors.
@@ -73,36 +213,41 @@ public class DB implements GlobalConst {
     
     name = new String(fname);
     num_pages = (num_pgs > 2) ? num_pgs : 2;
+    table_relation = fname+"TRkhusmodi.in";
+    
     
     File DBfile = new File(name);
+    //DBfile.delete();
+    if ( DBfile.exists() ) {
+    	fp = new RandomAccessFile(DBfile, "rw");
+    }
+    else {
+    	// Create a random access file
+    	fp = new RandomAccessFile(fname, "rw");
+    	// Make the file num_pages pages long, filled with zeroes.
+        fp.seek((long)(num_pages*MINIBASE_PAGESIZE-1));
+        fp.writeByte(0);
+     // Initialize space map and directory pages.
+        
+        // Initialize the first DB page
+        Page apage = new Page();
+        PageId pageId = new PageId();
+        pageId.pid = 0;
+        pinPage(pageId, apage, true /*no diskIO*/);
+        
+        DBFirstPage firstpg = new DBFirstPage(apage);
+        
+        firstpg.setNumDBPages(num_pages);
+        unpinPage(pageId, true /*dirty*/);
+        
+        // Calculate how many pages are needed for the space map.  Reserve pages
+        // 0 and 1 and as many additional pages for the space map as are needed.
+        int num_map_pages = (num_pages + bits_per_page -1)/bits_per_page;
+        
+        set_bits(pageId, 1+num_map_pages, 1);
+    }
     
-    DBfile.delete();
-    
-    // Creaat a random access file
-    fp = new RandomAccessFile(fname, "rw");
-    
-    // Make the file num_pages pages long, filled with zeroes.
-    fp.seek((long)(num_pages*MINIBASE_PAGESIZE-1));
-    fp.writeByte(0);
-    
-    // Initialize space map and directory pages.
-    
-    // Initialize the first DB page
-    Page apage = new Page();
-    PageId pageId = new PageId();
-    pageId.pid = 0;
-    pinPage(pageId, apage, true /*no diskIO*/);
-    
-    DBFirstPage firstpg = new DBFirstPage(apage);
-    
-    firstpg.setNumDBPages(num_pages);
-    unpinPage(pageId, true /*dirty*/);
-    
-    // Calculate how many pages are needed for the space map.  Reserve pages
-    // 0 and 1 and as many additional pages for the space map as are needed.
-    int num_map_pages = (num_pages + bits_per_page -1)/bits_per_page;
-    
-    set_bits(pageId, 1+num_map_pages, 1);
+    read_table_relation();
 
   }
   
@@ -111,6 +256,104 @@ public class DB implements GlobalConst {
    */
   public void closeDB() throws IOException {
     fp.close();
+    tables.clear();
+  }
+  
+  public Table get_relation(String tablename) {
+	  //System.out.println("tables size in database "+tables.size());
+	  java.util.Iterator<Table> it = tables.iterator();
+	  while ( it.hasNext() ) {
+		  Table temp_table = it.next();
+		  //System.out.println("talbename :"+temp_table.getTablename());
+		  if ( temp_table.getTablename().equals(tablename) ) {
+			  return temp_table;
+		  }
+	  }
+	  return null;
+  }
+  
+  public void add_to_relation_tables(Table relation) {
+	  tables.add(relation);
+	  Tuple t = new Tuple();
+	  try {
+		/* set the tuple for the tables relation */
+		t.setHdr( (short)tables_attr.length, tables_attr, tables_strsize);
+		table_relation_tuple_size = t.size();
+		//System.out.println("Tuple size "+ table_relation_tuple_size);
+		t = new Tuple(table_relation_tuple_size);
+		t.setHdr( (short)tables_attr.length, tables_attr, tables_strsize);
+		
+		/* prepare all the data for the tuples relation */
+		t.setStrFld(1, relation.getTablename()); // setting the table name in the tuple
+		
+		/* store the number of attrs in the table */
+		t.setIntFld(2, relation.getTable_num_attr()); // number of attributes in the table
+		
+		/* store the tuple size as well */
+		t.setIntFld(3, relation.getTable_tuple_size());
+		
+		/* make a combined attr of all the cols */
+		String s = "";
+		String[] names_cols = relation.getTable_attr_name();
+		for ( int i=0; i<names_cols.length; i++ ) {
+			if ( i==0) {
+				s = names_cols[i];
+			}
+			else {
+				s = s + "," + names_cols[i];
+			}
+		}
+		System.out.println("columns: "+ s);
+		t.setStrFld(4, s);
+		
+		/* make a string of all the attrs */
+		String y = "";
+		AttrType[] cols_attr = relation.getTable_attr_type();
+		for ( int i=0; i<cols_attr.length; i++ ) {
+			if ( i==0 ) {
+				y = Integer.toString(cols_attr[i].attrType);
+			}
+			else {
+				y = y + "," + cols_attr[i].attrType;
+			}
+		}
+		System.out.println("attrs: "+ y);
+		t.setStrFld(5, y);
+		
+		/* insert the tuple into the heapfile */
+		//System.out.println(table_relation);
+		Heapfile hf = new Heapfile(table_relation);
+		RID rid = new RID();
+		rid = hf.insertRecord(t.getTupleByteArray());
+		
+	} catch (InvalidTypeException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (InvalidTupleSizeException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (IOException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (FieldNumberOutOfBoundException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (HFException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (HFBufMgrException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (HFDiskMgrException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (InvalidSlotNumberException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (SpaceNotAvailableException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	}
   }
   
   

@@ -45,6 +45,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
     private static int _t_size;
     static String dataFile = "";
     private int numberOfDimensions = 0;
+    //private Table table;
     
     /* current open database */
     private String open_db_name;
@@ -71,7 +72,6 @@ class DriverPhase3 extends TestDriver implements GlobalConst
         open_db_name = "";
         dbpath = "MINIBASE.minibase-db";
 		logpath = "MINIBASE.minibase-log";
-        sysdef = new SystemDefs(dbpath,160000, 3000,"Clock");
     }
     
     /* function to handle open DB and close DB calls */
@@ -108,13 +108,11 @@ class DriverPhase3 extends TestDriver implements GlobalConst
     		if ( is_current_db_open ) {
     			System.out.print("A DB is already open, ");
 				close_DB();
-				is_current_db_open = false;
     		}
+    		
     		//TBD what happened if the DB exists and what happens if it doesn't
     		System.out.println("Loading database "+ tokens[1]);
     		open_DB(tokens[1], db_exists);
-    		open_db_name = tokens[1];
-    		is_current_db_open = true;
     	}
     }
     
@@ -122,40 +120,16 @@ class DriverPhase3 extends TestDriver implements GlobalConst
     public void open_DB( String db_name, boolean db_exists ) {
     	if ( db_exists ) {
     		/* open the already existing DB */
-			try {
-				SystemDefs.JavabaseDB.openDB(db_name);
-			} catch (InvalidPageNumberException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (FileIOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (DiskMgrException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			sysdef = new SystemDefs(db_name,0, NUMBFPAGES,DBREPLACER);
+			//SystemDefs.JavabaseDB.openDB(db_name);
     	}
     	else {
-    		try {
-				SystemDefs.JavabaseDB.openDB(db_name, 5000);
+    			sysdef = new SystemDefs(db_name,NUMDBPAGES, NUMBFPAGES,DBREPLACER);
+				//SystemDefs.JavabaseDB.openDB(db_name, 5000);
 				list_db_name.add(db_name);
-			} catch (InvalidPageNumberException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (FileIOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (DiskMgrException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
     	}
+    	open_db_name = db_name;
+		is_current_db_open = true;
     }
     
     /* closes the DB and flushes all pages to disk */
@@ -164,6 +138,8 @@ class DriverPhase3 extends TestDriver implements GlobalConst
     		System.out.println("Closing DB "+open_db_name);
 			SystemDefs.JavabaseBM.flushAllPages();
 			SystemDefs.JavabaseDB.closeDB();
+			is_current_db_open = false;
+			open_db_name = "";
 		} catch (HashOperationException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -179,6 +155,29 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 		} catch (BufMgrException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    }
+    
+    /* deletes the DB */
+    public void destroy_db() {
+    	try {
+    		System.out.println("Deleting DB "+open_db_name);
+    		for ( int i=0; i<list_db_name.size(); i++ ) {
+    			String temp_db = list_db_name.remove();
+    			if ( temp_db.equals(open_db_name) ) {
+    				continue;
+    			}
+    			else {
+    				list_db_name.add(temp_db);
+    			}
+    		}
+    		SystemDefs.JavabaseDB.closeDB();
+    		SystemDefs.JavabaseDB.DBDestroy();
+    		open_db_name = "";
+    		is_current_db_open = false;
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -254,7 +253,10 @@ class DriverPhase3 extends TestDriver implements GlobalConst
     		}
     		filename = tokens[1];
     		System.out.println("Creating a table of file "+ filename);
+    		Table table = new Table(filename);
     		//TBD create just a table and no index 
+    		table.create_table();
+    		
     	}
     }
     
@@ -296,6 +298,18 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 		}
     	String tablename = tokens[1];
     	System.out.println("Printing the table "+tablename);
+    	try {
+			Table table = SystemDefs.JavabaseDB.get_relation(tablename);
+			if ( table == null ) {
+				System.out.println("*********ERROR: table does not exist **************");
+			}
+			else {
+				table.print_table();
+			}
+		} catch (InvalidTupleSizeException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
     	//TBD print the mentioned table properly
     }
     
@@ -353,15 +367,16 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    	}
     	
 	    	if ( is_output_saved ) {
-	    		System.out.println(" calculating "+skyline_algo+" skyline on table "+ skyline_tablename+" on attributes "+Arrays.toString(skyline_preference_list)+
+	    		System.out.println("Calculating "+skyline_algo+" skyline on table "+ skyline_tablename+" on attributes "+Arrays.toString(skyline_preference_list)+
 	    				" with buffer pages: "+skyline_n_pages+". Saving the output table to "+out_tablename);
 	    	}
 	    	else {
-	    		System.out.println(" calculating "+skyline_algo+" skyline on table "+ skyline_tablename+" on attributes "+Arrays.toString(skyline_preference_list)+
+	    		System.out.println("Calculating "+skyline_algo+" skyline on table "+ skyline_tablename+" on attributes "+Arrays.toString(skyline_preference_list)+
 	    				" with buffer pages: "+skyline_n_pages);
 	    	}
 	    	
 	    	/* run the appropriate skyline algorithm */
+	    	SkylineQueryDriver skyd = new SkylineQueryDriver(skyline_preference_list, skyline_tablename, skyline_n_pages, out_tablename, skyline_algo);
 	    	switch ( skyline_algo ) {
 	    		case "NLS":
 	    			//TBD run NLS with proper params
@@ -607,6 +622,9 @@ class DriverPhase3 extends TestDriver implements GlobalConst
     				close_DB();
     				System.out.println("exiting query interface");
     				exit_interface = true;
+    				break;
+    			case "destroy_database":
+    				destroy_db();
     				break;
     			case "open_database":
     				/* open new or already existing database 
