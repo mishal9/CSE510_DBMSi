@@ -48,6 +48,14 @@ public class Table implements GlobalConst{
 	/* name of the heap file containing the heapfile for the tabe data */
 	private String table_heapfile;
 	
+	public String getTable_heapfile() {
+		return table_heapfile;
+	}
+
+	public void setTable_heapfile(String table_heapfile) {
+		this.table_heapfile = table_heapfile;
+	}
+
 	/* name of the data file given by the user when creating the table */
 	private String table_data_file;
 	
@@ -103,6 +111,14 @@ public class Table implements GlobalConst{
 	/* size of the string fields in the data */
 	private short[] table_attr_size;
 	
+	public short[] getTable_attr_size() {
+		return table_attr_size;
+	}
+
+	public void setTable_attr_size(short[] table_attr_size) {
+		this.table_attr_size = table_attr_size;
+	}
+
 	/* size of the tuple in the data field */
 	private int table_tuple_size;
   
@@ -214,7 +230,7 @@ public class Table implements GlobalConst{
 	    try {
 	    	SystemDefs.JavabaseDB.add_to_relation_tables(this);
 			System.out.println("Number of elements in the table "+hf.getRecCnt());
-			System.out.println("\n\n");
+			System.out.print("\n");
 		} catch (InvalidSlotNumberException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

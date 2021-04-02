@@ -34,12 +34,15 @@ public class TupleUtils {
 		int t1_i, t2_i;
 		float t1_r, t2_r;
 		String t1_s, t2_s;
-
+		//System.out.println("field number "+t1_fld_no);
+		//System.out.println("comparing for attrtype"+fldType.attrType);
 		switch (fldType.attrType) {
 		case AttrType.attrInteger: // Compare two integers.
 			try {
 				t1_i = t1.getIntFld(t1_fld_no);
 				t2_i = t2.getIntFld(t2_fld_no);
+				//System.out.println(t1_i);
+				//System.out.println(t2_i);
 			} catch (FieldNumberOutOfBoundException e) {
 				throw new TupleUtilsException(e, "FieldNumberOutOfBoundException is caught by TupleUtils.java");
 			}
@@ -88,8 +91,12 @@ public class TupleUtils {
 	public static boolean Dominates(Tuple t1, AttrType[] type1, Tuple t2, AttrType[] type2, short len_in,
 			short[] str_sizes, int[] pref_list, int pref_list_length)
 			throws IOException, TupleUtilsException, UnknowAttrType, FieldNumberOutOfBoundException {
+		//System.out.println(Arrays.toString(pref_list));
+		//System.out.println(Arrays.toString(str_sizes));
+		//t1.print(type1);
+		//t2.print(type2);
 		for (int i = 0; i < pref_list_length; i++) {
-			if (CompareTupleWithTuple(type1[i], t1, pref_list[i], t2, pref_list[i]) != 1)
+			if (CompareTupleWithTuple(type1[pref_list[i]-1], t1, pref_list[i], t2, pref_list[i]) != 1)
 				return false;
 		}
 		return true;

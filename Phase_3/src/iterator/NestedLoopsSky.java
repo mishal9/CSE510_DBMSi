@@ -176,6 +176,7 @@ public class NestedLoopsSky extends Iterator
                 return null;
             }
             this.outer_candidate.tupleCopy(outer_candidate_temp);
+            //this.outer_candidate.print(_in1);
             if ( this._status == true )
             {
                 try
@@ -203,6 +204,9 @@ public class NestedLoopsSky extends Iterator
                 {
                     /* compare the outer loop tuple with inner loop tuple */
                 	this.inner_candidate.tupleCopy(inner_candidate_temp);
+                	//System.out.println ("Comparing the 2 tuples-->");
+                	//this.inner_candidate.print(_in1);
+                	//this.outer_candidate.print(_in1);
                     inner_dominates_outer = TupleUtils.Dominates(this.inner_candidate,
                             									 this._in1,
                             									 this.outer_candidate,
@@ -220,6 +224,8 @@ public class NestedLoopsSky extends Iterator
             if (inner_dominates_outer == false)
             {
             	/* no one dominated the outer loop tuple and hence it belongs to the skyline */
+            	//System.out.println("Skyline element found");
+            	//this.outer_candidate.print(_in1);
                 return this.outer_candidate;
             }
             this._inner_scan.closescan();
