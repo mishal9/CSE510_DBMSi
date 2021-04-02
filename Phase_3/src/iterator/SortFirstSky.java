@@ -151,7 +151,7 @@ public class SortFirstSky extends Iterator implements GlobalConst {
         } catch (FileAlreadyDeletedException e) {
             e.printStackTrace();
         }
-        SystemDefs.JavabaseBM.limit_memory_usage(false, _n_pages);
+        //SystemDefs.JavabaseBM.limit_memory_usage(false, _n_pages);
 
     }
 
@@ -181,14 +181,8 @@ public class SortFirstSky extends Iterator implements GlobalConst {
         Tuple t = new Tuple();
 
         try {
-        	System.out.println("Number of Disk reads: "+ PCounter.get_rcounter());
-            System.out.println("Number of Disk writes: "+ PCounter.get_wcounter());
-            PCounter.initialize();
             // check if there's atleast one tuple
             t = sort.get_next();
-            System.out.println("Number of Disk reads sorted: "+ PCounter.get_rcounter());
-            System.out.println("Number of Disk writes: "+ PCounter.get_wcounter());
-            PCounter.initialize();
         }
         catch (Exception e) {
             status = FAIL;
@@ -198,65 +192,7 @@ public class SortFirstSky extends Iterator implements GlobalConst {
         int count = 0;
 
         RID rid = null;
-        /*
-        while (t != null) {
 
-            Tuple outer_tuple = new Tuple(t);
-            boolean isDominatedBy = false;
-            if(count == 0){
-                window[count] = outer_tuple;
-            }else {
-                // compare outer_tuple with all the window objects here
-                for (int i = 0; i < window.length; i++) {
-                    if (window[i] != null) {
-                        // if window[i] is not null
-                        // check if window_tuple dominates outer_tuple
-                        if (TupleUtils.Dominates(window[i], _attrType, outer_tuple, _attrType, _len_in, _str_sizes, _pref_list, _pref_list_length)) {
-                            // If tuple in heap file is dominated by at least one in main memory - simply move to the next element
-                            isDominatedBy = true;
-                            System.out.println("Heap tuple");
-                            outer_tuple.print(_in);
-                            System.out.println("Dominated by ");
-                            window[i].print(_in);
-                            System.out.println(" ");
-                            break;
-                        }
-                    }
-                }
-            }
-
-            if(isDominatedBy == false) {
-                System.out.println("Not dominated by any in the window");
-                if (count < window.length) {
-                    // move outer tuple to window
-                    // If tuple in outer loop dominates the window object - replace the window object
-                    window[count] = outer_tuple;
-                } else {
-                    // move outer tuple to heap
-                    try {
-                        rid = temp.insertRecord(outer_tuple.returnTupleByteArray());
-                    } catch (Exception e) {
-                        status = FAIL;
-                        e.printStackTrace();
-                    }
-                }
-            }
-
-            count++;
-
-            try {
-                t = sort.get_next();
-            }
-            catch (Exception e) {
-                status = FAIL;
-                e.printStackTrace();
-            }
-        }
-
-         */
-        System.out.println("Number of Disk reads: "+ PCounter.get_rcounter());
-        System.out.println("Number of Disk writes: "+ PCounter.get_wcounter());
-        PCounter.initialize();
         while (t != null && count < window.length) {
 
             Tuple outer_tuple = new Tuple(t);
@@ -294,9 +230,7 @@ public class SortFirstSky extends Iterator implements GlobalConst {
                 e.printStackTrace();
             }
         }
-        System.out.println("Number of Disk reads: "+ PCounter.get_rcounter());
-        System.out.println("Number of Disk writes: "+ PCounter.get_wcounter());
-        PCounter.initialize();
+
         while (t != null) {
             boolean isDominatedBy = false;
             Tuple htuple = new Tuple(t);
@@ -339,9 +273,7 @@ public class SortFirstSky extends Iterator implements GlobalConst {
                 e.printStackTrace();
             }
         }
-        System.out.println("Number of Disk reads: "+ PCounter.get_rcounter());
-        System.out.println("Number of Disk writes: "+ PCounter.get_wcounter());
-        PCounter.initialize();
+
         /*
         System.out.println("=====Window Skyline Tuples=====");
 
@@ -370,21 +302,8 @@ public class SortFirstSky extends Iterator implements GlobalConst {
         );
 
 
-        System.out.println("=====Temp heap Skyline Tuples=====");
-        /*
-        Tuple skl;
-        try {
-            skl = bnls.get_next();
-            while (skl!=null) {
-                skl.print(_in);
-                skl = bnls.get_next();
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        */
-        //bnls.close();
+        //System.out.println("=====Temp heap Skyline Tuples=====");
+        
 
         return;
     }

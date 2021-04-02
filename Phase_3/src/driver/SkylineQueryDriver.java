@@ -61,6 +61,7 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
 				break;
 			case "SFS":
 				//TBD run SFS with proper params
+				runSortFirstSky();
 				break;
 			case "BTS":
 				//TBD run btree sky with proper params
@@ -73,6 +74,99 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
     	}
     }
     
+    private void runSortFirstSky() {
+    	Table table = SystemDefs.JavabaseDB.get_relation(tablename);
+        int numSkyEle = 0;
+    	int COLS = table.getTable_num_attr();
+        FldSpec[] projlist = new FldSpec[COLS + 1];
+        RelSpec rel = new RelSpec(RelSpec.outer);
+        for( int i=0; i<COLS; i++ ) {
+            projlist[i] = new FldSpec(rel, i+1);
+        }
+
+        projlist[COLS] = new FldSpec(rel, 1);
+
+        AttrType[] attrType_for_proj = new AttrType[COLS];
+
+        for(int i=0;i<COLS;i++)
+            attrType_for_proj[i] = table.getTable_attr_type()[i];
+
+        OurFileScan fscan = null;
+
+        try {
+            fscan = new OurFileScan(table.getTable_heapfile(), attrType_for_proj, table.getTable_attr_size(), (short) COLS, COLS, projlist, null, this.pref_list);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        // Sort "test1sortPref.in"
+
+        AttrType[] attrType_for_sort = new AttrType[COLS+1];
+
+        for(int i=0;i<COLS;i++) {
+            attrType_for_sort[i] = table.getTable_attr_type()[i];
+        }
+        attrType_for_sort[COLS] = new AttrType(AttrType.attrReal);
+
+        //SystemDefs.JavabaseBM.limit_memory_usage(true, _n_pages);
+
+        Sort sort = null;
+        try {
+            sort = new Sort(attrType_for_sort, (short) (COLS+1), table.getTable_attr_size(), fscan, (COLS+1), new TupleOrder(TupleOrder.Descending), 32, this.n_pages);
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        // pass this sort object to the sortfirstsky
+
+        SortFirstSky sortFirstSky = null;
+        try {
+            sortFirstSky = new SortFirstSky(attrType_for_sort,
+						                    (short) COLS,
+						                    null,
+						                    sort,
+						                    (short)table.getTable_tuple_size(),
+						                    table.getTable_heapfile(),
+						                    this.pref_list,
+						                    this.pref_list.length,
+						                    this.n_pages);
+            fscan.close();
+            sort.close();
+            System.out.println("Skyline object: ");
+            Tuple temp;
+            try {
+                temp = sortFirstSky.get_next();
+                while (temp!=null) {
+                    temp.printTuple(attrType_for_proj);
+                    numSkyEle++;
+                    temp = sortFirstSky.get_next();
+                }
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            // clean up
+            try {
+                sortFirstSky.close();
+            }
+            catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        System.out.println("Skyline Length: "+numSkyEle);
+        System.out.println("Number of Disk reads: "+ PCounter.get_rcounter());
+        System.out.println("Number of Disk writes: "+ PCounter.get_wcounter());
+        PCounter.initialize();
+
+    }
+
     private void runNestedLoopSky(){
         NestedLoopsSky nestedLoopsSky = null;
         int numSkyEle =0;
@@ -164,34 +258,5 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
         System.out.println("Tablename: "+tablename);
         System.out.println("Outtablename: "+ outtablename);
         System.out.println("\n");
-    }
-    
-    /* calculates the NLS on tablename */
-    private String calculate_NLS() {
-    	return null;
-    }
-    
-    /* calculates the skyline as per params */
-    public String calculate_skyline() {
-    	switch ( skyline_algo ) {
-	    	case "NLS":
-				//TBD run NLS with proper params
-	    		return calculate_NLS();
-			case "BNLS":
-				//TBD run BNLS with proper params
-				break;
-			case "SFS":
-				//TBD run SFS with proper params
-				break;
-			case "BTS":
-				//TBD run btree sky with proper params
-				break;
-			case "BTSS":
-				//TBD run btree sorted sky with proper params
-				break;
-			default:
-				return null;
-    	}
-    	return null;
     }
 }

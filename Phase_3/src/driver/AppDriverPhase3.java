@@ -377,26 +377,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    	
 	    	/* run the appropriate skyline algorithm */
 	    	SkylineQueryDriver skyd = new SkylineQueryDriver(skyline_preference_list, skyline_tablename, skyline_n_pages, out_tablename, skyline_algo);
-	    	switch ( skyline_algo ) {
-	    		case "NLS":
-	    			//TBD run NLS with proper params
-	    			break;
-	    		case "BNLS":
-	    			//TBD run BNLS with proper params
-	    			break;
-	    		case "SFS":
-	    			//TBD run SFS with proper params
-	    			break;
-	    		case "BTS":
-	    			//TBD run btree sky with proper params
-	    			break;
-	    		case "BTSS":
-	    			//TBD run btree sorted sky with proper params
-	    			break;
-	    		default:
-	    			validate_token_length(0, "skyline");
-	    			break;
-	    	}
+	    	
     	}catch (ArrayIndexOutOfBoundsException e){
 	        validate_token_length(0, "skyline");
 	    }
@@ -1075,7 +1056,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 
                     case 3:
                         // call sort first sky
-                        runSortFirstSky();
+                        //runSortFirstSky();
                         break;
 
                     case 4:
@@ -1125,154 +1106,6 @@ class DriverPhase3 extends TestDriver implements GlobalConst
         return true;
     }
 	
-    private void runSortFirstSky() {
-
-        System.out.println("Will run sort first sky with params: ");
-        System.out.println("N pages: "+_n_pages);
-        System.out.println("Pref list: "+Arrays.toString(_pref_list));
-        System.out.println("Pref list length: "+_pref_list.length);
-
-        PCounter.initialize();
-
-        /*
-        try {
-            fscan = new FileScan(hFile, attrType, attrSize, (short) COLS, COLS, projlist, null);
-        }
-        catch (Exception e) {
-            status = FAIL;
-            e.printStackTrace();
-        }
-
-        SortFirstSky sortFirstSky = null;
-        try {
-            sortFirstSky = new SortFirstSky(attrType,
-                (short) COLS,
-                attrSize,
-                fscan,
-                (short)_t_size,
-                hFile,
-                _pref_list,
-                _pref_list.length,
-                _n_pages);
-
-
-            while(sortFirstSky.hasNext()) {
-                System.out.println("Skyline object: ");
-                sortFirstSky.get_next().print(attrType);
-            }
-
-
-            
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            status = OK;
-            // clean up
-            try {
-                sortFirstSky.close();
-            }
-            catch (Exception e) {
-                status = FAIL;
-                e.printStackTrace();
-            }
-        }
-
-         */
-
-        FldSpec[] projlist = new FldSpec[COLS+1];
-        RelSpec rel = new RelSpec(RelSpec.outer);
-        for(int i=0;i<COLS;i++)
-            projlist[i] = new FldSpec(rel, i+1);
-
-        projlist[COLS] = new FldSpec(rel, 1);
-
-        AttrType[] attrType_for_proj = new AttrType[COLS];
-
-        for(int i=0;i<COLS;i++)
-            attrType_for_proj[i] = new AttrType(AttrType.attrReal);
-
-        OurFileScan fscan = null;
-
-        try {
-            fscan = new OurFileScan(hFile, attrType_for_proj, null, (short) COLS, COLS, projlist, null, _pref_list);
-        }
-        catch (Exception e) {
-            status = FAIL;
-            e.printStackTrace();
-        }
-
-        // Sort "test1sortPref.in"
-
-        AttrType[] attrType_for_sort = new AttrType[COLS+1];
-
-        for(int i=0;i<COLS;i++) {
-            attrType_for_sort[i] = new AttrType(AttrType.attrReal);
-        }
-        attrType_for_sort[COLS] = new AttrType(AttrType.attrReal);
-
-        SystemDefs.JavabaseBM.limit_memory_usage(true, _n_pages);
-
-        Sort sort = null;
-        try {
-            sort = new Sort(attrType_for_sort, (short) (COLS+1), attrSize, fscan, (COLS+1), new TupleOrder(TupleOrder.Descending), 32, _n_pages/2);
-        }
-        catch (Exception e) {
-            status = FAIL;
-            e.printStackTrace();
-        }
-        System.out.println("Number of Disk reads: "+ PCounter.get_rcounter());
-        System.out.println("Number of Disk writes: "+ PCounter.get_wcounter());
-        PCounter.initialize();
-        // pass this sort object to the sortfirstsky
-
-        SortFirstSky sortFirstSky = null;
-        try {
-            sortFirstSky = new SortFirstSky(attrType_for_sort,
-                    (short) COLS,
-                    null,
-                    sort,
-                    (short)_t_size,
-                    hFile,
-                    _pref_list,
-                    _pref_list.length,
-                    _n_pages);
-
-            System.out.println("Skyline object: ");
-            Tuple temp;
-            int numSkyEle = 0;
-            try {
-                temp = sortFirstSky.get_next();
-                while (temp!=null) {
-                    temp.printTuple(attrType_for_proj);
-                    numSkyEle++;
-                    temp = sortFirstSky.get_next();
-                }
-
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            status = OK;
-            // clean up
-            try {
-                sortFirstSky.close();
-            }
-            catch (Exception e) {
-                status = FAIL;
-                e.printStackTrace();
-            }
-        }
-
-        System.out.println("Number of Disk reads: "+ PCounter.get_rcounter());
-        System.out.println("Number of Disk writes: "+ PCounter.get_wcounter());
-        PCounter.initialize();
-
-    }
-
 	private void runBtreeSky() throws Exception {
 		System.out.println("Will run b tree sky with params: ");
 		System.out.println("N pages: " + _n_pages);
