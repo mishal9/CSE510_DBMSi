@@ -1065,12 +1065,12 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 
                     case 1:
                         // call nested loop sky
-                        runNestedLoopSky();
+                        //runNestedLoopSky();
                         break;
 
                     case 2:
                         // call block nested loop sky
-                        blockNestedSky();
+                        //blockNestedSky();
                         break;
 
                     case 3:
@@ -1124,98 +1124,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 
         return true;
     }
-
-    private void runNestedLoopSky(){
-        System.out.println("Will run nested loop skyline with params: ");
-        System.out.println("N pages: "+_n_pages);
-        System.out.println("Pref list: "+Arrays.toString(_pref_list));
-        System.out.println("Pref list length: "+_pref_list.length);
-        PCounter.initialize();
-        NestedLoopsSky nestedLoopsSky = null;
-        int numSkyEle =0;
-        try {
-            nestedLoopsSky = new NestedLoopsSky(attrType,
-                    (short)COLS,
-                    attrSize,
-                    null,
-                    hFile,
-                    _pref_list,
-                    _pref_list.length,
-                    _n_pages);
-
-            System.out.println("Printing the Nested Loop Skyline");
-            Tuple temp = nestedLoopsSky.get_next();
-            while (temp!=null) {
-            	numSkyEle++;
-                temp.print(attrType);
-                temp = nestedLoopsSky.get_next();
-            }
-        
-		} catch (IOException | JoinsException | InvalidTupleSizeException | InvalidTypeException | PageNotReadException
-				| PredEvalException | UnknowAttrType | FieldNumberOutOfBoundException | WrongPermat
-				| TupleUtilsException | FileScanException | InvalidRelation e) {
-			e.printStackTrace();
-		} finally {
-            status = OK;
-            // clean up
-            try {
-                nestedLoopsSky.close();
-            }
-            catch (Exception e) {
-                status = FAIL;
-                e.printStackTrace();
-            }
-        }
-        System.out.println("Skyline Length: "+numSkyEle);
-        System.out.println("Number of Disk reads: "+ PCounter.get_rcounter());
-        System.out.println("Number of Disk writes: "+ PCounter.get_wcounter());
-        PCounter.initialize();
-    }
-
-    private void blockNestedSky(){
-        System.out.println("Will run block nested loop skyline with params: ");
-        System.out.println("N pages: "+_n_pages);
-        System.out.println("Pref list: "+Arrays.toString(_pref_list));
-        System.out.println("Pref list length: "+_pref_list.length);
-
-        BlockNestedLoopsSky blockNestedLoopsSky = null;
-        PCounter.initialize();
-        int numSkyEle = 0;
-        try {
-            blockNestedLoopsSky = new BlockNestedLoopsSky(attrType,
-                    (short)COLS,
-                    attrSize,
-                    null,
-                    hFile,
-                    _pref_list,
-                    _pref_list.length,
-                    _n_pages);
-
-            System.out.println("Printing the Block Nested Loop Skyline");
-            Tuple temp;
-            try {
-                temp = blockNestedLoopsSky.get_next();
-                while (temp!=null) {
-                    temp.print(attrType);
-                    numSkyEle++;
-                    temp = blockNestedLoopsSky.get_next();
-                }
-               
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-       
-        } catch (IOException | FileScanException | TupleUtilsException | InvalidRelation e) {
-            e.printStackTrace();
-        } finally {
-            blockNestedLoopsSky.close();
-        }
-        System.out.println("Skyline Length: "+numSkyEle);
-        System.out.println("Number of Disk reads: "+ PCounter.get_rcounter());
-        System.out.println("Number of Disk writes: "+ PCounter.get_wcounter());
-        PCounter.initialize();
-    }
-
+	
     private void runSortFirstSky() {
 
         System.out.println("Will run sort first sky with params: ");

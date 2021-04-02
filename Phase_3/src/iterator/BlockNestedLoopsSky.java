@@ -128,7 +128,7 @@ public class BlockNestedLoopsSky extends Iterator implements GlobalConst
         try {
         	/* limit the memory usage of BM to calculated pages */
         	buffer_pages = this._n_pages/2;
-        	SystemDefs.JavabaseBM.limit_memory_usage(true, buffer_pages);
+        	//SystemDefs.JavabaseBM.limit_memory_usage(true, buffer_pages);
         	this._heap_file = new Heapfile(this._relation_name);
         	System.out.println("BNL heapfile size "+_heap_file.getRecCnt());
         	this._temp_heap_file = new Heapfile(this._temp_heap_file_name);
@@ -565,7 +565,7 @@ public class BlockNestedLoopsSky extends Iterator implements GlobalConst
 			}
 		}
 		this._temp_heap_file.deleteFile();
-		SystemDefs.JavabaseBM.limit_memory_usage(false, this._n_pages);
+		//SystemDefs.JavabaseBM.limit_memory_usage(false, this._n_pages);
 		System.out.println("No more records in skyline. All records already scanned.");
 		return null;
 	}
