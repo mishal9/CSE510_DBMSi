@@ -4,294 +4,210 @@ import java.io.IOException;
 
 import global.Convert;
 
-/**
- * Provides a general and type-safe way to store and compare index search keys.
- */
-public class HashKey implements Comparable<HashKey> {
+public class HashKey {
 
-  /** Internal type number for Integer keys. */
-  protected static final byte INTEGER_KEY = 1;
+	public static final byte INT = 1;
+	public static final byte FLOAT = 2;
+	public static final byte STRING = 3;
 
-  /** Internal type number for Float keys. */
-  protected static final byte FLOAT_KEY = 2;
+	byte type;
+	int size;
+	Object value;
 
-  /** Internal type number for String keys. */
-  protected static final byte STRING_KEY = 3;
+	public HashKey(Integer value) throws IOException {
+		this.type = INT;
+		this.value = value;
+		this.size = HashUtils.getKeyLength(this);
+	}
 
-  // --------------------------------------------------------------------------
+	public HashKey(Float value) throws IOException {
+		this.type = FLOAT;
+		this.value = value;
+		this.size = HashUtils.getKeyLength(this);
+	}
 
-  /** The type of the key value. */
-  protected byte type;
+	public HashKey(String value) throws IOException {
+		this.type = STRING;
+		this.value = value;
+		this.size = HashUtils.getKeyLength(this);
+	}
 
-  /** The size of the key value (in bytes). */
-  protected int size;
+	public HashKey(HashKey key) {
 
-  /** The actual key value. */
-  protected Object value;
+		this.type = key.type;
+		this.size = key.size;
 
-  // --------------------------------------------------------------------------
+		switch (key.type) {
+		case INT:
+			this.value = new Integer((Integer) key.value);
+			break;
+		case FLOAT:
+			this.value = new Float((Float) key.value);
+			break;
+		case STRING:
+			this.value = new String((String) key.value);
+			break;
+		}
 
-  /**
-   * Constructs a new integer search key.
-   */
-  public HashKey(Integer value) {
-    this.type = INTEGER_KEY;
-    this.size = Integer.SIZE / Byte.SIZE;
-    this.value = value;
-  }
+	} 
 
-  /**
-   * Constructs a new float search key.
-   */
-  public HashKey(Float value) {
-    this.type = FLOAT_KEY;
-    this.size = Float.SIZE / Byte.SIZE;
-    this.value = value;
-  }
+	public HashKey(byte[] data, int offset) throws IOException {
 
-  /**
-   * Constructs a new string search key.
-   */
-  public HashKey(String value) {
-    this.type = STRING_KEY;
-    this.size = value.length();
-    this.value = value;
-  }
+		type = data[offset];
+		size = Convert.getIntValue(offset + 1, data);
 
-  /**
-   * Constructs a search key from a generic value.
-   * 
-   * @throws IllegalArgumentException if value's type is invalid
-   */
-  public HashKey(Object value) {
+		switch (type) {
+		case INT:
+			value = new Integer(Convert.getIntValue(offset + 5, data));
+			break;
+		case FLOAT:
+			value = new Float(Convert.getFloValue(offset + 5, data));
+			break;
+		case STRING:
+			value = Convert.getStrValue(offset + 5, data, size);
+			break;
+		}
 
-    // Integer key?
-    if (value instanceof Integer) {
-      this.type = INTEGER_KEY;
-      this.size = Integer.SIZE / Byte.SIZE;
-      this.value = value;
-    }
+	} 
 
-    // Float key?
-    else if (value instanceof Float) {
-      this.type = FLOAT_KEY;
-      this.size = Float.SIZE / Byte.SIZE;
-      this.value = value;
-    }
+	public void writeToByteArray(byte[] data, int offset) throws IOException {
 
-    // String key?
-    else if (value instanceof String) {
-      this.type = STRING_KEY;
-      this.size = ((String) value).length();
-      this.value = value;
-    }
+		data[offset] = type;
+		Convert.setIntValue(size, offset + 1, data);
 
-    // otherwise, none of the above
-    else {
-      throw new IllegalArgumentException("invalid key value type");
-    }
+		switch (type) {
+		case INT:
+			Convert.setIntValue((Integer) value, offset + 5, data);
+			break;
+		case FLOAT:
+			Convert.setFloValue((Float) value, offset + 5, data);
+			break;
+		case STRING:
+			Convert.setStrValue((String) value, offset + 5, data);
+			break;
+		}
 
-  } // public SearchKey(Object value)
+	}
 
-  /**
-   * Copy constructor for a search key.
-   */
-  public HashKey(HashKey key) {
+	public int size() {
+		return 1 + 4 + size;
+	}
 
-    // copy the type and size
-    this.type = key.type;
-    this.size = key.size;
 
-    // copy the value
-    switch (key.type) {
-      case INTEGER_KEY:
-        this.value = new Integer((Integer) key.value);
-        break;
-      case FLOAT_KEY:
-        this.value = new Float((Float) key.value);
-        break;
-      case STRING_KEY:
-        this.value = new String((String) key.value);
-        break;
-    }
+	public int getHash(int depth) {
 
-  } // public SearchKey(SearchKey key)
+		// apply the appropriate calculation
+		int mask = (1 << depth) - 1;
+		switch (type) {
 
-  // --------------------------------------------------------------------------
+		default:
+		case INT:
+			int ikey = ((Integer) value).intValue();
+			return ikey & mask;
 
-  /**
-   * Constructs a SearchKey stored in the given data buffer.
- * @throws IOException 
-   */
-  public HashKey(byte[] data, int offset) throws IOException {
+		case FLOAT:
+			int fkey = Float.floatToIntBits((Float) value);
+			return fkey & mask;
 
-    // extract the type and size
-    type = data[offset];
-    size = Convert.getIntValue(offset + 1, data);
+		case STRING:
 
-    // extract the key value
-    switch (type) {
-      case INTEGER_KEY:
-        value = new Integer(Convert.getIntValue(offset + 3, data));
-        break;
-      case FLOAT_KEY:
-        value = new Float(Convert.getFloValue(offset + 3, data));
-        break;
-      case STRING_KEY:
-        value = Convert.getStrValue(offset + 3, data, size);
-        break;
-    }
+			// reverse the first four bytes of the string
+			byte[] s = ((String) value).getBytes();
+			int skey = 0;
+			int len = s.length > 4 ? 4 : s.length;
+			for (int i = 0; i < len; i++) {
+				skey |= (s[i] << (i * Byte.SIZE));
+			}
+			return skey & mask;
 
-  } // public SearchKey(byte[] data, short offset)
+		} // switch
 
-  /**
-   * Writes the SearchKey into the given data buffer.
- * @throws IOException 
-   */
-  public void writeData(byte[] data, int offset) throws IOException {
+	}
 
-    // write the type and size
-    data[offset] = type;
-    Convert.setIntValue(size, offset + 1, data);
+	/**
+	 * Returns true if the search key matches the given hash value, false otherwise.
+	 */
+	public boolean isHash(int hash) {
 
-    // write the key value
-    switch (type) {
-      case INTEGER_KEY:
-        Convert.setIntValue((Integer) value, offset + 3, data);
-        break;
-      case FLOAT_KEY:
-        Convert.setFloValue((Float) value, offset + 3, data);
-        break;
-      case STRING_KEY:
-        Convert.setStrValue((String) value, offset + 3, data);
-        break;
-    }
+		// calculate the bit depth (i.e. the left-most '1' bit)
+		int depth = (int) (Math.log(hash) / Math.log(2) + 1);
 
-  } // public void writeData(byte[] data, short offset)
+		// compare the hash codes
+		return (getHash(depth) == hash);
 
-  /**
-   * Gets the total length of the search key (in bytes).
-   */
-  public int getLength() {
-    return (int) (3 + size);
-  }
+	} // public boolean isHash(int hash)
 
-  // --------------------------------------------------------------------------
+	// --------------------------------------------------------------------------
 
-  /**
-   * Gets the hash value for the search key, given the depth (i.e. number of
-   * bits to consider).
-   */
-  public int getHash(int depth) {
+	/**
+	 * Returns a generic hash code for the key value.
+	 */
+	public int hashCode() {
+		return value.hashCode();
+	}
 
-    // apply the appropriate calculation
-    int mask = (1 << depth) - 1;
-    switch (type) {
+	/**
+	 * True if obj is a SearchKey with the same values; false otherwise.
+	 */
+	public boolean equals(Object obj) {
+		if (obj instanceof HashKey) {
+			HashKey key = (HashKey) obj;
+			return (value.equals(key.value));
+		}
+		return false;
+	}
 
-      default:
-      case INTEGER_KEY:
-        int ikey = ((Integer) value).intValue();
-        return ikey & mask;
+	/**
+	 * Generically compares two search keys.
+	 * 
+	 * @return a negative integer, zero, or a positive integer as this object is
+	 *         less than, equal to, or greater than the specified object
+	 * @throws IllegalArgumentException if the search keys are not comparable
+	 */
+	public int compareTo(HashKey key) {
 
-      case FLOAT_KEY:
-        int fkey = Float.floatToIntBits((Float) value);
-        return fkey & mask;
+		// Integer comparison
+		if (value instanceof Integer) {
+			if (key.value instanceof Integer) {
 
-      case STRING_KEY:
+				Integer ikey1 = (Integer) this.value;
+				Integer ikey2 = (Integer) key.value;
+				return ikey1.compareTo(ikey2);
 
-        // reverse the first four bytes of the string
-        byte[] s = ((String) value).getBytes();
-        int skey = 0;
-        int len = s.length > 4 ? 4 : s.length;
-        for (int i = 0; i < len; i++) {
-          skey |= (s[i] << (i * Byte.SIZE));
-        }
-        return skey & mask;
+			} else {
+				throw new IllegalArgumentException("search keys are not comparable");
+			}
+		}
 
-    } // switch
+		// Float comparison
+		if (value instanceof Float) {
+			if (key.value instanceof Float) {
 
-  } // public int getHash(int depth)
+				Float fkey1 = (Float) this.value;
+				Float fkey2 = (Float) key.value;
+				return fkey1.compareTo(fkey2);
 
-  /**
-   * Returns true if the search key matches the given hash value, false
-   * otherwise.
-   */
-  public boolean isHash(int hash) {
+			} else {
+				throw new IllegalArgumentException("search keys are not comparable");
+			}
+		}
 
-    // calculate the bit depth (i.e. the left-most '1' bit)
-    int depth = (int) (Math.log(hash) / Math.log(2) + 1);
+		// default: String comparison
+		if (key.value instanceof String) {
 
-    // compare the hash codes
-    return (getHash(depth) == hash);
+			String skey1 = (String) this.value;
+			String skey2 = (String) key.value;
+			return skey1.compareTo(skey2);
 
-  } // public boolean isHash(int hash)
+		} else {
+			throw new IllegalArgumentException("search keys are not comparable");
+		}
 
-  // --------------------------------------------------------------------------
+	}
 
-  /**
-   * Returns a generic hash code for the key value.
-   */
-  public int hashCode() {
-    return value.hashCode();
-  }
+	@Override
+	public String toString() {
+		return "HashKey [type=" + type + ", size=" + size + ", value=" + value + "]";
+	}
 
-  /**
-   * True if obj is a SearchKey with the same values; false otherwise.
-   */
-  public boolean equals(Object obj) {
-    if (obj instanceof HashKey) {
-      HashKey key = (HashKey) obj;
-      return (value.equals(key.value));
-    }
-    return false;
-  }
-
-  /**
-   * Generically compares two search keys.
-   * 
-   * @return a negative integer, zero, or a positive integer as this object is
-   *         less than, equal to, or greater than the specified object
-   * @throws IllegalArgumentException if the search keys are not comparable
-   */
-  public int compareTo(HashKey key) {
-
-    // Integer comparison
-    if (value instanceof Integer) {
-      if (key.value instanceof Integer) {
-
-        Integer ikey1 = (Integer) this.value;
-        Integer ikey2 = (Integer) key.value;
-        return ikey1.compareTo(ikey2);
-
-      } else {
-        throw new IllegalArgumentException("search keys are not comparable");
-      }
-    }
-
-    // Float comparison
-    if (value instanceof Float) {
-      if (key.value instanceof Float) {
-
-        Float fkey1 = (Float) this.value;
-        Float fkey2 = (Float) key.value;
-        return fkey1.compareTo(fkey2);
-
-      } else {
-        throw new IllegalArgumentException("search keys are not comparable");
-      }
-    }
-
-    // default: String comparison
-    if (key.value instanceof String) {
-
-      String skey1 = (String) this.value;
-      String skey2 = (String) key.value;
-      return skey1.compareTo(skey2);
-
-    } else {
-      throw new IllegalArgumentException("search keys are not comparable");
-    }
-
-  } // public int compareTo(SearchKey key)
-
-} // public class SearchKey implements Comparable<SearchKey>
+}
