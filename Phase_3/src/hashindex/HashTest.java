@@ -2,10 +2,16 @@ package hashindex;
 
 import java.io.IOException;
 
+import global.GlobalConst;
 import global.PageId;
 import global.RID;
+import global.SystemDefs;
+import heap.HFBufMgrException;
+import heap.HFDiskMgrException;
+import heap.HFException;
+import heap.Scan;
 
-public class HashTest {
+public class HashTest implements GlobalConst {
 
 	public static void main(String[] args) {
 		
@@ -23,18 +29,35 @@ public class HashTest {
 		System.out.println("End");
 	}
 	
+	public HashTest() {
+		long time=System.currentTimeMillis();
+		time=10;
+		String dbpath = "HASHTEST" + time + ".minibase-db";
+		//SystemDefs.MINIBASE_RESTART_FLAG=true;
+		SystemDefs sysdef = new SystemDefs(dbpath, 5000, 100, "Clock");
 
-	private void testHashBucket() throws IOException {
-		HashBucket bucket = new HashBucket(null);
+	}
 
 
-		for (int i = 0; i < 10; i++) {
+	private void testHashBucket() throws Exception {
+
+		printPinnedPages();
+		HashBucket bucket = new HashBucket("SomeNam");
+		
+		for (int i = 10; i < 30; i++) {
 			HashKey key = new HashKey(i);
 			RID rid = new RID(new PageId(i),i);
 			HashEntry ent = new HashEntry(key, rid);
 			bucket.insertEntry(ent);
 
 		}
+		bucket.printToConsole();
+		HashEntry entryToDelete  = new HashEntry(new HashKey(13), new RID(new PageId(13),13));
+		bucket.deleteEntry(entryToDelete);
+		bucket.printToConsole();
+		printPinnedPages();
+		//46
+
 	}
 	
 	private void testEntryCreation() throws IOException {
@@ -58,6 +81,11 @@ public class HashTest {
 		key.writeToByteArray(arr, 1);
 		key = new HashKey(arr, 1);
 		System.out.println(key);
+	}
+	
+	public static void printPinnedPages() {
+		System.out.println("pin: "+(SystemDefs.JavabaseBM.getNumBuffers()- SystemDefs.JavabaseBM.getNumUnpinnedBuffers()));
+
 	}
 
 }
