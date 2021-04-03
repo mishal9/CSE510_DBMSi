@@ -545,6 +545,11 @@ public class Table implements GlobalConst{
 		  return false;
 	  }
   }
+  
+  /* inserts data into an already existing table */
+  public void insert_data( String filename ) {
+	  
+  }
 
 }
 
