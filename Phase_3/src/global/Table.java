@@ -351,6 +351,38 @@ public class Table implements GlobalConst{
     }
   	  
   }
+  
+  private String get_unclustered_index_filename( int attr_number, boolean[] unclustered_exist, String file_type, String file_ext ) {
+	  return ( tablename + Integer.toString(attr_number) + file_ext );
+  }
+  
+  public String get_unclustered_index_filename(int attr_number, String unclustered_index_type) {
+	  if ( unclustered_index_type.equals("btree") ) {
+		  return get_unclustered_index_filename(attr_number-1, btree_unclustered_attr, "btree", btree_clustered_file_ext);
+	  }
+	  else if ( unclustered_index_type.equals("hash") ) {
+		  return get_unclustered_index_filename(attr_number-1, hash_unclustered_attr, "hash", hash_unclustered_file_ext);
+	  }
+	  else {
+		  return null;
+	  }
+  }
+  
+  private  boolean unclustered_index_exist( int attr_number, boolean[] unclustered_exist ) {
+	  return unclustered_exist[attr_number];
+  }
+  
+  public boolean unclustered_index_exist( int attr_number, String unclustered_index_type ) {
+	  if ( unclustered_index_type.equals("btree") ) {
+		  return unclustered_index_exist(attr_number-1, btree_unclustered_attr);
+	  }
+	  else if ( unclustered_index_type.equals("hash") ) {
+		  return unclustered_index_exist(attr_number-1, hash_unclustered_attr);
+	  }
+	  else {
+		  return false;
+	  }
+  }
 
 }
 
