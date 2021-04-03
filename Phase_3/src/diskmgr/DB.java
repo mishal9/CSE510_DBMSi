@@ -41,10 +41,12 @@ public class DB implements GlobalConst {
 											 new AttrType(AttrType.attrInteger),//contains the number of attributes in the table  
 											 new AttrType(AttrType.attrInteger),// contains the size of tuple in the table
 											 new AttrType(AttrType.attrString), //contains a string of comma separated column names
-											 new AttrType(AttrType.attrString)}; // contains a string of comma separated attrtypes
+											 new AttrType(AttrType.attrString), // contains a string of comma separated attrtypes
+											 new AttrType(AttrType.attrString), // contains an array of 1s and 0s which says whether an btree unclustered index exist on attr
+											 new AttrType(AttrType.attrString)};// contains an array of 1s and 0s which says whether an hash unclustered index exist on attr
 	private static short[] tables_strsize;
 	
-	private static int table_relation_tuple_size = 928;
+	private static int table_relation_tuple_size;
 	
 	private static final int bits_per_page = MAX_SPACE * 8;
   
@@ -111,7 +113,33 @@ public class DB implements GlobalConst {
 					}
 					//System.out.println("attrtypes "+Arrays.toString(col_token_attr_str));
 					
-					Table relation = new Table(tablename, num_attr, col_attr, col_token, tsize);
+					/* get the btree unclustered attr boolean array */
+					boolean[] bunc = new boolean[num_attr];
+					String bunc_str = t.getStrFld(6);
+					String[] bunc_token_str = bunc_str.split(",");
+					for( int i=0; i<num_attr; i++ ) {
+						if ( bunc_token_str[i].equals("1") ) {
+							bunc[i] = true;
+						}
+						else {
+							bunc[i] = false;
+						}
+					}
+					
+					/* get the hash unclustered attr boolean array */
+					boolean[] hunc = new boolean[num_attr];
+					String hunc_str = t.getStrFld(6);
+					String[] hunc_token_str = hunc_str.split(",");
+					for( int i=0; i<num_attr; i++ ) {
+						if ( hunc_token_str[i].equals("1") ) {
+							hunc[i] = true;
+						}
+						else {
+							hunc[i] = false;
+						}
+					}
+					
+					Table relation = new Table(tablename, num_attr, col_attr, col_token, tsize, bunc, hunc);
 					tables.add(relation);
 					
 					temp_t = relation_scan.getNext(rid);
@@ -319,6 +347,48 @@ public class DB implements GlobalConst {
 		}
 		System.out.println("attrs: "+ y);
 		t.setStrFld(5, y);
+		
+		/* make a string of 0s and 1s for btree unclustered attr index */
+		String bunc = "";
+		boolean[] cols_bunc = relation.getBtree_unclustered_attr();
+		for ( int i=0; i<cols_bunc.length; i++ ) {
+			int j;
+			if ( cols_bunc[i] ) {
+				j = 1;
+			}
+			else {
+				j = 0;
+			}
+			if ( i==0 ) {
+				bunc = Integer.toString(j);
+			}
+			else {
+				bunc = bunc + "," + Integer.toString(j);
+			}
+		}
+		System.out.println("unclustered index: " + bunc);
+		t.setStrFld(6, bunc);
+		
+		/* make a string of 0s and 1s for hash unclustered attr index */
+		String hunc = "";
+		boolean[] cols_hunc = relation.getHash_unclustered_attr();
+		for ( int i=0; i<cols_hunc.length; i++ ) {
+			int j;
+			if ( cols_hunc[i] ) {
+				j = 1;
+			}
+			else {
+				j = 0;
+			}
+			if ( i==0 ) {
+				hunc = Integer.toString(j);
+			}
+			else {
+				hunc = hunc + "," + Integer.toString(j);
+			}
+		}
+		System.out.println("unclustered index: " + hunc);
+		t.setStrFld(7, hunc);
 		
 		/* insert the tuple into the heapfile */
 		//System.out.println(table_relation);

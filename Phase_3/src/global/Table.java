@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Queue;
 import java.util.Scanner;
 
 import heap.HFBufMgrException;
@@ -36,6 +37,15 @@ public class Table implements GlobalConst{
 	/* extension for the data filename */
 	private static String data_file_ext = ".txt";
 	
+	/* extension for clustered index */
+	private static String btree_clustered_file_ext = ".btreeclustered";
+	
+	/* extension for clustered index */
+	private static String btree_unclustered_file_ext = ".btreeunclustered";
+	
+	/* extension for clustered index */
+	private static String hash_unclustered_file_ext = ".hashunclustered";
+	
 	/* list of all the tables that exist in this DB */
 	private static List<String> DBtablenames;
 	
@@ -47,6 +57,35 @@ public class Table implements GlobalConst{
 	
 	/* name of the heap file containing the heapfile for the tabe data */
 	private String table_heapfile;
+	
+	/* list of all the unclustered index attributes in the table --> 0,1,2,3... */
+	private boolean[] btree_unclustered_attr;
+	
+	public boolean[] getBtree_unclustered_attr() {
+		return btree_unclustered_attr;
+	}
+
+	public void setBtree_unclustered_attr(boolean[] btree_unclustered_attr) {
+		this.btree_unclustered_attr = btree_unclustered_attr;
+	}
+
+	/* list of all the hash unclustered index attributes in the table --> 0,1,2,3... */
+	private boolean[] hash_unclustered_attr;
+
+	public boolean[] getHash_unclustered_attr() {
+		return hash_unclustered_attr;
+	}
+
+	public void setHash_unclustered_attr(boolean[] hash_unclustered_attr) {
+		this.hash_unclustered_attr = hash_unclustered_attr;
+	}
+
+	/* attribute number for the btree clustered index --> 0,1,2,3....*/
+	private int clustered_btree_attr = -1;
+	
+	/* attribute number for the hash clustered index --> 0,1,2,3.... */
+	private int clustered_hash_attr = -1;
+	
 	
 	public String getTable_heapfile() {
 		return table_heapfile;
@@ -128,13 +167,16 @@ public class Table implements GlobalConst{
 	  this.table_heapfile = filename.substring(0, filename.length()-data_file_ext.length()) + heapfile_ext;
   }
   
-  public Table( String tablename, int table_num_attr, AttrType[] table_attr_type, String[] table_attr_name, int table_tuple_size ) {
+  public Table( String tablename, int table_num_attr, AttrType[] table_attr_type, String[] table_attr_name, int table_tuple_size, boolean[] btree_unclustered_attr, boolean[] hash_unclustered_attr ) {
 	  this.tablename = tablename;
 	  this.table_heapfile = tablename + heapfile_ext;
 	  this.table_num_attr = table_num_attr;
 	  this.table_attr_type = table_attr_type;
 	  this.table_attr_name = table_attr_name;
 	  this.table_tuple_size = table_tuple_size;
+	  this.btree_unclustered_attr = btree_unclustered_attr;
+	  this.hash_unclustered_attr = hash_unclustered_attr;
+	  
 	  /* create the tuple and calculate the size of the tuple */
 	  table_attr_size = new short[table_num_attr];
 	  for(int i=0; i<table_attr_size.length; i++){
@@ -156,6 +198,14 @@ public class Table implements GlobalConst{
 	    
 	    /* initialising the number of attributes in the table */
 	    table_num_attr = sc.nextInt();
+	    
+	    /* initialise the btree unclustered attr array i.e. no unclustered index exist at the time of creating the table for the first time*/
+	    btree_unclustered_attr = new boolean[table_num_attr];
+	    Arrays.fill(btree_unclustered_attr, false);
+	    
+	    /* initialise the hash unclustered attr array i.e. no unclustered index exist at the time of creating the table for the first time*/
+	    hash_unclustered_attr = new boolean[table_num_attr];
+	    Arrays.fill(hash_unclustered_attr, false);
 	    
 	    /* initialising the attr type array of attributes */
 	    table_attr_type = new AttrType[table_num_attr];
