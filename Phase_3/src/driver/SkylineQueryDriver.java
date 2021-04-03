@@ -65,15 +65,63 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
 				break;
 			case "BTS":
 				//TBD run btree sky with proper params
+				runBtreeSky();
 				break;
 			case "BTSS":
 				//TBD run btree sorted sky with proper params
+				//TBD modify btree sort sky to handle input as a heap file
 				break;
 			default:
 				break;
     	}
     }
-    
+
+    private void runBtreeSky() {
+    	try {
+	    	Table table = SystemDefs.JavabaseDB.get_relation(tablename);
+	    	Heapfile f = new Heapfile(table.getTable_heapfile());
+			BtreeGeneratorUtil.generateAllBtreesForHeapfile( table.getTable_heapfile(), f, table.getTable_attr_type(), table.getTable_attr_size());
+			System.out.println("Btree DATABASE CREATED");
+			
+			//limiting buffer pages in BufMgr
+			//SystemDefs.JavabaseBM.limit_memory_usage(true, this._n_pages);
+			
+			int amt_of_mem = 100; // TODO what should this be?
+			Iterator am1 = null;
+			String relationName = table.getTable_heapfile();
+			
+			//get only the btree indexes specified by the the pref_list array
+			IndexFile[] index_file_list = BtreeGeneratorUtil.getBtreeSubset(this.pref_list);
+			PCounter.initialize();
+			BTreeSky btreesky = new BTreeSky(table.getTable_attr_type(), table.getTable_num_attr(), table.getTable_attr_size(), amt_of_mem, am1, relationName, this.pref_list,
+											 this.pref_list.length, index_file_list, this.n_pages);
+			btreesky.debug = false;
+			int numSkyEle = 0;
+			Tuple skyEle = btreesky.get_next(); // first sky element
+			System.out.print("First Sky element is: ");
+			skyEle.print(table.getTable_attr_type());
+			numSkyEle++;
+			while (skyEle != null) {
+				skyEle = btreesky.get_next(); // subsequent sky elements
+				if (skyEle == null) {
+					System.out.println("No more sky elements");
+					break;
+				}
+				numSkyEle++;
+				System.out.print("Sky element is: ");
+				skyEle.print(table.getTable_attr_type());
+			}
+			System.out.println("Skyline Length: "+numSkyEle);
+			btreesky.close();
+			System.out.println("End of runBtreeSky");
+			System.out.println("Number of Disk reads: "+ PCounter.get_rcounter());
+			System.out.println("Number of Disk writes: "+ PCounter.get_wcounter());
+			PCounter.initialize();
+    	} catch ( Exception e ) {
+    		e.printStackTrace();
+    	}
+	}
+
     private void runSortFirstSky() {
     	Table table = SystemDefs.JavabaseDB.get_relation(tablename);
         int numSkyEle = 0;

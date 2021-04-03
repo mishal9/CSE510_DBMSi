@@ -239,8 +239,8 @@ public class BTreeSky extends Iterator implements GlobalConst {
 			System.out.println("getNumBuffers "+SystemDefs.JavabaseBM.getNumBuffers());
 		}
 		//unlimit the buffer manager here, it will be limited again in BNL
-		SystemDefs.JavabaseBM.limit_memory_usage(false, this.n_pages);
-		SystemDefs.JavabaseBM.flushAllPages();
+		//SystemDefs.JavabaseBM.limit_memory_usage(false, this.n_pages);
+		//SystemDefs.JavabaseBM.flushAllPages();
 		Iterator bnlIterator = null;
 		blockNestedLoopSkyline = new BlockNestedLoopsSky(attrType, attrType.length, t1_str_sizes, bnlIterator, prunedHeapFileName, pref_list, pref_length_list, n_pages);
 	}

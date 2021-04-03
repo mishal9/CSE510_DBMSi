@@ -111,6 +111,7 @@ public class GenerateIndexFiles{
         float fkey;
         KeyClass ffkey;
         
+        //TBD modify this portion of the code to handle input file as a heap file and also create proper keys 
         for(double[] value :records){
             
             fkey = create_key_float(value, pref_list, pref_list_length);

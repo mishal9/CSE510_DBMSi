@@ -1061,7 +1061,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 
                     case 4:
                         // call btree sky
-                    	runBtreeSky();
+                    	//runBtreeSky();
                         break;
 
                     case 5:
@@ -1106,54 +1106,6 @@ class DriverPhase3 extends TestDriver implements GlobalConst
         return true;
     }
 	
-	private void runBtreeSky() throws Exception {
-		System.out.println("Will run b tree sky with params: ");
-		System.out.println("N pages: " + _n_pages);
-		System.out.println("Pref list: " + Arrays.toString(_pref_list));
-		System.out.println("Pref list length: " + _pref_list.length);
-		
-		if (individualBTreeIndexesCreated == false) {
-			BtreeGeneratorUtil.generateAllBtreesForHeapfile(hFile, f, attrType, attrSize);
-			individualBTreeIndexesCreated = true;
-		}
-		
-		//limiting buffer pages in BufMgr
-		SystemDefs.JavabaseBM.limit_memory_usage(true, this._n_pages);
-		
-		int len_in1 = 4;
-		int amt_of_mem = 100; // TODO what should this be?
-		Iterator am1 = null;
-		String relationName = hFile;
-		
-		//get only the btree indexes specified by the the pref_list array
-		IndexFile[] index_file_list = BtreeGeneratorUtil.getBtreeSubset(_pref_list);
-		PCounter.initialize();
-		BTreeSky btreesky = new BTreeSky(attrType, len_in1, attrSize, amt_of_mem, am1, relationName, _pref_list,
-				_pref_list.length, index_file_list, _n_pages);
-		btreesky.debug = false;
-		int numSkyEle = 0;
-		Tuple skyEle = btreesky.get_next(); // first sky element
-		System.out.print("First Sky element is: ");
-		skyEle.print(attrType);
-		numSkyEle++;
-		while (skyEle != null) {
-			skyEle = btreesky.get_next(); // subsequent sky elements
-			if (skyEle == null) {
-				System.out.println("No more sky elements");
-				break;
-			}
-			numSkyEle++;
-			System.out.print("Sky element is: ");
-			skyEle.print(attrType);
-		}
-		System.out.println("Skyline Length: "+numSkyEle);
-		btreesky.close();
-		System.out.println("End of runBtreeSky");
-		 System.out.println("Number of Disk reads: "+ PCounter.get_rcounter());
-         System.out.println("Number of Disk writes: "+ PCounter.get_wcounter());
-         PCounter.initialize();
-	}
-
 	private void runBtreeSortSky() throws Exception {
         System.out.println("Will run btree sort sky with params: ");
         System.out.println("N pages: "+_n_pages);
@@ -1215,6 +1167,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
         btree.close();
         
     }
+
 }
 
 
