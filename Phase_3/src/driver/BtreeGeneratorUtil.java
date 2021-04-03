@@ -16,6 +16,7 @@ import heap.Tuple;
 import index.IndexScan;
 import iterator.FldSpec;
 import iterator.RelSpec;
+import iterator.TupleUtils;
 
 public class BtreeGeneratorUtil {
 
@@ -61,12 +62,13 @@ public class BtreeGeneratorUtil {
 
 	private static BTreeFile createSingleBtree(String btreeName,Scan scan, AttrType[] attrType,short[] t1_str_sizes,int keyNoForIndex) throws Exception {
 
+		//TBD remove attrreal and make it work on any kind of attribute
 		// create the index file
 		BTreeFile btf  = new BTreeFile(btreeName, AttrType.attrReal, 4, 1/* delete */);
 
 
 		RID rid = new RID();
-		Tuple t = getEmptyTuple(attrType,t1_str_sizes);
+		Tuple t = TupleUtils.getEmptyTuple(attrType,t1_str_sizes);
 		float key = 0;
 		
 		Tuple temp = scan.getNext(rid);
@@ -130,15 +132,5 @@ public class BtreeGeneratorUtil {
 		iscan.close();
 
 	}
-
-	private static Tuple getEmptyTuple(AttrType[] attrType, short[] t1_str_sizes) throws InvalidTypeException, InvalidTupleSizeException, IOException {
-		Tuple t = new Tuple();
-		t.setHdr((short) attrType.length, attrType, t1_str_sizes);
-		int size = t.size();
-		t = new Tuple(size);
-		t.setHdr((short) attrType.length, attrType, t1_str_sizes);
-		return t;
-	}
-
 
 }

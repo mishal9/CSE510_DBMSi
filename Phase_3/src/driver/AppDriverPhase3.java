@@ -136,6 +136,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
     public void close_DB() {
     	try {
     		System.out.println("Closing DB "+open_db_name);
+    		SystemDefs.JavabaseDB.add_all_table_to_relation();
 			SystemDefs.JavabaseBM.flushAllPages();
 			SystemDefs.JavabaseDB.closeDB();
 			is_current_db_open = false;
@@ -211,6 +212,13 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 			if ( btree_type_index ) {
 				System.out.println("Creating an unclustered btree index on table "+tablename+" on attribute "+index_att_no);
 				//TBD create UNCLUSTERED BTREE INDEX on attribute
+				Table table = SystemDefs.JavabaseDB.get_relation(tablename);
+				if ( table.unclustered_index_exist(index_att_no, "btree") ) {
+					System.out.println("ERROR: Unclustered index already exists on attribute number *********"+index_att_no);
+				}
+				else {
+					table.create_unclustered_index(index_att_no, "btree");
+				}
 			}
 			else if ( hash_type_index ) {
 				System.out.println("Creating an unclustered hash index on table "+tablename+" on attribute "+index_att_no);
@@ -254,9 +262,12 @@ class DriverPhase3 extends TestDriver implements GlobalConst
     		filename = tokens[1];
     		System.out.println("Creating a table of file "+ filename);
     		Table table = new Table(filename);
+    		if ( SystemDefs.JavabaseDB.get_relation(table.getTablename()) != null ) {
+    			System.out.println("Error: Table already exists**************");
+    			return;
+    		}
     		//TBD create just a table and no index 
     		table.create_table();
-    		
     	}
     }
     

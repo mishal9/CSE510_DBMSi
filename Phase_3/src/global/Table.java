@@ -7,6 +7,32 @@ import java.util.List;
 import java.util.Queue;
 import java.util.Scanner;
 
+import btree.AddFileEntryException;
+import btree.BT;
+import btree.BTreeFile;
+import btree.ConstructPageException;
+import btree.ConvertException;
+import btree.DeleteRecException;
+import btree.GetFileEntryException;
+import btree.IndexInsertRecException;
+import btree.IndexSearchException;
+import btree.InsertException;
+import btree.IntegerKey;
+import btree.IteratorException;
+import btree.KeyClass;
+import btree.KeyNotMatchException;
+import btree.KeyTooLongException;
+import btree.LeafDeleteException;
+import btree.LeafInsertRecException;
+import btree.NodeNotMatchException;
+import btree.PinPageException;
+import btree.StringKey;
+import btree.UnpinPageException;
+import bufmgr.HashEntryNotFoundException;
+import bufmgr.InvalidFrameNumberException;
+import bufmgr.PageUnpinnedException;
+import bufmgr.ReplacerException;
+import heap.FieldNumberOutOfBoundException;
 import heap.HFBufMgrException;
 import heap.HFDiskMgrException;
 import heap.HFException;
@@ -17,6 +43,7 @@ import heap.InvalidTypeException;
 import heap.Scan;
 import heap.SpaceNotAvailableException;
 import heap.Tuple;
+import iterator.TupleUtils;
 
 /** 
  * Enumeration class for TupleOrder
@@ -278,7 +305,7 @@ public class Table implements GlobalConst{
 			}
 	    }
 	    try {
-	    	SystemDefs.JavabaseDB.add_to_relation_tables(this);
+	    	SystemDefs.JavabaseDB.add_to_relation_queue(this);
 			System.out.println("Number of elements in the table "+hf.getRecCnt());
 			System.out.print("\n");
 		} catch (InvalidSlotNumberException e) {
@@ -352,13 +379,146 @@ public class Table implements GlobalConst{
   	  
   }
   
+  /* attr_number --> 1,2,3,4 */
+  private void create_btree_index(int attr_number ) {
+	  try {
+		/* open the data heapfile */
+		Heapfile hf = new Heapfile(this.table_heapfile);
+		Scan scan = hf.openScan();
+		
+		/* keep the key ready for insertion */
+		KeyClass key;
+		
+		// create the index file
+		BTreeFile btf  = new BTreeFile(this.get_unclustered_index_filename(attr_number, "btree"),
+										table_attr_type[attr_number-1].attrType, 
+										table_attr_size[attr_number-1],
+										1/* delete */);
+		
+		/* start scanning each record and insert it to the btree */
+		RID rid = new RID();
+		Tuple t = TupleUtils.getEmptyTuple(table_attr_type, table_attr_size);
+		Tuple temp = scan.getNext(rid);
+		while ( temp != null ) {
+			t.tupleCopy(temp);
+			if ( table_attr_type[attr_number-1].attrType == AttrType.attrInteger ) {
+				key = new IntegerKey(t.getIntFld(attr_number));
+			}
+			else {
+				key = new StringKey(t.getStrFld(attr_number));
+			}
+			btf.insert(key, rid);
+			temp = scan.getNext(rid);
+		}
+		scan.closescan();
+		BT.printBTree(btf.getHeaderPage());
+		btf.close();
+		
+		/* mark the unclustered index exist key */
+		btree_unclustered_attr[attr_number-1] = true;
+	} catch (HFException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (HFBufMgrException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (HFDiskMgrException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (IOException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (InvalidTupleSizeException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (InvalidTypeException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (GetFileEntryException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (ConstructPageException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (AddFileEntryException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (FieldNumberOutOfBoundException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (KeyTooLongException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (KeyNotMatchException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (LeafInsertRecException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (IndexInsertRecException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (UnpinPageException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (PinPageException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (NodeNotMatchException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (ConvertException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (DeleteRecException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (IndexSearchException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (IteratorException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (LeafDeleteException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (InsertException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (PageUnpinnedException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (InvalidFrameNumberException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (HashEntryNotFoundException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (ReplacerException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	}
+  }
+  
+  /* attr_number --> 1,2,3,4... */
+  public void create_unclustered_index( int attr_number, String file_type ) {
+	  if ( file_type.equals("btree") ) {
+		  create_btree_index(attr_number);
+	  }
+	  else {
+		  //TBD create an unclustered hash index
+	  }
+  }
+  
+  /* attr_number --> 0,2,3,4... */
   private String get_unclustered_index_filename( int attr_number, boolean[] unclustered_exist, String file_type, String file_ext ) {
 	  return ( tablename + Integer.toString(attr_number) + file_ext );
   }
   
+  /* attr_number --> 1,2,3,4... */
   public String get_unclustered_index_filename(int attr_number, String unclustered_index_type) {
 	  if ( unclustered_index_type.equals("btree") ) {
-		  return get_unclustered_index_filename(attr_number-1, btree_unclustered_attr, "btree", btree_clustered_file_ext);
+		  return get_unclustered_index_filename(attr_number-1, btree_unclustered_attr, "btree", btree_unclustered_file_ext);
 	  }
 	  else if ( unclustered_index_type.equals("hash") ) {
 		  return get_unclustered_index_filename(attr_number-1, hash_unclustered_attr, "hash", hash_unclustered_file_ext);
@@ -368,10 +528,12 @@ public class Table implements GlobalConst{
 	  }
   }
   
+  /* attr_number --> 0,2,3,4... */
   private  boolean unclustered_index_exist( int attr_number, boolean[] unclustered_exist ) {
 	  return unclustered_exist[attr_number];
   }
   
+  /* attr_number --> 1,2,3,4... */
   public boolean unclustered_index_exist( int attr_number, String unclustered_index_type ) {
 	  if ( unclustered_index_type.equals("btree") ) {
 		  return unclustered_index_exist(attr_number-1, btree_unclustered_attr);

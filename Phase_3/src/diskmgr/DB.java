@@ -287,6 +287,14 @@ public class DB implements GlobalConst {
     tables.clear();
   }
   
+  public void add_all_table_to_relation() {
+	  java.util.Iterator<Table> it = tables.iterator();
+	  while ( it.hasNext() ) {
+		  Table temp_table = it.next();
+		  add_to_relation_tables(temp_table);
+	  }
+  }
+  
   public Table get_relation(String tablename) {
 	  //System.out.println("tables size in database "+tables.size());
 	  java.util.Iterator<Table> it = tables.iterator();
@@ -294,14 +302,19 @@ public class DB implements GlobalConst {
 		  Table temp_table = it.next();
 		  //System.out.println("talbename :"+temp_table.getTablename());
 		  if ( temp_table.getTablename().equals(tablename) ) {
+			  //System.out.println("Checking " + Arrays.toString(temp_table.getBtree_unclustered_attr()));
 			  return temp_table;
 		  }
 	  }
 	  return null;
   }
   
-  public void add_to_relation_tables(Table relation) {
+  public void add_to_relation_queue( Table relation ) {
 	  tables.add(relation);
+  }
+  
+  public void add_to_relation_tables(Table relation) {
+	  //tables.add(relation);
 	  Tuple t = new Tuple();
 	  try {
 		/* set the tuple for the tables relation */
@@ -331,7 +344,7 @@ public class DB implements GlobalConst {
 				s = s + "," + names_cols[i];
 			}
 		}
-		System.out.println("columns: "+ s);
+		//System.out.println("columns: "+ s);
 		t.setStrFld(4, s);
 		
 		/* make a string of all the attrs */
@@ -345,7 +358,7 @@ public class DB implements GlobalConst {
 				y = y + "," + cols_attr[i].attrType;
 			}
 		}
-		System.out.println("attrs: "+ y);
+		//System.out.println("attrs: "+ y);
 		t.setStrFld(5, y);
 		
 		/* make a string of 0s and 1s for btree unclustered attr index */
@@ -366,7 +379,7 @@ public class DB implements GlobalConst {
 				bunc = bunc + "," + Integer.toString(j);
 			}
 		}
-		System.out.println("unclustered index: " + bunc);
+		//System.out.println("unclustered index: " + bunc);
 		t.setStrFld(6, bunc);
 		
 		/* make a string of 0s and 1s for hash unclustered attr index */
@@ -387,7 +400,7 @@ public class DB implements GlobalConst {
 				hunc = hunc + "," + Integer.toString(j);
 			}
 		}
-		System.out.println("unclustered index: " + hunc);
+		//System.out.println("unclustered index: " + hunc);
 		t.setStrFld(7, hunc);
 		
 		/* insert the tuple into the heapfile */

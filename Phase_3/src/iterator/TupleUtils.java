@@ -88,6 +88,15 @@ public class TupleUtils {
 		}
 	}
 
+	public static Tuple getEmptyTuple(AttrType[] attrType, short[] t1_str_sizes) throws InvalidTypeException, InvalidTupleSizeException, IOException {
+		Tuple t = new Tuple();
+		t.setHdr((short) attrType.length, attrType, t1_str_sizes);
+		int size = t.size();
+		t = new Tuple(size);
+		t.setHdr((short) attrType.length, attrType, t1_str_sizes);
+		return t;
+	}
+	
 	public static boolean Dominates(Tuple t1, AttrType[] type1, Tuple t2, AttrType[] type2, short len_in,
 			short[] str_sizes, int[] pref_list, int pref_list_length)
 			throws IOException, TupleUtilsException, UnknowAttrType, FieldNumberOutOfBoundException {
