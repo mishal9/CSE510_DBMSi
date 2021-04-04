@@ -19,7 +19,7 @@ public class HashTest implements GlobalConst {
 		
 		HashTest thiss = new HashTest();
 		try {
-			thiss.testHIndex();
+			thiss.hashBla();
 			
 			
 		} catch (Exception e) {
@@ -30,19 +30,38 @@ public class HashTest implements GlobalConst {
 	}
 	
 	
+	private void hashBla() {
+		int h0 = 1;
+		for (int j = 0; j < 2; j++) {
+			int depth = h0+j;
+			int mask = (1 << depth) - 1;
+			for (int i = 0; i < 100; i++) {
+				Integer value = i;
+
+				int ikey = ((Integer) value).intValue();
+				int hash = ikey & mask;
+				System.out.println(value + " : "+depth+" : "  + hash);
+			}
+		}
+
+	}
+	
 	private void testHIndex() throws Exception {
 		HIndex h = new HIndex("whatever", 1, 12);
-		for (int i = 10; i < 30; i++) {
-			HashKey key = new HashKey(i);
+		for (int i = 10; i < 50; i++) {
+			HashKey key = new HashKey(i+"laskdhlaskdhaskdhaskdhlaskdhlahsd"+i);
 			RID rid = new RID(new PageId(i),i);
 			h.insert(key, rid);
 		}
+		for(int i =0;i<h.headerPage.get_NumberOfBuckets();i++) {
+			System.out.println("BUCKET: "+i);
+			HashBucket bucket = new HashBucket(h.headerPage.get_NthBucketName(i));
+			bucket.printToConsole();
+		}
 		
-		HashBucket bucket = new HashBucket(h.headerPage.get_NthBucketName(0));
-		bucket.printToConsole();
-		
-		h.delete(new HashKey(13));
-		bucket.printToConsole();
+//		
+//		h.delete(new HashKey(13));
+//		bucket.printToConsole();
 		h.close();
 	}
 	

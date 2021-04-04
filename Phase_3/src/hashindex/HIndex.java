@@ -1,21 +1,19 @@
 package hashindex;
 
-import java.io.IOException;
-
 import btree.AddFileEntryException;
 import btree.GetFileEntryException;
 import global.GlobalConst;
 import global.PageId;
 import global.RID;
 import global.SystemDefs;
-import heap.HFBufMgrException;
-import heap.HFDiskMgrException;
-import heap.HFException;
 
 public class HIndex implements GlobalConst {
 
 	HIndexHeaderPage headerPage;
 	PageId headerPageId;
+	
+	
+	int targetUtilization = 80;
 
 	public HIndex(String fileName, int keyType, int keySize) throws Exception {
 		headerPageId = get_file_entry(fileName);
@@ -23,25 +21,60 @@ public class HIndex implements GlobalConst {
 		{
 			HashUtils.log("Creating new HIndex header page");
 			//creating new header page with filename and number of buckets 1
-			headerPage = new HIndexHeaderPage(fileName,1);
+			headerPage = new HIndexHeaderPage(fileName,2);
 			headerPageId = headerPage.getPageId();
 			add_file_entry(fileName, headerPageId);
 
 			headerPage.set_keyType((byte) keyType);
+			headerPage.set_H0Deapth(1);
+			headerPage.set_SplitPointerLocation(0);
+			headerPage.set_EntriesCount(0);
+			
 
 		} else {
 			HashUtils.log("Opening existing HIndex");
 			headerPage = new HIndexHeaderPage(headerPageId);
 		}
+		
+		//h1Deapth = h0Deapth + 1;
+		
+		
 	}
 
 
-	public void insert(HashKey key, RID rid) throws Exception{
+	public void insert(HashKey key, RID rid) throws Exception {
 		HashEntry entry = new HashEntry(key, rid);
-		int bucketNumber =0;
-		HashUtils.log("Inserting to bucket: "+bucketNumber);
-		HashBucket bucket = new HashBucket(headerPage.get_NthBucketName(bucketNumber ));
+		int hash = entry.key.getHash(headerPage.get_H0Deapth());
+		int splitPointer = headerPage.get_SplitPointerLocation();
+		if(hash<splitPointer) {
+			hash = entry.key.getHash(headerPage.get_H0Deapth()+1);
+			HashUtils.log("new hash: "+hash);
+		}
+		
+		int bucketNumber = hash;
+		String bucketName = headerPage.get_NthBucketName(bucketNumber);
+		HashUtils.log("Inserting to bucket: " + bucketNumber);
+		HashBucket bucket = new HashBucket(bucketName);
 		bucket.insertEntry(entry);
+		headerPage.set_EntriesCount(headerPage.get_EntriesCount() + 1);
+		// now add buckets(pages) if reqd
+		float currentEntryCount = headerPage.get_EntriesCount();
+		int bucketCount = headerPage.get_NumberOfBuckets();
+		float maxPossibleEntries = (bucketCount * MINIBASE_PAGESIZE) / entry.size();
+		float util = currentEntryCount / maxPossibleEntries;
+		HashUtils.log("util: " + util);
+		
+		if (util >= targetUtilization) {
+			HashUtils.log("Adding a bucket page to HIndex");
+			
+			
+			//rehash element in bucket splitPointer
+			//TODO
+			
+			splitPointer++;
+			headerPage.set_SplitPointerLocation(splitPointer);
+			
+		}
 	}
 
 	public boolean delete(HashKey key)  throws Exception{

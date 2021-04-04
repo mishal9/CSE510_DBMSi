@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import btree.ConstructPageException;
 import diskmgr.Page;
+import global.Convert;
 import global.PageId;
 import global.RID;
 import global.SystemDefs;
@@ -53,6 +54,11 @@ public class HIndexHeaderPage extends HFPage {
 	void setPageId(PageId pageno) throws IOException {
 		setCurPage(pageno);
 	}
+	/*
+	 *number of buckets int
+	 *h0 int
+	 *split pointer location int  
+	 */
 
 	public void set_keyType(byte keyType) {
 
@@ -78,5 +84,34 @@ public class HIndexHeaderPage extends HFPage {
 	public int get_NumberOfBuckets() throws IOException {
 		return getPrevPage().pid;
 	}
+	
 
+	public void set_H0Deapth(int location) throws IOException {
+		setSlot(2, location, 0);
+	}
+
+	public int get_H0Deapth() throws IOException {
+		return getSlotLength(2);
+	} 
+
+	public void set_SplitPointerLocation(int location) throws IOException {
+		setSlot(3, location, 0);
+	}
+
+	public int get_SplitPointerLocation() throws IOException {
+		return getSlotLength(3);
+	}
+	
+	public void set_EntriesCount(int count) throws IOException {
+		setSlot(4, count, 0);
+	}
+
+	public int get_EntriesCount() throws IOException {
+		return getSlotLength(4);
+	}
+
+	public void close() {
+		//unpin page being done in HIndex, not here
+		;
+	}
 }
