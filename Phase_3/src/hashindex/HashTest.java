@@ -19,7 +19,7 @@ public class HashTest implements GlobalConst {
 		
 		HashTest thiss = new HashTest();
 		try {
-			thiss.testHashBucket();
+			thiss.testHIndex();
 			
 			
 		} catch (Exception e) {
@@ -29,6 +29,37 @@ public class HashTest implements GlobalConst {
 		System.out.println("End");
 	}
 	
+	
+	private void testHIndex() throws Exception {
+		HIndex h = new HIndex("whatever", 1, 12);
+		for (int i = 10; i < 30; i++) {
+			HashKey key = new HashKey(i);
+			RID rid = new RID(new PageId(i),i);
+			h.insert(key, rid);
+		}
+		
+		HashBucket bucket = new HashBucket(h.headerPage.get_NthBucketName(0));
+		bucket.printToConsole();
+		
+		h.delete(new HashKey(13));
+		bucket.printToConsole();
+		h.close();
+	}
+	
+	
+	private void testHHeaderPage() throws Exception {
+		HIndex h = new HIndex("whatever", 1, 12);
+		printPinnedPages();
+		String bucketStart = h.headerPage.get_HashIndexName();
+		System.out.println("bucket start: "+bucketStart);
+		System.out.println("clsing hindex...");
+		h.close();
+		h = null;
+		h = new HIndex("whatever", 1, 12);
+		h.close();
+		
+	}
+
 	public HashTest() {
 		long time=System.currentTimeMillis();
 		time=10;

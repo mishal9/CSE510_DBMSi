@@ -31,6 +31,11 @@ public class HashBucket {
 		RID hashLocation =  heapfile.insertRecord(byteArr);
 	}
 
+	public boolean deleteEntry(HashKey key) throws InvalidSlotNumberException, HFException, HFBufMgrException, HFDiskMgrException, Exception {
+		return deleteEntry(new HashEntry(key, new RID()));
+	}
+
+
 	public boolean deleteEntry(HashEntry entryToDelete) throws InvalidSlotNumberException, HFException, HFBufMgrException, HFDiskMgrException, Exception {
 		RID foundLocation = null;
 		Scan scan = heapfile.openScan();
@@ -48,7 +53,7 @@ public class HashBucket {
 			System.out.println("rid: "+rid);
 			HashEntry scannedHashEntry = new HashEntry(tup.returnTupleByteArray(),0);
 			//System.out.println(i+" scannedRid: "+scannedRID);
-			if(scannedHashEntry.equals(entryToDelete)) {
+			if(scannedHashEntry.key.equals(entryToDelete.key)) {
 				done=true;
 				foundLocation = new RID(new PageId(rid.pageNo.pid),rid.slotNo);
 				break;
@@ -64,7 +69,7 @@ public class HashBucket {
 		heapfile.deleteRecord(foundLocation);
 		//TODO check if heapfile can be compacted, ie all current records can fit in 1 page
 		int numberOfRecordsInBucket = heapfile.getRecCnt();
-		
+
 		return true;
 
 	}

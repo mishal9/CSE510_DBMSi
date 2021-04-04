@@ -19,9 +19,23 @@ public class HashUtils {
 			outstr.writeUTF(((String) key.value));
 			return outstr.size();
 		default:
-			throw new IOException( "key types do not match");
+			throw new IOException("key types do not match");
 		}
 
 	}
 
+	public static byte[] intToBytes(int x) throws IOException {
+		ByteArrayOutputStream bos = new ByteArrayOutputStream();
+		DataOutputStream out = new DataOutputStream(bos);
+		out.writeInt(x);
+		out.close();
+		byte[] int_bytes = bos.toByteArray();
+		bos.close();
+		return int_bytes;
+	}
+	
+	public static void log(Object str) {
+		System.out.println(str);
+	}
+	
 }
