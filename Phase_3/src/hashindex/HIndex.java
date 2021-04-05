@@ -1,5 +1,7 @@
 package hashindex;
 
+import java.io.IOException;
+
 import btree.AddFileEntryException;
 import btree.GetFileEntryException;
 import btree.KeyNotMatchException;
@@ -7,6 +9,9 @@ import global.GlobalConst;
 import global.PageId;
 import global.RID;
 import global.SystemDefs;
+import heap.HFBufMgrException;
+import heap.HFDiskMgrException;
+import heap.HFException;
 import heap.Heapfile;
 import heap.Scan;
 import heap.Tuple;
@@ -181,6 +186,35 @@ public class HIndex implements GlobalConst {
 			e.printStackTrace();
 			throw new AddFileEntryException(e, "");
 		}
+	}
+	
+	public void print_bucket_names() {
+		try {
+			for( int i=0; i<this.headerPage.get_NumberOfBuckets(); i++ ) {
+				System.out.println("BUCKET: "+i);
+				HashBucket bucket = new HashBucket(this.headerPage.get_NthBucketName(i));
+				bucket.printToConsole();
+			}
+		} catch (HFException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (HFBufMgrException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (HFDiskMgrException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	public void scan_index() {
+		
 	}
 
 

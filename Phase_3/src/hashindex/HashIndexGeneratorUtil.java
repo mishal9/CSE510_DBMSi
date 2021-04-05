@@ -11,6 +11,7 @@ import heap.InvalidTupleSizeException;
 import heap.InvalidTypeException;
 import heap.Scan;
 import heap.Tuple;
+import iterator.TupleUtils;
 
 public class HashIndexGeneratorUtil implements GlobalConst {
 
@@ -20,7 +21,7 @@ public class HashIndexGeneratorUtil implements GlobalConst {
 		
 		HIndex hindex = new HIndex(hashIndexName, AttrType.attrReal, 100,80);
 		RID rid = new RID();
-		Tuple t = getEmptyTuple(attrType,t1_str_sizes);
+		Tuple t = TupleUtils.getEmptyTuple(attrType,t1_str_sizes);
 		float key = 0;
 		
 		Tuple temp = scan.getNext(rid);
@@ -40,15 +41,6 @@ public class HashIndexGeneratorUtil implements GlobalConst {
 		scan.closescan();
 		System.out.println("HashIndex: "+hashIndexName+" created !!");
 		
-	}
-	
-	private static Tuple getEmptyTuple(AttrType[] attrType, short[] t1_str_sizes) throws InvalidTypeException, InvalidTupleSizeException, IOException {
-		Tuple t = new Tuple();
-		t.setHdr((short) attrType.length, attrType, t1_str_sizes);
-		int size = t.size();
-		t = new Tuple(size);
-		t.setHdr((short) attrType.length, attrType, t1_str_sizes);
-		return t;
 	}
 
 }

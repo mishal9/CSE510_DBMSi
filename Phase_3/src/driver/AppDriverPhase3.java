@@ -208,13 +208,16 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 			}
 	    	int index_att_no = Integer.parseInt(tokens[2]);
 	    	String tablename = tokens[3];
-	
+	    	Table table = SystemDefs.JavabaseDB.get_relation(tablename);
+	    	if ( table == null ) {
+	    		System.out.println("ERROR: Table does not exist ************");
+	    		return;
+	    	}
 			if ( btree_type_index ) {
 				System.out.println("Creating an unclustered btree index on table "+tablename+" on attribute "+index_att_no);
 				//TBD create UNCLUSTERED BTREE INDEX on attribute
-				Table table = SystemDefs.JavabaseDB.get_relation(tablename);
 				if ( table.unclustered_index_exist(index_att_no, "btree") ) {
-					System.out.println("ERROR: Unclustered index already exists on attribute number *********"+index_att_no);
+					System.out.println("ERROR: Unclustered btree index already exists on attribute number *********"+index_att_no);
 				}
 				else {
 					table.create_unclustered_index(index_att_no, "btree");
@@ -223,6 +226,12 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 			else if ( hash_type_index ) {
 				System.out.println("Creating an unclustered hash index on table "+tablename+" on attribute "+index_att_no);
 				//TBD create UNCLUSTERED HASH INDEX on attribute
+				if ( table.unclustered_index_exist(index_att_no, "hash") ) {
+					System.out.println("ERROR: Unclustered hash index already exists on attribute number *********"+index_att_no);
+				}
+				else {
+					table.create_unclustered_index(index_att_no, "hash");
+				}
 			}
     	}catch (ArrayIndexOutOfBoundsException e){
 	        validate_token_length(0, "create_index");

@@ -42,4 +42,7 @@ public interface GlobalConst {
   public static final String DBREPLACER = "Clock";
   
   public static final int INVALID_PAGE = -1;
+  
+  /* target utilisation for index */
+  public static int TARGET_UTILISATION = 80;
 }
