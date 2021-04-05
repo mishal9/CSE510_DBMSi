@@ -9,6 +9,7 @@ module DBMSI_Phase_3 {
 	exports driver;
 	exports chainexception;
 	exports diskmgr;
+	exports hashindex;
 	exports btree;
 	exports heap;
 	exports bufmgr;

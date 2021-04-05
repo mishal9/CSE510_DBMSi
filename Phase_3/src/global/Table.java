@@ -812,7 +812,24 @@ public class Table implements GlobalConst{
 					BT.printBTree(btf.getHeaderPage());
 					BT.printAllLeafPages(btf.getHeaderPage());
 					btf.close();
-			  } 
+			  }
+			  if ( hash_unclustered_attr[i] ) {
+				  
+				  HIndex hasher = new HIndex(this.get_unclustered_index_filename(i+1, "hash"),
+					  	   this.table_attr_type[i].attrType, 
+					  	    this.table_attr_size[i],
+					  	    TARGET_UTILISATION);
+					HashKey keyh;
+					if ( table_attr_type[i].attrType == AttrType.attrInteger ) {
+						keyh = new HashKey(t.getIntFld(i+1));
+					}
+					else {
+						keyh = new HashKey(t.getStrFld(i+1));
+					}
+					hasher.insert(keyh, rid);
+					hasher.print_bucket_names();
+					hasher.close();	
+			  }
 		  }
 	  }catch (GetFileEntryException e) {
 			// TODO Auto-generated catch block
@@ -880,8 +897,10 @@ public class Table implements GlobalConst{
 		} catch (ReplacerException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+		}catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
-	  //TBD update hash indexes
   }
 
 }
