@@ -43,7 +43,9 @@ public class DB implements GlobalConst {
 											 new AttrType(AttrType.attrString), //contains a string of comma separated column names
 											 new AttrType(AttrType.attrString), // contains a string of comma separated attrtypes
 											 new AttrType(AttrType.attrString), // contains an array of 1s and 0s which says whether an btree unclustered index exist on attr
-											 new AttrType(AttrType.attrString)};// contains an array of 1s and 0s which says whether an hash unclustered index exist on attr
+											 new AttrType(AttrType.attrString),// contains an array of 1s and 0s which says whether an hash unclustered index exist on attr
+											 new AttrType(AttrType.attrInteger),//contains the clustered btree attribute number; if -1 then no clustered btree present
+											 new AttrType(AttrType.attrInteger)};//contains the clustered hash attribute number; if -1 then no clustered hash present
 	private static short[] tables_strsize;
 	
 	private static int table_relation_tuple_size;
@@ -139,7 +141,13 @@ public class DB implements GlobalConst {
 						}
 					}
 					
-					Table relation = new Table(tablename, num_attr, col_attr, col_token, tsize, bunc, hunc);
+					/* get the clustered btree attribute number from the table */
+					int b_clustered_attr = t.getIntFld(8);
+					
+					/* get the clustered hash attribute number from the table */
+					int h_clustered_attr = t.getIntFld(9);
+					
+					Table relation = new Table(tablename, num_attr, col_attr, col_token, tsize, bunc, hunc, b_clustered_attr, h_clustered_attr);
 					tables.add(relation);
 					
 					temp_t = relation_scan.getNext(rid);
@@ -402,6 +410,12 @@ public class DB implements GlobalConst {
 		}
 		//System.out.println("unclustered index: " + hunc);
 		t.setStrFld(7, hunc);
+		
+		/* store the clustered btree attribute number */
+		t.setIntFld(8, relation.getClustered_btree_attr()); // clustered btree attribute number in the table --> 1,2,3....
+		
+		/* store the clustered hash attribute number */
+		t.setIntFld(9, relation.getClustered_hash_attr()); // clustered hash attribute number in the table --> 1,2,3...
 		
 		/* insert the tuple into the heapfile */
 		//System.out.println(table_relation);

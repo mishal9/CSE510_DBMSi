@@ -106,10 +106,26 @@ public class Table implements GlobalConst{
 	public void setHash_unclustered_attr(boolean[] hash_unclustered_attr) {
 		this.hash_unclustered_attr = hash_unclustered_attr;
 	}
-
+	
 	/* attribute number for the btree clustered index --> 0,1,2,3....*/
 	private int clustered_btree_attr = -1;
 	
+	public int getClustered_btree_attr() {
+		return clustered_btree_attr;
+	}
+
+	public void setClustered_btree_attr(int clustered_btree_attr) {
+		this.clustered_btree_attr = clustered_btree_attr;
+	}
+
+	public int getClustered_hash_attr() {
+		return clustered_hash_attr;
+	}
+
+	public void setClustered_hash_attr(int clustered_hash_attr) {
+		this.clustered_hash_attr = clustered_hash_attr;
+	}
+
 	/* attribute number for the hash clustered index --> 0,1,2,3.... */
 	private int clustered_hash_attr = -1;
 	
@@ -194,7 +210,15 @@ public class Table implements GlobalConst{
 	  this.table_heapfile = filename.substring(0, filename.length()-data_file_ext.length()) + heapfile_ext;
   }
   
-  public Table( String tablename, int table_num_attr, AttrType[] table_attr_type, String[] table_attr_name, int table_tuple_size, boolean[] btree_unclustered_attr, boolean[] hash_unclustered_attr ) {
+  public Table( String tablename,
+		  		int table_num_attr,
+		  		AttrType[] table_attr_type,
+		  		String[] table_attr_name,
+		  		int table_tuple_size,
+		  		boolean[] btree_unclustered_attr,
+		  		boolean[] hash_unclustered_attr,
+		  		int clustered_btree_attr,
+		  		int clustered_hash_attr) {
 	  this.tablename = tablename;
 	  this.table_heapfile = tablename + heapfile_ext;
 	  this.table_num_attr = table_num_attr;
@@ -203,6 +227,8 @@ public class Table implements GlobalConst{
 	  this.table_tuple_size = table_tuple_size;
 	  this.btree_unclustered_attr = btree_unclustered_attr;
 	  this.hash_unclustered_attr = hash_unclustered_attr;
+	  this.clustered_btree_attr = clustered_btree_attr;
+	  this.clustered_hash_attr = clustered_hash_attr;
 	  
 	  /* create the tuple and calculate the size of the tuple */
 	  table_attr_size = new short[table_num_attr];
