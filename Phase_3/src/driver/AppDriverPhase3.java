@@ -267,7 +267,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
     			return;
     		}
     		//TBD create just a table and no index 
-    		table.create_table();
+    		table.create_table(table.getTable_heapfile(), table.getTable_data_file());
     	}
     }
     
@@ -283,6 +283,13 @@ class DriverPhase3 extends TestDriver implements GlobalConst
     	String tablename = tokens[1];
     	System.out.println("Inserting data from file "+filename+" to table "+tablename);
     	//TBD insert the data into mentioned table and update the index structures accordingly
+    	Table table = SystemDefs.JavabaseDB.get_relation(tablename);
+    	if ( table == null ) {
+    		System.out.println("Table does not exist. Please use the create_table query to insert data");
+    		printQueryHelper("create_table");
+    		return;
+    	}
+    	table.insert_data(filename);
     }
     
     /* parses the delete_data query for the exact structure 

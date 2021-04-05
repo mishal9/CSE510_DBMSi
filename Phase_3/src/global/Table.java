@@ -58,6 +58,9 @@ public class Table implements GlobalConst{
 	/* table separateer in printing the table */
 	private static String table_sep = "\t\t";
 	
+	/* tempfile name used for creating/adding data */
+	private static String temp_heap_file = "temp_table_khusmodi.in";
+	
 	/* extension for the heapfile */
 	private static String heapfile_ext = ".in";
 	
@@ -141,6 +144,14 @@ public class Table implements GlobalConst{
 	/* name of the data file given by the user when creating the table */
 	private String table_data_file;
 	
+	public String getTable_data_file() {
+		return table_data_file;
+	}
+
+	public void setTable_data_file(String table_data_file) {
+		this.table_data_file = table_data_file;
+	}
+
 	/* number of attributes in the table */
 	private int table_num_attr;
 	
@@ -238,12 +249,12 @@ public class Table implements GlobalConst{
   }
   
   /* create a table from the data file and stores it in the heap file */
-  public void create_table() {
+  public void create_table(String heap_file_name, String data_file_name) {
 	  try {
 		/* print out the table name under process */
 		System.out.println("Creating table "+tablename);
 		/* initialising the heapfile for the table */
-		Heapfile hf = new Heapfile(table_heapfile);
+		Heapfile hf = new Heapfile(heap_file_name);
 		
 		/* opening the data file for reading */
 		File file = new File(data_folder + table_data_file);
@@ -438,6 +449,7 @@ public class Table implements GlobalConst{
 		}
 		scan.closescan();
 		BT.printBTree(btf.getHeaderPage());
+		BT.printAllLeafPages(btf.getHeaderPage());
 		btf.close();
 		
 		/* mark the unclustered index exist key */
@@ -574,7 +586,177 @@ public class Table implements GlobalConst{
   
   /* inserts data into an already existing table */
   public void insert_data( String filename ) {
+	  /* created a temp heap file of the data */
+	  //create_table(this.temp_heap_file, filename);
 	  
+	  /* print out the table name under process */
+		System.out.println("Inserting into table "+this.tablename);
+		
+	try {
+		/* initialising the heapfile for the table */
+		Heapfile hf = new Heapfile(this.table_heapfile);
+		
+		/* opening the data file for reading */
+		File file = new File(data_folder + filename);
+	    Scanner sc = new Scanner(file);
+	    
+	    /* initialising the number of attributes in the table */
+	    int temp_table_num_attr = sc.nextInt();
+	    if ( temp_table_num_attr != table_num_attr ) {
+	    	System.out.println("ERROR: number of attributes does not match the existing table attributes*********");
+	    }
+	    
+	    /* moving to next line to skip the first line read above */
+	    sc.nextLine();
+	    
+	    /* parse the attributes from the data file */
+	    int counter = 0;
+	    while ( sc.hasNextLine() && ( counter < table_num_attr ) ) {
+	    	String next_line = sc.nextLine();
+	    	counter++;
+	    }
+	    
+        try {
+        	Tuple t = TupleUtils.getEmptyTuple(table_attr_type, table_attr_size);
+        	
+        	/* parse the data and store it in the heapfile */
+		    while ( sc.hasNextLine() ) {
+		    	String temp_next_line = sc.nextLine().trim();
+		    	String[] token_next_line = temp_next_line.split("\\s+");
+		    	for ( int i=0; i<table_num_attr; i++ ) {
+		    		try {
+			    		switch ( table_attr_type[i].attrType ) {
+			    			case AttrType.attrString:
+			    				t.setStrFld(i+1, token_next_line[i]);
+			    				break;
+			    			case AttrType.attrInteger:
+			    				t.setIntFld(i+1, Integer.parseInt(token_next_line[i]));
+			    				break;
+			    			default:
+			    				break;	    			
+			    		}
+		    		} catch (Exception e) {
+	                    e.printStackTrace();
+	                }
+		    	}
+		    	RID rid = new RID();
+		    	try {
+					rid = hf.insertRecord(t.returnTupleByteArray());
+					update_index(t, rid);
+				} catch (InvalidSlotNumberException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (InvalidTupleSizeException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (SpaceNotAvailableException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+		    }
+        }
+        catch (Exception e) {
+            System.err.println("*** error in Tuple.setHdr() ***");
+        }
+	} catch (HFException | HFBufMgrException | HFDiskMgrException | IOException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	}
+  }
+  
+  private void update_index( Tuple t, RID rid ) {
+	  // TBD/* update all the btree clustered indexes */
+	  
+	  /* update the unclustered btree indexes */
+	  try {
+		  /* keep the key ready for insertion */
+		  KeyClass key;
+		  for ( int i=0; i<btree_unclustered_attr.length; i++ ) {
+			  if ( btree_unclustered_attr[i] ) {
+					BTreeFile btf  = new BTreeFile(this.get_unclustered_index_filename(i+1, "btree"),
+								table_attr_type[i].attrType, 
+								table_attr_size[i],
+								1/* delete */);
+					if ( table_attr_type[i].attrType == AttrType.attrInteger ) {
+						key = new IntegerKey(t.getIntFld(i+1));
+					}
+					else {
+						key = new StringKey(t.getStrFld(i+1));
+					}
+					btf.insert(key, rid);
+					BT.printBTree(btf.getHeaderPage());
+					BT.printAllLeafPages(btf.getHeaderPage());
+					btf.close();
+			  } 
+		  }
+	  }catch (GetFileEntryException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (ConstructPageException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (AddFileEntryException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (FieldNumberOutOfBoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (KeyTooLongException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (KeyNotMatchException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (LeafInsertRecException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IndexInsertRecException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (UnpinPageException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (PinPageException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (NodeNotMatchException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (ConvertException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (DeleteRecException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IndexSearchException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IteratorException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (LeafDeleteException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InsertException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (HashEntryNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InvalidFrameNumberException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (PageUnpinnedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (ReplacerException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	  //TBD update hash indexes
   }
 
 }
