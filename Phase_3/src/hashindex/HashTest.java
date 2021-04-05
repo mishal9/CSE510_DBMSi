@@ -28,7 +28,7 @@ public class HashTest implements GlobalConst {
 	}
 	
 	private void testScan() throws Exception {
-		HIndex h = new HIndex("whatever", 1, 12);
+		HIndex h = new HIndex("whatever");
 		
 				
 		//String i = "13";
@@ -64,7 +64,7 @@ public class HashTest implements GlobalConst {
 	}
 	
 	private void testHIndex() throws Exception {
-		HIndex h = new HIndex("whatever", AttrType.attrInteger, 4);
+		HIndex h = new HIndex("whatever", AttrType.attrInteger, 4,80);
 		for (int i = 10; i < 100; i++) {
 			//HashKey key = new HashKey(i+"laskdhlaskdlaskhdlaskdhlaskdlaskhdalskdhlaskdhalskdhlaskdhlahdlaskdhalksaskdhaskdhaskdhlaskdhlahsd"+i);
 			HashKey key = new HashKey(i);
@@ -85,14 +85,14 @@ public class HashTest implements GlobalConst {
 	
 	
 	private void testHHeaderPage() throws Exception {
-		HIndex h = new HIndex("whatever", 1, 12);
+		HIndex h = new HIndex("whatever", 1, 12,80);
 		printPinnedPages();
 		String bucketStart = h.headerPage.get_HashIndexName();
 		System.out.println("bucket start: "+bucketStart);
 		System.out.println("clsing hindex...");
 		h.close();
 		h = null;
-		h = new HIndex("whatever", 1, 12);
+		h = new HIndex("whatever");
 		h.close();
 		
 	}

@@ -36,6 +36,8 @@ public class HashUtils {
 		return int_bytes;
 	}
 	
+	//util function to debug log stuff
+	// if no debug log wanted, comment the print statement
 	public static void log(Object str) {
 		System.out.println(str);
 	}

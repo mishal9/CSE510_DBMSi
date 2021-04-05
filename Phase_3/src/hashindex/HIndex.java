@@ -1,9 +1,5 @@
 package hashindex;
 
-import java.io.IOException;
-
-import javax.print.attribute.HashPrintServiceAttributeSet;
-
 import btree.AddFileEntryException;
 import btree.GetFileEntryException;
 import btree.KeyNotMatchException;
@@ -12,7 +8,6 @@ import global.PageId;
 import global.RID;
 import global.SystemDefs;
 import heap.Heapfile;
-import heap.InvalidTupleSizeException;
 import heap.Scan;
 import heap.Tuple;
 
@@ -22,9 +17,9 @@ public class HIndex implements GlobalConst {
 	PageId headerPageId;
 	
 	
-	float targetUtilization = 0.80f;
+	final float targetUtilization;
 
-	public HIndex(String fileName, int keyType, int keySize) throws Exception {
+	public HIndex(String fileName, int keyType, int keySize,int targetUtilization) throws Exception {
 		headerPageId = get_file_entry(fileName);
 		if (headerPageId == null) // file not exist
 		{
@@ -38,16 +33,24 @@ public class HIndex implements GlobalConst {
 			headerPage.set_H0Deapth(1);
 			headerPage.set_SplitPointerLocation(0);
 			headerPage.set_EntriesCount(0);
+			headerPage.set_TargetUtilization(targetUtilization);
 			
 
 		} else {
 			HashUtils.log("Opening existing HIndex");
 			headerPage = new HIndexHeaderPage(headerPageId);
 		}
-		
-		//h1Deapth = h0Deapth + 1;
-		
-		
+		this.targetUtilization = (float) ((float)headerPage.get_TargetUtilization()/100.0);
+				
+	}
+	
+	public HIndex(String fileName) throws Exception {
+		headerPageId = get_file_entry(fileName);
+		if(headerPageId == null) {
+			throw new IllegalArgumentException("No index found with name "+fileName);
+		}
+		headerPage = new HIndexHeaderPage(headerPageId);
+		this.targetUtilization = (float) ((float)headerPage.get_TargetUtilization()/100.0);
 	}
 
 
@@ -75,7 +78,7 @@ public class HIndex implements GlobalConst {
 		float maxPossibleEntries = (bucketCount * MINIBASE_PAGESIZE) / entry.size();
 		float currentUtilization = currentEntryCount / maxPossibleEntries;
 		HashUtils.log("currentUtilization: " + currentUtilization);
-
+		HashUtils.log("targetUtilization: " + targetUtilization);
 		if (currentUtilization >= targetUtilization) {
 			HashUtils.log("Adding a bucket page to HIndex");
 

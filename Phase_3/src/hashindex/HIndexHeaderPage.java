@@ -102,6 +102,14 @@ public class HIndexHeaderPage extends HFPage {
 	public int get_EntriesCount() throws IOException {
 		return getSlotLength(4);
 	}
+	
+	public void set_TargetUtilization(int targetUtilization) throws IOException {
+		setSlot(6, targetUtilization, 0);
+	}
+
+	public int get_TargetUtilization() throws IOException {
+		return getSlotLength(6);
+	}
 
 	public void close() {
 		//unpin page being done in HIndex, not here
