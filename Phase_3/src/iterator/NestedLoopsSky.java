@@ -96,7 +96,7 @@ public class NestedLoopsSky extends Iterator
         this._pref_list_length = pref_list_length;
         this._n_pages = n_pages;
         this._inner_scan = null;
-        SystemDefs.JavabaseBM.limit_memory_usage(true, this._n_pages);
+        //SystemDefs.JavabaseBM.limit_memory_usage(true, this._n_pages);
         try {
         	/* open the data heap file */
         	this._heap_file = new Heapfile(this._relation_name);
@@ -172,10 +172,11 @@ public class NestedLoopsSky extends Iterator
             {
                 System.out.println("No more records in skyline. All records already scanned.");
                 this._outer_scan.closescan();
-                SystemDefs.JavabaseBM.limit_memory_usage(false, this._n_pages);
+                //SystemDefs.JavabaseBM.limit_memory_usage(false, this._n_pages);
                 return null;
             }
             this.outer_candidate.tupleCopy(outer_candidate_temp);
+            //this.outer_candidate.print(_in1);
             if ( this._status == true )
             {
                 try
@@ -203,6 +204,9 @@ public class NestedLoopsSky extends Iterator
                 {
                     /* compare the outer loop tuple with inner loop tuple */
                 	this.inner_candidate.tupleCopy(inner_candidate_temp);
+                	//System.out.println ("Comparing the 2 tuples-->");
+                	//this.inner_candidate.print(_in1);
+                	//this.outer_candidate.print(_in1);
                     inner_dominates_outer = TupleUtils.Dominates(this.inner_candidate,
                             									 this._in1,
                             									 this.outer_candidate,
@@ -220,6 +224,8 @@ public class NestedLoopsSky extends Iterator
             if (inner_dominates_outer == false)
             {
             	/* no one dominated the outer loop tuple and hence it belongs to the skyline */
+            	//System.out.println("Skyline element found");
+            	//this.outer_candidate.print(_in1);
                 return this.outer_candidate;
             }
             this._inner_scan.closescan();

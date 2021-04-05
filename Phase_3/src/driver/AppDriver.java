@@ -52,7 +52,7 @@ class Driver extends TestDriver implements GlobalConst
         dbpath = "MINIBASE.minibase-db";
 		logpath = "MINIBASE.minibase-log";
         // Each page can handle at most 25 tuples on original data => 7308 / 25 = 292
-        SystemDefs sysdef = new SystemDefs(dbpath,80000, 3000,"Clock");
+        SystemDefs sysdef = new SystemDefs(dbpath,160000, 3000,"Clock");
 
         // Kill anything that might be hanging around
         String newdbpath;
@@ -137,15 +137,15 @@ class Driver extends TestDriver implements GlobalConst
         int choice= GetStuff.getChoice();
          switch(choice) {
          case 1:
-        	 dataFile = OS.indexOf("mac") >= 0 ? "../../data/data2.txt" : "data/data2.txt";
-        	 numberOfDimensions = 5;
+        	 dataFile = OS.indexOf("mac") >= 0 ? "data/demo_data/nc_2_3000_single.txt" : "data/data2.txt";
+        	 numberOfDimensions = 2;
         	 break;
          case 2:
-        	 dataFile = OS.indexOf("mac") >= 0 ? "../../data/data3.txt" : "data/data3.txt";
+        	 dataFile = OS.indexOf("mac") >= 0 ? "data/data3.txt" : "data/data3.txt";
         	 numberOfDimensions = 5;
         	 break;
          case 3:
-        	 dataFile = OS.indexOf("mac") >= 0 ? "../../data/data_large_skyline.txt" : "data/data_large_skyline.txt";
+        	 dataFile = OS.indexOf("mac") >= 0 ? "data/data_large_skyline.txt" : "data/data_large_skyline.txt";
         	 numberOfDimensions = 2;
         	 break;
          default:
@@ -568,7 +568,9 @@ class Driver extends TestDriver implements GlobalConst
             status = FAIL;
             e.printStackTrace();
         }
-
+        System.out.println("Number of Disk reads: "+ PCounter.get_rcounter());
+        System.out.println("Number of Disk writes: "+ PCounter.get_wcounter());
+        PCounter.initialize();
         // pass this sort object to the sortfirstsky
 
         SortFirstSky sortFirstSky = null;
@@ -728,6 +730,7 @@ class Driver extends TestDriver implements GlobalConst
         btree.close();
         
     }
+
 }
 
 

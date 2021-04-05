@@ -6,7 +6,7 @@ import global.RID;
 import heap.*;
 import iterator.*;
 
-import javax.swing.*;
+//import javax.swing.*;
 import java.io.IOException;
 
 public class OurFileScan extends Iterator{
