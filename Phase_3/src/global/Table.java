@@ -828,7 +828,7 @@ public class Table implements GlobalConst{
 					}
 					hasher.insert(keyh, rid);
 					hasher.print_bucket_names();
-					hasher.close();	
+					hasher.close();
 			  }
 		  }
 	  }catch (GetFileEntryException e) {
