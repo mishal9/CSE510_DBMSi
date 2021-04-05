@@ -12,17 +12,17 @@ import java.io.*;
 * April 9, 1998
 */
 
-public class DataPageInfo implements GlobalConst{
+class DataPageInfo implements GlobalConst{
 
 
   /** HFPage returns int for avail space, so we use int here */
-  public int    availspace; 
+  int    availspace; 
   
   /** for efficient implementation of getRecCnt() */
-  public int    recct;    
+  int    recct;    
   
   /** obvious: id of this particular data page (a HFPage) */
-  public PageId pageId = new PageId();   
+  PageId pageId = new PageId();   
     
   /** auxiliary fields of DataPageInfo */
 

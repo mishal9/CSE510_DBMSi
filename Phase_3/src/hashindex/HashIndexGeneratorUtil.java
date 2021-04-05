@@ -18,7 +18,7 @@ public class HashIndexGeneratorUtil implements GlobalConst {
 			int keyNoForIndex) throws Exception {
 		Scan scan = new Heapfile(heapFileName).openScan();
 		
-		HIndex hindex = new HIndex(hashIndexName, AttrType.attrReal, 100);
+		HIndex hindex = new HIndex(hashIndexName, AttrType.attrReal, 100,80);
 		RID rid = new RID();
 		Tuple t = getEmptyTuple(attrType,t1_str_sizes);
 		float key = 0;
