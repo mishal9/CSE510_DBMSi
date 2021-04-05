@@ -2,207 +2,143 @@ package hashindex;
 
 import java.io.IOException;
 
+import btree.KeyNotMatchException;
+import global.AttrType;
 import global.Convert;
 
 public class HashKey {
-
-	public static final byte INT = 1;
-	public static final byte FLOAT = 2;
-	public static final byte STRING = 3;
 
 	byte type;
 	int size;
 	Object value;
 
 	public HashKey(Integer value) throws IOException {
-		this.type = INT;
-		this.value = value;
-		this.size = HashUtils.getKeyLength(this);
-	}
-
-	public HashKey(Float value) throws IOException {
-		this.type = FLOAT;
+		this.type = (byte) AttrType.attrInteger;
 		this.value = value;
 		this.size = HashUtils.getKeyLength(this);
 	}
 
 	public HashKey(String value) throws IOException {
-		this.type = STRING;
+		this.type = (byte) AttrType.attrString;
 		this.value = value;
 		this.size = HashUtils.getKeyLength(this);
 	}
-
+	
+	public HashKey(Float value) throws IOException {
+		this.type = (byte) AttrType.attrReal;
+		this.value = value;
+		this.size = HashUtils.getKeyLength(this);
+	}
 	public HashKey(HashKey key) {
 
 		this.type = key.type;
 		this.size = key.size;
 
 		switch (key.type) {
-		case INT:
+		case AttrType.attrInteger:
 			this.value = new Integer((Integer) key.value);
 			break;
-		case FLOAT:
+		case AttrType.attrReal:
 			this.value = new Float((Float) key.value);
 			break;
-		case STRING:
+		case AttrType.attrString:
 			this.value = new String((String) key.value);
 			break;
+		
 		}
 
-	} 
+	}
 
-	public HashKey(byte[] data, int offset) throws IOException {
+	public HashKey(byte[] data, int offset) throws IOException, KeyNotMatchException {
 
 		type = data[offset];
 		size = Convert.getIntValue(offset + 1, data);
 
 		switch (type) {
-		case INT:
+		case AttrType.attrInteger:
 			value = new Integer(Convert.getIntValue(offset + 5, data));
 			break;
-		case FLOAT:
+		case AttrType.attrReal:
 			value = new Float(Convert.getFloValue(offset + 5, data));
 			break;
-		case STRING:
+		case AttrType.attrString:
 			value = Convert.getStrValue(offset + 5, data, size);
 			break;
+		default:
+			throw new KeyNotMatchException("Unknown key type");
 		}
 
-	} 
+	}
 
-	public void writeToByteArray(byte[] data, int offset) throws IOException {
+	public void writeToByteArray(byte[] data, int offset) throws IOException, KeyNotMatchException {
 
 		data[offset] = type;
 		Convert.setIntValue(size, offset + 1, data);
 
 		switch (type) {
-		case INT:
+		case AttrType.attrInteger:
 			Convert.setIntValue((Integer) value, offset + 5, data);
 			break;
-		case FLOAT:
+		case AttrType.attrReal:
 			Convert.setFloValue((Float) value, offset + 5, data);
 			break;
-		case STRING:
+		case AttrType.attrString:
 			Convert.setStrValue((String) value, offset + 5, data);
 			break;
+		default:
+			throw new KeyNotMatchException("Unknown key type");
 		}
 
 	}
 
 	public int size() {
+		// type + size + value
 		return 1 + 4 + size;
 	}
 
+	/**
+	 * this function just return the last n bytes of the key
+	 * @param n
+	 * @return
+	 */
+	public int getHash(int n) {
 
-	public int getHash(int depth) {
-
-		// apply the appropriate calculation
-		int mask = (1 << depth) - 1;
+		int bitMask = (1 << n) - 1;
+		// 000011111 
 		switch (type) {
 
-		default:
-		case INT:
-			int ikey = ((Integer) value).intValue();
-			return ikey & mask;
+		case AttrType.attrInteger:
+			int primIntValue = ((Integer) value).intValue();
+			return primIntValue & bitMask;
 
-		case FLOAT:
-			int fkey = Float.floatToIntBits((Float) value);
-			return fkey & mask;
+		case AttrType.attrString:
 
-		case STRING:
-
-			// reverse the first four bytes of the string
 			byte[] s = ((String) value).getBytes();
-			int skey = 0;
-			int len = s.length > 4 ? 4 : s.length;
-			for (int i = 0; i < len; i++) {
-				skey |= (s[i] << (i * Byte.SIZE));
+			int bitsOfStr = 0;
+			for (int i = 0; i < s.length; i++) {
+				bitsOfStr |= (s[i] << (i * Byte.SIZE));
 			}
-			return skey & mask;
+			return bitsOfStr & bitMask;
+			
 
-		} // switch
+		case AttrType.attrReal:
+			int primFltIntValue = Float.floatToIntBits((Float) value);
+			return primFltIntValue & bitMask;
+
+		default:
+			throw new IllegalArgumentException("Unknown key type");
+		}
 
 	}
 
-	/**
-	 * Returns true if the search key matches the given hash value, false otherwise.
-	 */
-	public boolean isHash(int hash) {
-
-		// calculate the bit depth (i.e. the left-most '1' bit)
-		int depth = (int) (Math.log(hash) / Math.log(2) + 1);
-
-		// compare the hash codes
-		return (getHash(depth) == hash);
-
-	} // public boolean isHash(int hash)
-
-	// --------------------------------------------------------------------------
-
-	/**
-	 * Returns a generic hash code for the key value.
-	 */
-	public int hashCode() {
-		return value.hashCode();
-	}
-
-	/**
-	 * True if obj is a SearchKey with the same values; false otherwise.
-	 */
-	public boolean equals(Object obj) {
-		if (obj instanceof HashKey) {
-			HashKey key = (HashKey) obj;
+	@Override
+	public boolean equals(Object hashKey) {
+		if (hashKey instanceof HashKey) {
+			HashKey key = (HashKey) hashKey;
+			//just compare the value, no need for size and length comparison
 			return (value.equals(key.value));
 		}
 		return false;
-	}
-
-	/**
-	 * Generically compares two search keys.
-	 * 
-	 * @return a negative integer, zero, or a positive integer as this object is
-	 *         less than, equal to, or greater than the specified object
-	 * @throws IllegalArgumentException if the search keys are not comparable
-	 */
-	public int compareTo(HashKey key) {
-
-		// Integer comparison
-		if (value instanceof Integer) {
-			if (key.value instanceof Integer) {
-
-				Integer ikey1 = (Integer) this.value;
-				Integer ikey2 = (Integer) key.value;
-				return ikey1.compareTo(ikey2);
-
-			} else {
-				throw new IllegalArgumentException("search keys are not comparable");
-			}
-		}
-
-		// Float comparison
-		if (value instanceof Float) {
-			if (key.value instanceof Float) {
-
-				Float fkey1 = (Float) this.value;
-				Float fkey2 = (Float) key.value;
-				return fkey1.compareTo(fkey2);
-
-			} else {
-				throw new IllegalArgumentException("search keys are not comparable");
-			}
-		}
-
-		// default: String comparison
-		if (key.value instanceof String) {
-
-			String skey1 = (String) this.value;
-			String skey2 = (String) key.value;
-			return skey1.compareTo(skey2);
-
-		} else {
-			throw new IllegalArgumentException("search keys are not comparable");
-		}
-
 	}
 
 	@Override

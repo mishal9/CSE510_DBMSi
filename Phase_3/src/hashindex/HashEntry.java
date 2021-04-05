@@ -2,6 +2,7 @@ package hashindex;
 
 import java.io.IOException;
 
+import btree.KeyNotMatchException;
 import global.Convert;
 import global.PageId;
 import global.RID;
@@ -16,12 +17,12 @@ public class HashEntry {
 		rid = new RID(ridd.pageNo, ridd.slotNo);
 	}
 
-	public HashEntry(byte data[], int offset) throws IOException {
+	public HashEntry(byte data[], int offset) throws IOException, KeyNotMatchException {
 		key = new HashKey(data, offset);
 		rid = getRIDFromByteArr(data, offset + key.size());
 	}
 
-	public void writeToByteArray(byte arr[], int offset) throws IOException {
+	public void writeToByteArray(byte arr[], int offset) throws IOException, KeyNotMatchException {
 		key.writeToByteArray(arr, offset);
 		rid.writeToByteArray(arr, offset + key.size());
 	}
@@ -34,7 +35,7 @@ public class HashEntry {
 	public boolean equals(Object obj) {
 		if (obj instanceof HashEntry) {
 			HashEntry ent = (HashEntry) obj;
-			return key.compareTo(ent.key) == 0 && rid.equals(ent.rid);
+			return key.equals(ent.key) && rid.equals(ent.rid);
 		}
 		return false;
 	}

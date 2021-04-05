@@ -2,14 +2,11 @@ package hashindex;
 
 import java.io.IOException;
 
+import global.AttrType;
 import global.GlobalConst;
 import global.PageId;
 import global.RID;
 import global.SystemDefs;
-import heap.HFBufMgrException;
-import heap.HFDiskMgrException;
-import heap.HFException;
-import heap.Scan;
 
 public class HashTest implements GlobalConst {
 
@@ -19,7 +16,8 @@ public class HashTest implements GlobalConst {
 		
 		HashTest thiss = new HashTest();
 		try {
-			thiss.hashBla();
+			thiss.testHIndex();
+			thiss.testScan();
 			
 			
 		} catch (Exception e) {
@@ -29,6 +27,25 @@ public class HashTest implements GlobalConst {
 		System.out.println("End");
 	}
 	
+	private void testScan() throws Exception {
+		HIndex h = new HIndex("whatever", 1, 12);
+		
+				
+		//String i = "13";
+		//HashKey searchKey = new HashKey(i +"laskdhlaskdlaskhdlaskdhlaskdlaskhdalskdhlaskdhalskdhlaskdhlahdlaskdhalksaskdhaskdhaskdhlaskdhlahsd"+i);
+		HashKey searchKey = new HashKey(13 );
+		HIndexScan scan = h.new_scan(searchKey);
+		HashEntry ent= null;
+		do {
+			ent = scan.get_next();
+			if(ent == null) {
+				System.out.println("breaking from scan loop");
+				break;
+			}
+			System.out.println("scan.get_next(): "+ent);
+		} while (ent!=null);
+		h.close();
+	}
 	
 	private void hashBla() {
 		int h0 = 1;
@@ -47,9 +64,10 @@ public class HashTest implements GlobalConst {
 	}
 	
 	private void testHIndex() throws Exception {
-		HIndex h = new HIndex("whatever", 1, 12);
-		for (int i = 10; i < 50; i++) {
-			HashKey key = new HashKey(i+"laskdhlaskdhaskdhaskdhlaskdhlahsd"+i);
+		HIndex h = new HIndex("whatever", AttrType.attrInteger, 4);
+		for (int i = 10; i < 100; i++) {
+			//HashKey key = new HashKey(i+"laskdhlaskdlaskhdlaskdhlaskdlaskhdalskdhlaskdhalskdhlaskdhlahdlaskdhalksaskdhaskdhaskdhlaskdhlahsd"+i);
+			HashKey key = new HashKey(i);
 			RID rid = new RID(new PageId(i),i);
 			h.insert(key, rid);
 		}
@@ -110,7 +128,7 @@ public class HashTest implements GlobalConst {
 
 	}
 	
-	private void testEntryCreation() throws IOException {
+	private void testEntryCreation() throws Exception {
 		HashKey key = new HashKey(12);
 		RID rid = new RID(new PageId(2),3);
 		HashEntry entry = new HashEntry(key, rid);
@@ -123,7 +141,7 @@ public class HashTest implements GlobalConst {
 		
 	}
 	
-	private void testKeyCreation() throws IOException {
+	private void testKeyCreation() throws Exception {
 		HashKey key = new HashKey("blaaaaaaa");
 		int keyLength = key.size();
 		System.out.println(key+" keyLength: "+keyLength);

@@ -5,15 +5,17 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import global.AttrType;
+
 public class HashUtils {
 
 	public final static int getKeyLength(HashKey key) throws IOException {
 		switch (key.type) {
-		case HashKey.INT:
+		case AttrType.attrInteger:
 			return 4;
-		case HashKey.FLOAT:
+		case AttrType.attrReal:
 			return 4;
-		case HashKey.STRING:
+		case AttrType.attrString:
 			OutputStream out = new ByteArrayOutputStream();
 			DataOutputStream outstr = new DataOutputStream(out);
 			outstr.writeUTF(((String) key.value));

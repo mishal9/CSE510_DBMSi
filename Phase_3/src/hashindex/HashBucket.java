@@ -2,21 +2,15 @@ package hashindex;
 
 import java.io.IOException;
 
-import diskmgr.Page;
 import global.GlobalConst;
 import global.PageId;
 import global.RID;
-import global.SystemDefs;
-import heap.DataPageInfo;
 import heap.HFBufMgrException;
 import heap.HFDiskMgrException;
 import heap.HFException;
-import heap.HFPage;
 import heap.Heapfile;
 import heap.InvalidSlotNumberException;
-import heap.InvalidTupleSizeException;
 import heap.Scan;
-import heap.SpaceNotAvailableException;
 import heap.Tuple;
 
 public class HashBucket implements GlobalConst {
@@ -30,7 +24,6 @@ public class HashBucket implements GlobalConst {
 	}
 
 	public void insertEntry(HashEntry entry) throws Exception {
-		//getRecCnt();
 		int entrySize = entry.size();
 		byte[] byteArr = new byte[entrySize];
 		entry.writeToByteArray(byteArr, 0);
@@ -40,46 +33,6 @@ public class HashBucket implements GlobalConst {
 	public boolean deleteEntry(HashKey key)
 			throws InvalidSlotNumberException, HFException, HFBufMgrException, HFDiskMgrException, Exception {
 		return deleteEntry(new HashEntry(key, new RID()));
-	}
-
-	public int getRecCnt() throws Exception	{
-		int numberOfPages = 0;
-		int freeSpace = 0;
-		int answer = 0;
-		PageId currentDirPageId = SystemDefs.JavabaseDB.get_file_entry(heapfileName);
-
-		PageId nextDirPageId = new PageId(0);
-
-		HFPage currentDirPage = new HFPage();
-		Page pageinbuffer = new Page();
-
-		while (currentDirPageId.pid != INVALID_PAGE) {
-			SystemDefs.JavabaseBM.pinPage(currentDirPageId, currentDirPage, false);
-			
-			RID rid = new RID();
-			Tuple atuple;
-			for (rid = currentDirPage.firstRecord(); rid != null; // rid==NULL means no more record
-					rid = currentDirPage.nextRecord(rid)) {
-				atuple = currentDirPage.getRecord(rid);
-				DataPageInfo dpinfo = new DataPageInfo(atuple);
-				
-				answer += dpinfo.recct;
-				freeSpace+=dpinfo.availspace;
-				numberOfPages++;
-			}
-			
-			//currentDirPage.dumpPage();
-			// ASSERTIONS: no more record
-			// - we have read all datapage records on
-			// the current directory page.
-
-			nextDirPageId = currentDirPage.getNextPage();
-			SystemDefs.JavabaseBM.unpinPage(currentDirPageId, false /* undirty */);
-			currentDirPageId.pid = nextDirPageId.pid;
-		}
-
-		System.out.println("recCount:"+answer+" numberOfPages:"+numberOfPages+" freespace:" +freeSpace);
-		return answer;
 	}
 
 	public boolean deleteEntry(HashEntry entryToDelete)
@@ -97,7 +50,7 @@ public class HashBucket implements GlobalConst {
 				done = true;
 				break;
 			}
-			System.out.println("rid: " + rid);
+			
 			HashEntry scannedHashEntry = new HashEntry(tup.returnTupleByteArray(), 0);
 			// System.out.println(i+" scannedRid: "+scannedRID);
 			if (scannedHashEntry.key.equals(entryToDelete.key)) {
@@ -112,17 +65,17 @@ public class HashBucket implements GlobalConst {
 			System.out.println("Not found in hashbucket");
 			return false;
 		}
-		System.out.println("foundLocation: " + foundLocation);
+		HashUtils.log("foundLocation: " + foundLocation);
 		heapfile.deleteRecord(foundLocation);
 		// TODO check if heapfile can be compacted, ie all current records can fit in 1
 		// page
-		int numberOfRecordsInBucket = heapfile.getRecCnt();
+		//int numberOfRecordsInBucket = heapfile.getRecCnt();
 
 		return true;
 
 	}
 
-	public void printToConsole() throws InvalidTupleSizeException, IOException {
+	public void printToConsole() throws Exception {
 		Scan scan = heapfile.openScan();
 		RID rid = new RID();
 		Tuple tup;
@@ -139,7 +92,7 @@ public class HashBucket implements GlobalConst {
 			System.out.println("  " + scannedHashEntry + " @ " + rid);
 			count++;
 		}
-		System.out.println("] count: "+count);
+		System.out.println("] count: " + count);
 		scan.closescan();
 	}
 

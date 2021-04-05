@@ -4,7 +4,6 @@ import java.io.IOException;
 
 import btree.ConstructPageException;
 import diskmgr.Page;
-import global.Convert;
 import global.PageId;
 import global.RID;
 import global.SystemDefs;
@@ -14,14 +13,8 @@ import heap.Tuple;
 public class HIndexHeaderPage extends HFPage {
 
 	/**
-	 * locations of stuff <br>
-	 * hashIndexName --> first element in page <br>
-	 * numberOfBuckets --> previous page id <br>
-	 * 
-	 * 
-	 * 
+	 * this class is similar to BTreeHeaderPage class
 	 * @param hashIndexName must be unique
-	 * @throws Exception
 	 */
 	public HIndexHeaderPage(String hashIndexName, int numberOfBuckets) throws Exception {
 		super();
@@ -33,7 +26,7 @@ public class HIndexHeaderPage extends HFPage {
 		this.init(pageId, apage);
 
 		RID hashIndexNameLocation = insertRecord(hashIndexName.getBytes());
-		HashUtils.log("hashIndexNameLocation: " + hashIndexNameLocation);
+		//HashUtils.log("hashIndexNameLocation: " + hashIndexNameLocation);
 		set_NumberOfBuckets(numberOfBuckets);
 
 	}
@@ -60,12 +53,12 @@ public class HIndexHeaderPage extends HFPage {
 	 *split pointer location int  
 	 */
 
-	public void set_keyType(byte keyType) {
-
+	public void set_keyType(int keyType) throws Exception {
+		setSlot(5, keyType, 0);
 	}
 
-	public byte get_keyType() {
-		return 0;
+	public int get_keyType() throws Exception {
+		return getSlotLength(5);
 	}
 
 	public String get_HashIndexName() throws Exception {
