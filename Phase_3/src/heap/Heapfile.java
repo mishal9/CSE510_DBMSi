@@ -54,7 +54,7 @@ public class Heapfile implements Filetype,  GlobalConst {
   /* get a new datapage from the buffer manager and initialize dpinfo
      @param dpinfop the information in the new HFPage
   */
-  private HFPage _newDatapage(DataPageInfo dpinfop)
+  protected HFPage _newDatapage(DataPageInfo dpinfop)
     throws HFException,
 	   HFBufMgrException,
 	   HFDiskMgrException,
@@ -948,7 +948,7 @@ public class Heapfile implements Filetype,  GlobalConst {
    * short cut to access the pinPage function in bufmgr package.
    * @see bufmgr.pinPage
    */
-  private void pinPage(PageId pageno, Page page, boolean emptyPage)
+  protected void pinPage(PageId pageno, Page page, boolean emptyPage)
     throws HFBufMgrException {
     
     try {
@@ -965,7 +965,7 @@ public class Heapfile implements Filetype,  GlobalConst {
    * short cut to access the unpinPage function in bufmgr package.
    * @see bufmgr.unpinPage
    */
-  private void unpinPage(PageId pageno, boolean dirty)
+  protected void unpinPage(PageId pageno, boolean dirty)
     throws HFBufMgrException {
 
     try {
@@ -990,7 +990,7 @@ public class Heapfile implements Filetype,  GlobalConst {
 
   } // end of freePage
 
-  private PageId newPage(Page page, int num)
+  protected PageId newPage(Page page, int num)
     throws HFBufMgrException {
 
     PageId tmpId = new PageId();
