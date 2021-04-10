@@ -96,4 +96,9 @@ public class HashBucket implements GlobalConst {
 		scan.closescan();
 	}
 
+	@Override
+	public String toString() {
+		return "HashBucket [heapfileName=" + heapfileName + "]";
+	}
+
 }

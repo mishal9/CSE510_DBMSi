@@ -1,37 +1,153 @@
 package hashindex;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import btree.KeyNotMatchException;
 import global.GlobalConst;
 import global.PageId;
 import global.RID;
+import global.SystemDefs;
 import heap.HashClustDataFile;
+import heap.Heapfile;
 import heap.Scan;
 import heap.Tuple;
 
 public class ClusHIndex implements GlobalConst{
-	
-	HashBucket bucket;
+
+	HIndexHeaderPage headerPage;
+	PageId headerPageId;
 	HashClustDataFile dataFile;
-	public ClusHIndex() throws Exception {
-		bucket=new HashBucket("asldhalskdaslk0");
-		dataFile = new HashClustDataFile("cldf-asldhalskdaslk");
-	}
-	
-	public void insert(HashKey key,Tuple tup) throws Exception {
-		int pageNumber = checkIfKeyAlreadyInBucket(key,bucket);
-		if(pageNumber == -1) { //new key
-			//dataFile.in
-		} else { //duplicate key
-			RID rid = new RID(new PageId(pageNumber), 12);
-			HashEntry entry = new HashEntry(key, rid );
-			dataFile.insertRecordOnExistingPage(tup.getTupleByteArray(), new PageId(pageNumber));
-			bucket.insertEntry(entry);
+
+	final float targetUtilization;
+
+
+	public ClusHIndex(String fileName, int keyType, int keySize,int targetUtilization) throws Exception {
+
+		headerPageId = HashUtils.get_file_entry(fileName);
+		if (headerPageId == null) // file not exist
+		{
+			HashUtils.log("Creating new HIndex header page");
+			//creating new header page with filename and number of buckets 2
+			headerPage = new HIndexHeaderPage(fileName,2);
+			headerPageId = headerPage.getPageId();
+			HashUtils.add_file_entry(fileName, headerPageId);
+
+			headerPage.set_keyType( keyType);
+			headerPage.set_H0Deapth(1);
+			headerPage.set_SplitPointerLocation(0);
+			headerPage.set_EntriesCount(0);
+			headerPage.set_TargetUtilization(targetUtilization);
+
+
+		} else {
+			HashUtils.log("Opening existing HIndex");
+			headerPage = new HIndexHeaderPage(headerPageId);
 		}
-		
-		
+		this.targetUtilization = (float) ((float)headerPage.get_TargetUtilization()/100.0);
+		this.dataFile = new HashClustDataFile("clhdf"+fileName);
+
+
 	}
-	
-	private int checkIfKeyAlreadyInBucket(HashKey key,HashBucket buc) throws Exception {
-		int pageNum = -1;
+
+	public ClusHIndex(String fileName) throws Exception {
+		headerPageId = HashUtils.get_file_entry(fileName);
+		if(headerPageId == null) {
+			throw new IllegalArgumentException("No index found with name "+fileName);
+		}
+		headerPage = new HIndexHeaderPage(headerPageId);
+		this.targetUtilization = (float) ((float)headerPage.get_TargetUtilization()/100.0);
+		this.dataFile = new HashClustDataFile("clhdf"+fileName);
+	}
+
+	public RID insert(HashKey key,Tuple tup) throws Exception {
+		HashUtils.log("[ClusHIndex] trying to insert key : "+key);
+
+		if (key.type != headerPage.get_keyType()) {
+			throw new KeyNotMatchException("Key types dont match!");
+		}
+		int hash = key.getHash(headerPage.get_H0Deapth());
+		int splitPointer = headerPage.get_SplitPointerLocation();
+		if (hash < splitPointer) {
+			hash = key.getHash(headerPage.get_H0Deapth() + 1);
+			HashUtils.log("new hash: " + hash);
+		}
+
+		int bucketNumber = hash;
+		String bucketName = headerPage.get_NthBucketName(bucketNumber);
+		HashBucket bucket = new HashBucket(bucketName);
+
+
+		//insert data in datafile and key in bucket(if reqd)
+		RID insertedLocation = insertInDataFileAndBucket(key, tup, bucket);
+
+
+		// now add buckets(pages) if reqd
+		float currentEntryCount = headerPage.get_EntriesCount();
+		int bucketCount = headerPage.get_NumberOfBuckets();
+		float maxPossibleEntries = (bucketCount * MINIBASE_PAGESIZE) / (8+key.size());
+		float currentUtilization = currentEntryCount / maxPossibleEntries;
+		HashUtils.log("currentUtilization: " + currentUtilization);
+		HashUtils.log("targetUtilization: " + targetUtilization);
+		if (currentUtilization >= targetUtilization) {
+			HashUtils.log("Adding a bucket page to HIndex");
+
+			headerPage.set_NumberOfBuckets(headerPage.get_NumberOfBuckets() + 1);
+			// rehash element in bucket splitPointer
+
+			rehashClusBucket(headerPage.get_NthBucketName(splitPointer), headerPage.get_H0Deapth() + 1);
+			splitPointer++;
+			if (splitPointer == (1 << headerPage.get_H0Deapth())) {
+				splitPointer = 0;
+				headerPage.set_H0Deapth(headerPage.get_H0Deapth() + 1);
+				HashUtils.log("resetting split pointer to 0 ");
+			}
+			headerPage.set_SplitPointerLocation(splitPointer);
+			HashUtils.log("after split splitPointer: " + splitPointer);
+
+		}
+		HashUtils.log("[ClusHIndex] inserted key "+key+" @ "+ insertedLocation );
+		return insertedLocation;
+	}
+
+	public void close() throws Exception {
+		if (headerPage != null) {
+			SystemDefs.JavabaseBM.unpinPage(headerPageId, true);
+			headerPage = null;
+		}
+	}
+
+	private RID insertInDataFileAndBucket(HashKey key, Tuple tup, HashBucket bucket) throws Exception {
+		byte[] record = tup.getTupleByteArray();
+		List<Integer> pageNumList = getExistingPagePointersForKeyInBucket(key,bucket);
+		RID insertedLocationOfTupleInDataFile = null;
+		boolean recordInsertedInDataFile = false;
+		//first try to insert in any of the pages which have same key
+		for (Integer pageNumOfKeyInDataFile : pageNumList) {
+			RID locationInDataFile = dataFile.insertRecordOnExistingPage(record, new PageId(pageNumOfKeyInDataFile));
+
+			if(locationInDataFile != null) {
+				insertedLocationOfTupleInDataFile = new RID(new PageId(locationInDataFile.pageNo.pid),locationInDataFile.slotNo);
+				recordInsertedInDataFile = true;
+				HashUtils.log("[ClusHIndex] Inserted data in " + key + " to existing bucket entry, RID in data file: " + insertedLocationOfTupleInDataFile);
+				break;
+			}
+		}
+
+		if(recordInsertedInDataFile == false) { //insert data to new page in datafile, key in bucket
+			RID loc = dataFile.insertRecordToNewPage(record);
+			insertedLocationOfTupleInDataFile = new RID(new PageId(loc.pageNo.pid),loc.slotNo);
+			HashEntry ent = new HashEntry(key, insertedLocationOfTupleInDataFile); 
+			bucket.insertEntry(ent);
+			headerPage.set_EntriesCount(headerPage.get_EntriesCount() + 1);
+			HashUtils.log("[ClusHIndex] Inserting " + key + " to bucket: " + bucket);
+
+		} 
+		return insertedLocationOfTupleInDataFile;
+	}
+
+	public static List<Integer> getExistingPagePointersForKeyInBucket(HashKey key,HashBucket buc) throws Exception {
+		List<Integer> pageNumList = new ArrayList<>();
 		Scan scan = buc.heapfile.openScan();
 		RID rid = new RID();
 		Tuple tup;
@@ -45,14 +161,71 @@ public class ClusHIndex implements GlobalConst{
 			}
 			HashEntry scannedHashEntry = new HashEntry(tup.returnTupleByteArray(), 0);
 			if(scannedHashEntry.key.equals(key)) {
-				pageNum = scannedHashEntry.rid.pageNo.pid;
+				int pageNum = scannedHashEntry.rid.pageNo.pid;
 				HashUtils.log("Key is already in bucket with page pointer: "+pageNum);
-				done = true;
-				break;
+				pageNumList.add(pageNum);
 			}
 		}
 		scan.closescan();
-		return pageNum;
+		return pageNumList;
+	}
+	
+	private void rehashClusBucket(String bucketToBeRehashedName,int newDeapth) throws Exception {
+		Heapfile tempheapfile = new Heapfile("temp");
+		HashBucket bucketToBeRehashed = new HashBucket(bucketToBeRehashedName);
+		Scan scan = bucketToBeRehashed.heapfile.openScan();
+		RID rid = new RID();
+		Tuple tup;
+		boolean done = false;
+		int i = 0;
+		while (!done) {
+			tup = scan.getNext(rid);
+
+			if (tup == null) {
+				done = true;
+				break;
+			}
+			tempheapfile.insertRecord(tup.returnTupleByteArray());
+			i++;
+		}
+		HashUtils.log("entries added to temp heapfile: "+i);
+		scan.closescan();
+		bucketToBeRehashed.heapfile.deleteFile();
+		Scan tempHeapScan = tempheapfile.openScan();
+		bucketToBeRehashed = new HashBucket(bucketToBeRehashedName);
+		 rid = new RID();
+		done = false;
+		i = 0;
+		while (!done) {
+			tup = tempHeapScan.getNext(rid);
+
+			if (tup == null) {
+				done = true;
+				break;
+			}
+			HashEntry scannedHashEntry = new HashEntry(tup.returnTupleByteArray(), 0);
+			int hash1 = scannedHashEntry.key.getHash(newDeapth);
+			String newBucketName = headerPage.get_NthBucketName(hash1);
+			HashBucket newBucket = new HashBucket(newBucketName );
+			newBucket.insertEntry(scannedHashEntry);
+			HashUtils.log("Rehashing "+scannedHashEntry.key+" to bucket "+newBucketName);
+			
+			i++;
+		}
+		HashUtils.log("entries rehashed: " + i);
+		tempHeapScan.closescan();
+		tempheapfile.deleteFile();
+	}
+	
+	public ClusHIndexScan new_scan(HashKey key) throws Exception {
+		ClusHIndexScan scan = new ClusHIndexScan(this, key);
+		return scan;
 	}
 
+	public HIndexHeaderPage getHeaderPage() {
+		return headerPage;
+	}
+	public HashClustDataFile getDataFile() {
+		return dataFile;
+	}
 }

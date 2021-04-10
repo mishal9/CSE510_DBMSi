@@ -1,17 +1,19 @@
 package heap;
 
 import java.io.IOException;
+import java.util.function.Function;
 
 import diskmgr.Page;
 import global.PageId;
 import global.RID;
+import hashindex.HashKey;
 import hashindex.HashUtils;
 
 public class HashClustDataFile extends Heapfile {
 
 	public HashClustDataFile(String name) throws HFException, HFBufMgrException, HFDiskMgrException, IOException {
 		super(name);
-		HashUtils.log("Created ClustDataFile" + name);
+		//HashUtils.log("Created ClustDataFile" + name);
 	}
 
 	public RID insertRecordOnExistingPage(byte[] record, PageId pageToInsertId) throws Exception {
@@ -27,7 +29,7 @@ public class HashClustDataFile extends Heapfile {
 		DataPageInfo dpinfo = new DataPageInfo();
 		while(currentDirPageId.pid != INVALID_PAGE)
 		{
-			HashUtils.log("checking dir page id :"+currentDirPageId.pid);
+			//HashUtils.log("checking dir page id :"+currentDirPageId.pid);
 			pinPage(currentDirPageId, currentDirPage, false);
 
 			RID rid = new RID();
@@ -40,7 +42,7 @@ public class HashClustDataFile extends Heapfile {
 				dpinfo = new DataPageInfo(atuple);
 
 				if(dpinfo.pageId.pid == pageToInsertId.pid) {
-					HashUtils.log("page id found in directory "+dpinfo.pageId.pid);
+					//HashUtils.log("page id found in directory "+dpinfo.pageId.pid);
 					found = true;
 					if(recLen <= dpinfo.availspace)
 					{
@@ -58,7 +60,7 @@ public class HashClustDataFile extends Heapfile {
 
 			unpinPage(currentDirPageId, false /*undirty*/);
 			if(found == true ) {
-				System.out.println("breaking from outer loop");
+				//HashUtils.log("breaking from outer loop");
 				break;
 			}
 			nextDirPageId = currentDirPage.getNextPage();
@@ -86,7 +88,7 @@ public class HashClustDataFile extends Heapfile {
 
 
 		unpinPage(dpinfo.pageId, true /* = DIRTY */);
-		unpinPage(currentDirPageId, true /* = DIRTY */);
+		//unpinPage(currentDirPageId, true /* = DIRTY */);
 
 
 		return rid;
@@ -123,7 +125,7 @@ public class HashClustDataFile extends Heapfile {
 
 				byte [] tmpData = newPageInfo.convertToTuple().getTupleByteArray();
 				RID newPageLocationInExistingDirectoryPage = currentDirPage.insertRecord(tmpData);
-				HashUtils.log("newPageLocationInExistingDirectoryPage "+newPageLocationInExistingDirectoryPage);
+				//HashUtils.log("newPageLocationInExistingDirectoryPage "+newPageLocationInExistingDirectoryPage);
 				RID tmprid = currentDirPage.firstRecord();
 
 			}
@@ -158,7 +160,7 @@ public class HashClustDataFile extends Heapfile {
 				//insert the new page info in the new directory page
 				byte [] tmpData = newPageInfo.convertToTuple().getTupleByteArray();
 				RID newPageLocationInNewDirectoryPage = newDirPage.insertRecord(tmpData);
-				HashUtils.log("newPageLocationInNewDirectoryPage "+newPageLocationInNewDirectoryPage);
+				//HashUtils.log("newPageLocationInNewDirectoryPage "+newPageLocationInNewDirectoryPage);
 				
 				unpinPage(nextDirPageId, true/*dirty*/);
 				break;
@@ -182,7 +184,25 @@ public class HashClustDataFile extends Heapfile {
 	@Override
 	public RID insertRecord(byte[] recPtr) throws InvalidSlotNumberException, InvalidTupleSizeException,
 			SpaceNotAvailableException, HFException, HFBufMgrException, HFDiskMgrException, IOException {
-		throw new IllegalArgumentException("This function not to used with clustered data file -_-");
+		throw new IllegalArgumentException("Funtion not supported for clustered file");
+	}
+	
+	public void printToConsole(Function<byte[], String> mapper) throws Exception {
+		Scan scan = openScan();
+		RID rid = new RID();
+		Tuple tup;
+		boolean done = false;
+		while (!done) {
+			tup = scan.getNext(rid);
+
+			if (tup == null) {
+				done = true;
+				break;
+			}
+			HashUtils.log("Tuple length "+mapper.apply(tup.getTupleByteArray())+" @ "+rid);
+				
+		}
+		scan.closescan();
 	}
 
 }

@@ -2,10 +2,19 @@ package heap;
 
 
 import java.io.File;
+import java.io.IOException;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
+import btree.KeyNotMatchException;
+import global.AttrType;
 import global.GlobalConst;
 import global.RID;
 import global.SystemDefs;
+import hashindex.ClusHIndex;
+import hashindex.ClusHIndexScan;
+import hashindex.HashBucket;
+import hashindex.HashEntry;
 import hashindex.HashKey;
 import hashindex.HashUtils;
 
@@ -17,7 +26,7 @@ public class TestHashClusDataFileTest implements GlobalConst {
 		
 		TestHashClusDataFileTest thiss = new TestHashClusDataFileTest();
 		try {
-			thiss.testFile();
+			thiss.testInsert();
 			
 			
 		} catch (Exception e) {
@@ -27,7 +36,45 @@ public class TestHashClusDataFileTest implements GlobalConst {
 		System.out.println("End");
 	}
 	
+	private void testInsert() throws Exception {
+		ClusHIndex index = new ClusHIndex("huehuehue",AttrType.attrInteger, 4,80);
+		for (int k = 10; k < 15; k++) {
+			for (int i = 0; i < 10; i++) {
+				// HashKey key= new HashKey(i+"laskdhlaskdlaskhdlaskdhlaskdlaskhdalskdhlaskdhalskdhlaskdhlahdlaskdhalksaskdhaskdhaskdhlaskdhlahsd"+i);
+				HashKey key = new HashKey(k);
+				byte[] arr = new byte[key.size()];
+				key.writeToByteArray(arr, 0);
+				Tuple tup = new Tuple(arr, 0, arr.length);
+				RID loc = index.insert(key, tup);
 
+			}
+		}
+		Function<byte[],String> mapper= (a)->{
+			try {
+				return new HashKey(a, 0).toString();
+			}catch (Exception e) {
+				e.printStackTrace();
+				return e.getMessage();
+			}
+		};
+		for(int i =0;i<index.getHeaderPage().get_NumberOfBuckets();i++) {
+			System.out.println("BUCKET: "+i);
+			HashBucket bucket = new HashBucket(index.getHeaderPage().get_NthBucketName(i));
+			bucket.printToConsole();
+		}
+		index.getDataFile().printToConsole(mapper);
+		ClusHIndexScan scan = index.new_scan(new HashKey(23));
+		Tuple tup= null;
+		do {
+			tup = scan.get_next();
+			if(tup == null) {
+				System.out.println("breaking from scan loop");
+				break;
+			}
+			System.out.println("scan.get_next(): "+tup);
+		} while (tup!=null);
+
+	}
 	
 	
 	private void testFile() throws Exception {
@@ -40,6 +87,7 @@ public class TestHashClusDataFileTest implements GlobalConst {
 			RID loc  = file.insertRecordToNewPage(arr);
 			
 		}
+		
 		Scan scan = file.openScan();
 		RID rid = new RID();
 		Tuple tup;
