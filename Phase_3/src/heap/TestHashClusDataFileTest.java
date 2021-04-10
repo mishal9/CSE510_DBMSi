@@ -39,7 +39,9 @@ public class TestHashClusDataFileTest implements GlobalConst {
 	private void testInsert() throws Exception {
 		ClusHIndex index = new ClusHIndex("huehuehue",AttrType.attrInteger, 4,80);
 		for (int k = 10; k < 15; k++) {
+			System.out.println("------------------------------------------------------");
 			for (int i = 0; i < 10; i++) {
+				System.out.println("\nooooooooooooooo");
 				// HashKey key= new HashKey(i+"laskdhlaskdlaskhdlaskdhlaskdlaskhdalskdhlaskdhalskdhlaskdhlahdlaskdhalksaskdhaskdhaskdhlaskdhlahsd"+i);
 				HashKey key = new HashKey(k);
 				byte[] arr = new byte[key.size()];
@@ -48,6 +50,7 @@ public class TestHashClusDataFileTest implements GlobalConst {
 				RID loc = index.insert(key, tup);
 
 			}
+			System.out.println("------------------------------------------------------\n");
 		}
 		Function<byte[],String> mapper= (a)->{
 			try {
@@ -63,7 +66,8 @@ public class TestHashClusDataFileTest implements GlobalConst {
 			bucket.printToConsole();
 		}
 		index.getDataFile().printToConsole(mapper);
-		ClusHIndexScan scan = index.new_scan(new HashKey(23));
+		System.out.println("\n\nNOW TESTING SCAN OF INDEX WITH SEARCH KEY \n");
+		ClusHIndexScan scan = index.new_scan(new HashKey(13));
 		Tuple tup= null;
 		do {
 			tup = scan.get_next();
@@ -71,7 +75,7 @@ public class TestHashClusDataFileTest implements GlobalConst {
 				System.out.println("breaking from scan loop");
 				break;
 			}
-			System.out.println("scan.get_next(): "+tup);
+			System.out.println("scan.get_next(): "+mapper.apply(tup.getTupleByteArray()));
 		} while (tup!=null);
 
 	}

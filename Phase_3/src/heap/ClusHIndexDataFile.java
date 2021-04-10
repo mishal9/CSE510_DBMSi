@@ -24,6 +24,7 @@ public class ClusHIndexDataFile extends Heapfile {
 		PageId nextDirPageId = new PageId(0);
 
 		HFPage currentDirPage = new HFPage();
+		RID ridOfPageInDirPage = null;
 		boolean found = false;
 		boolean canBeStored = false;
 		DataPageInfo dpinfo = new DataPageInfo();
@@ -47,6 +48,7 @@ public class ClusHIndexDataFile extends Heapfile {
 					if(recLen <= dpinfo.availspace)
 					{
 						HashUtils.log("data page has enough space");
+						ridOfPageInDirPage = new RID(new PageId(rid.pageNo.pid), rid.slotNo);
 						canBeStored = true;
 					}else {
 						HashUtils.log("not enough space in data page :"+pageToInsertId.pid);
@@ -82,13 +84,23 @@ public class ClusHIndexDataFile extends Heapfile {
 		
 		RID rid;
 		rid = dataPageToInsert.insertRecord(record);
-
+		System.out.println("dpinfo.availspace: "+dpinfo.availspace);
 		dpinfo.recct++;
 		dpinfo.availspace = dataPageToInsert.available_space();
-
-
+		System.out.println("after dpinfo.availspace: "+dpinfo.availspace);
+		dpinfo.flushToTuple();
 		unpinPage(dpinfo.pageId, true /* = DIRTY */);
-		//unpinPage(currentDirPageId, true /* = DIRTY */);
+		
+		pinPage(currentDirPageId, currentDirPage, false);
+		 DataPageInfo dpinfo_ondirpage = new DataPageInfo(currentDirPage.returnRecord(ridOfPageInDirPage));
+	      
+	      
+	      dpinfo_ondirpage.availspace = dpinfo.availspace;
+	      dpinfo_ondirpage.recct = dpinfo.recct;
+	      dpinfo_ondirpage.pageId.pid = dpinfo.pageId.pid;
+	      dpinfo_ondirpage.flushToTuple();
+	      
+		unpinPage(currentDirPageId, true /* = DIRTY */);
 
 
 		return rid;

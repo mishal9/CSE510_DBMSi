@@ -129,7 +129,7 @@ public class ClusHIndex implements GlobalConst{
 			if(locationInDataFile != null) {
 				insertedLocationOfTupleInDataFile = new RID(new PageId(locationInDataFile.pageNo.pid),locationInDataFile.slotNo);
 				recordInsertedInDataFile = true;
-				HashUtils.log("[ClusHIndex] Inserted data in " + key + " to existing bucket entry, RID in data file: " + insertedLocationOfTupleInDataFile);
+				HashUtils.log("[ClusHIndex][SAME_KEY] Inserted data in " + key + " to existing bucket entry, RID in data file: " + insertedLocationOfTupleInDataFile);
 				break;
 			}
 		}
@@ -140,7 +140,7 @@ public class ClusHIndex implements GlobalConst{
 			HashEntry ent = new HashEntry(key, insertedLocationOfTupleInDataFile); 
 			bucket.insertEntry(ent);
 			headerPage.set_EntriesCount(headerPage.get_EntriesCount() + 1);
-			HashUtils.log("[ClusHIndex] Inserting " + key + " to bucket: " + bucket);
+			HashUtils.log("[ClusHIndex][NEW_KEY] Inserting " + key + " to bucket: " + bucket);
 
 		} 
 		return insertedLocationOfTupleInDataFile;
@@ -162,7 +162,7 @@ public class ClusHIndex implements GlobalConst{
 			HashEntry scannedHashEntry = new HashEntry(tup.returnTupleByteArray(), 0);
 			if(scannedHashEntry.key.equals(key)) {
 				int pageNum = scannedHashEntry.rid.pageNo.pid;
-				HashUtils.log("Key is already in bucket with page pointer: "+pageNum);
+				//HashUtils.log("Key is already in bucket with page pointer: "+pageNum);
 				pageNumList.add(pageNum);
 			}
 		}
