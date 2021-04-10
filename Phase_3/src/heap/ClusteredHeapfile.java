@@ -1598,6 +1598,7 @@ throws InvalidSlotNumberException,
 		  	btf.Delete(key_entry, rid_entry);
 		  	btf.Delete(key_nextentry, rid_nextentry);
 			btf.insert(key_new, tmprid);
+			btf.close();
 			
 			unpinPage(newdpinfo.pageId, true);
 			lookup_dirPage.deleteRecord(lookup_currentDataPageRid);
