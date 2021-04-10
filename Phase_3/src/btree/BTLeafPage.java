@@ -54,23 +54,6 @@ public class BTLeafPage extends BTSortedPage {
       setType(NodeType.LEAF);
     }  
   
-  /**new a page, associate the BTLeafPage instance with the Page instance,
-   * also it sets the type to be NodeType.LEAF. 
-   *@param keyType either AttrType.attrInteger or AttrType.attrString.
-   *  Input parameter.
-   *@exception IOException  error from the lower layer
-   *@exception ConstructPageException BTLeafPage constructor error
-   */
-  public BTLeafPage( int keyType) 
-    throws IOException, 
-	   ConstructPageException
-    {
-      super(keyType);
-      setType(NodeType.LEAF);
-    }  
-  
-
-  
   /** insertRecord
    * READ THIS DESCRIPTION CAREFULLY. THERE ARE TWO RIDs
    * WHICH MEAN TWO DIFFERENT THINGS.
@@ -100,7 +83,23 @@ public class BTLeafPage extends BTSortedPage {
         throw new LeafInsertRecException(e, "insert record failed");
       }
     } // end of insertRecord
+
+/**new a page, associate the BTLeafPage instance with the Page instance,
+   * also it sets the type to be NodeType.LEAF. 
+   *@param keyType either AttrType.attrInteger or AttrType.attrString.
+   *  Input parameter.
+   *@exception IOException  error from the lower layer
+   *@exception ConstructPageException BTLeafPage constructor error
+   */
+  public BTLeafPage( int keyType) 
+    throws IOException, 
+	   ConstructPageException
+    {
+      super(keyType);
+      setType(NodeType.LEAF);
+    }  
   
+
   
   /**  Iterators. 
    * One of the two functions: getFirst and getNext
@@ -228,7 +227,7 @@ public class BTLeafPage extends BTSortedPage {
    *@exception LeafRedistributeException
    *@return true if redistrbution success. false if we can not redistribute them.
    */
-  boolean redistribute(BTLeafPage leafPage, BTIndexPage parentIndexPage, 
+  public boolean redistribute(BTLeafPage leafPage, BTIndexPage parentIndexPage, 
 		       int direction, KeyClass deletedKey)
     throws LeafRedistributeException
     {

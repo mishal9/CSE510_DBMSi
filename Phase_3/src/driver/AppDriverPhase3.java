@@ -258,6 +258,12 @@ class DriverPhase3 extends TestDriver implements GlobalConst
     		if ( btree_type_index ) {
     			System.out.println("Creating a table of file "+ filename+" and a clustered btree index on attribute "+index_att_no);
     			//TBD create CLUSTERED BTREE INDEX on attribute
+    			Table table = new Table(filename);
+        		if ( SystemDefs.JavabaseDB.get_relation(table.getTablename()) != null ) {
+        			System.out.println("Error: Table already exists**************");
+        			return;
+        		}
+        		table.create_table(index_att_no);
     		}
     		else if ( hash_type_index ) {
     			System.out.println("Creating a table of file "+ filename+" and a clustered hash index on attribute "+index_att_no);
@@ -618,6 +624,73 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    }
     }
     
+    public void run_test_query() {
+    	/*try {
+			Heapfile hp = new Heapfile("blah.in");
+			AttrType[] attrType = new AttrType[1];
+			short[] strsizes = new short[1];
+			strsizes[0] = 100;
+			attrType[0] = new AttrType(AttrType.attrInteger);
+			Tuple t = TupleUtils.getEmptyTuple(attrType, strsizes);
+			RID wer = new RID();
+			for ( int i = 0; i<2000; i++ ) {
+				
+				hp.insertRecord(t.getTupleByteArray());
+			}
+			Scan sc = hp.openScan();
+			Tuple t1;
+			t1 = sc.getNext(wer);
+			while ( t1 != null ) {
+				t.tupleCopy(t1);
+				t1 = sc.getNext(wer);
+				t.print(attrType);
+			}
+			System.out.println(hp.getRecCnt());
+			sc.closescan();
+		} catch (HFException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (HFBufMgrException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (HFDiskMgrException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InvalidTypeException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InvalidTupleSizeException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InvalidSlotNumberException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (SpaceNotAvailableException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}*/
+    	
+    	Table table = SystemDefs.JavabaseDB.get_relation("subsetone");
+    	try {
+			table.test();
+		} catch (InvalidTypeException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InvalidTupleSizeException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    }
+    
     /* This function runs the main query interface which reads and processes all the queries */
     public void startQueryInterface() {
     	boolean exit_interface = false;
@@ -627,7 +700,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
     		switch (tokens[0]) {
     			case "exit":
     				// TBD need to close the DB and save the open stuff here
-    				close_DB();
+    				handleOpenDB(true);
     				System.out.println("exiting query interface");
     				exit_interface = true;
     				break;
@@ -708,6 +781,9 @@ class DriverPhase3 extends TestDriver implements GlobalConst
     				break;
     			case "help":
     				printQueryHelper("all");
+    				break;
+    			case "test":
+    				run_test_query();
     				break;
     			default:
     				System.out.println("Query command not recognized "+tokens[0]);

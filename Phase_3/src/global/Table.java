@@ -17,8 +17,10 @@ import btree.GetFileEntryException;
 import btree.IndexInsertRecException;
 import btree.IndexSearchException;
 import btree.InsertException;
+import btree.InsertRecException;
 import btree.IntegerKey;
 import btree.IteratorException;
+import btree.Key;
 import btree.KeyClass;
 import btree.KeyNotMatchException;
 import btree.KeyTooLongException;
@@ -32,8 +34,10 @@ import bufmgr.HashEntryNotFoundException;
 import bufmgr.InvalidFrameNumberException;
 import bufmgr.PageUnpinnedException;
 import bufmgr.ReplacerException;
+import clustered_btree.ClusteredBTreeFile;
 import hashindex.HIndex;
 import hashindex.HashKey;
+import heap.ClusteredHeapfile;
 import heap.FieldNumberOutOfBoundException;
 import heap.HFBufMgrException;
 import heap.HFDiskMgrException;
@@ -45,7 +49,19 @@ import heap.InvalidTypeException;
 import heap.Scan;
 import heap.SpaceNotAvailableException;
 import heap.Tuple;
+import iterator.FileScan;
+import iterator.FileScanException;
+import iterator.FldSpec;
+import iterator.InvalidRelation;
+import iterator.JoinsException;
+import iterator.LowMemException;
+import iterator.OurFileScan;
+import iterator.RelSpec;
+import iterator.Sort;
+import iterator.SortException;
 import iterator.TupleUtils;
+import iterator.TupleUtilsException;
+import iterator.UnknowAttrType;
 
 /** 
  * Enumeration class for TupleOrder
@@ -69,8 +85,11 @@ public class Table implements GlobalConst{
 	/* extension for the data filename */
 	private static String data_file_ext = ".txt";
 	
-	/* extension for clustered index */
+	/* extension for btree clustered index */
 	private static String btree_clustered_file_ext = ".btreeclustered";
+	
+	/* extension for hash clustered index */
+	private static String hash_clustered_file_ext = ".hashclustered";
 	
 	/* extension for clustered index */
 	private static String btree_unclustered_file_ext = ".btreeunclustered";
@@ -450,7 +469,7 @@ public class Table implements GlobalConst{
 			temp = scan.getNext(rid);
 		}
 		scan.closescan();
-		BT.printBTree(btf.getHeaderPage());
+		//BT.printBTree(btf.getHeaderPage());
 		BT.printAllLeafPages(btf.getHeaderPage());
 		btf.close();
 		
@@ -691,6 +710,19 @@ public class Table implements GlobalConst{
 	  }
   }
   
+  /* attr_number --> 1,2,3,4... */
+  public String get_clustered_index_filename(int attr_number, String clustered_index_type) {
+	  if ( clustered_index_type.equals("btree") ) {
+		  return ( this.tablename + Integer.toString(attr_number) + this.btree_clustered_file_ext );
+	  }
+	  else if ( clustered_index_type.equals("hash") ) {
+		  return ( this.tablename + Integer.toString(attr_number) + this.hash_clustered_file_ext );
+	  }
+	  else {
+		  return null;
+	  }
+  }
+  
   /* attr_number --> 0,2,3,4... */
   private  boolean unclustered_index_exist( int attr_number, boolean[] unclustered_exist ) {
 	  return unclustered_exist[attr_number];
@@ -903,6 +935,288 @@ public class Table implements GlobalConst{
 		}
   }
 
+  public void create_table_struct( Scanner sc ) {
+  	/* initialising the number of attributes in the table */
+  	table_num_attr = sc.nextInt();
+  
+  	/* initialise the btree unclustered attr array i.e. no unclustered index exist at the time of creating the table for the first time*/
+	btree_unclustered_attr = new boolean[table_num_attr];
+	Arrays.fill(btree_unclustered_attr, false);
+	
+	/* initialise the hash unclustered attr array i.e. no unclustered index exist at the time of creating the table for the first time*/
+	hash_unclustered_attr = new boolean[table_num_attr];
+	Arrays.fill(hash_unclustered_attr, false);
+	
+	/* initialising the attr type array of attributes */
+	table_attr_type = new AttrType[table_num_attr];
+	
+	/* initialising the names of the attributes array */
+	table_attr_name = new String[table_num_attr];
+	
+	/* moving to next line to skip the first line read above */
+    sc.nextLine();
+    
+    /* parse the attributes from the data file */
+    int counter = 0;
+    while ( sc.hasNextLine() && ( counter < table_num_attr ) ) {
+    	String next_line = sc.nextLine();
+    	String[] tokens_next_line = next_line.split("\\s+");
+    	table_attr_name[counter] = tokens_next_line[0];
+    	table_attr_type[counter] = new AttrType(tokens_next_line[1].equals("STR") ? AttrType.attrString : AttrType.attrInteger);
+    	counter++;
+    }
+    
+    /* create the tuple and calculate the size of the tuple */
+    table_attr_size = new short[table_num_attr];
+    for(int i=0; i<table_attr_size.length; i++){
+    	table_attr_size[i] = STRSIZE;
+    }
+  }
+  
+  /* This method is used to create a table and create a corresponding clustered
+   * tree with key, rid pairs.
+   * clustered_attr_num --> 1,2,3... */
+  public void create_table(int clustered_attr_num) {
+	  /* print out the table name under process */
+	  System.out.println("Creating table "+tablename);
+	  
+	  /* saving the clustered btree attr */
+	  this.clustered_btree_attr = clustered_attr_num;
+	  
+	  /* adding the sorted data to the temp heap file 
+	   * After calling this function, we have the sorted data in the heap file.
+	   * Now we need to build a clustered btree on this data
+	   * */
+	  create_sorted_heap_file();
+	  
+	  SystemDefs.JavabaseDB.add_to_relation_queue(this);
+	  System.out.print("\n");
+	  
+	  /* create a custered btree now */
+	  //print_table_attr();
+  }
+  
+  private void print_table_attr() {
+	  System.out.println("Table attrypes: "+ Arrays.toString(this.table_attr_type));
+	  System.out.println("Table num attr: "+ Integer.toString(table_num_attr));
+  }
+  
+  /* writes the sorted data into the table heap file and returns
+   * also creates a clustered index in parellel
+   *  */
+  private void create_sorted_heap_file() {
+	  try {
+		
+		/* initialising the heapfile for the table */
+		Heapfile hf = new Heapfile(this.temp_heap_file);
+		
+		/* opening the data file for reading */
+		File file = new File(data_folder + table_data_file);
+	    Scanner sc = new Scanner(file);
+	    
+	    /* initialising the number of attributes in the table */
+	    create_table_struct(sc);
+
+	    Tuple t = TupleUtils.getEmptyTuple(this.table_attr_type, this.table_attr_size);
+	    
+	    this.table_tuple_size = t.size();
+	    
+	    /* initialise a btree to insert the data records */
+	    ClusteredBTreeFile btf  = new ClusteredBTreeFile(this.get_clustered_index_filename(this.clustered_btree_attr, "btree"),
+										table_attr_type[this.clustered_btree_attr-1].attrType, 
+										table_attr_size[this.clustered_btree_attr-1],
+										1/* delete */);
+		
+        /* parse the data and store it in the heapfile */
+	    while ( sc.hasNextLine() ) {
+	    	String temp_next_line = sc.nextLine().trim();
+	    	String[] token_next_line = temp_next_line.split("\\s+");
+	    	for ( int i=0; i<table_num_attr; i++ ) {
+	    		try {
+		    		switch ( table_attr_type[i].attrType ) {
+		    			case AttrType.attrString:
+		    				t.setStrFld(i+1, token_next_line[i]);
+		    				break;
+		    			case AttrType.attrInteger:
+		    				t.setIntFld(i+1, Integer.parseInt(token_next_line[i]));
+		    				break;
+		    			default:
+		    				break;	    			
+		    		}
+	    		} catch (Exception e) {
+                    e.printStackTrace();
+                }
+	    	}
+	    	RID rid = new RID();
+	    	try {
+				rid = hf.insertRecord(t.returnTupleByteArray());
+			} catch (InvalidSlotNumberException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (InvalidTupleSizeException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (SpaceNotAvailableException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+	    }
+	    sc.close();
+        FldSpec[] projlist = new FldSpec[this.table_num_attr];
+        RelSpec rel = new RelSpec(RelSpec.outer);
+        for( int i=0; i<projlist.length; i++ )
+        {
+            projlist[i] = new FldSpec(rel, i+1);
+        }
+
+        AttrType[] attrType_for_proj = new AttrType[this.table_num_attr];
+
+        for(int i=0;i<this.table_num_attr;i++)
+            attrType_for_proj[i] = new AttrType(this.table_attr_type[i].attrType);
+
+        Sort sort_c = null;
+        FileScan fscan = null;
+        fscan = new FileScan(this.temp_heap_file,
+        					 this.table_attr_type, 
+        					 this.table_attr_size, 
+        					 (short)this.table_num_attr,
+        					 (short)this.table_num_attr,
+        					 projlist,
+        					 null);
+        
+        sort_c = new Sort(this.table_attr_type,
+        				  (short)this.table_num_attr,
+        				  this.table_attr_size,
+        				  fscan,
+        				  this.clustered_btree_attr,
+        				  new TupleOrder(TupleOrder.Ascending),
+        				  this.table_attr_size[this.clustered_btree_attr-1],
+        				  100);
+        Tuple t_s = TupleUtils.getEmptyTuple(this.table_attr_type, this.table_attr_size);
+        Tuple t1 = sort_c.get_next();
+
+        /* keep the key ready for insertion */
+		KeyClass key, prev_key;
+		prev_key = null;
+		key = null;
+        ClusteredHeapfile hf1 = new ClusteredHeapfile(this.table_heapfile);
+        RID curr_rid = new RID();
+        RID prev_rid = new RID(new PageId(INVALID_PAGE), INVALID_SLOT);
+        while ( t1 != null ) {
+        	t_s.tupleCopy(t1);
+        	if ( table_attr_type[this.clustered_btree_attr-1].attrType == AttrType.attrInteger ) {
+				key = new IntegerKey(t_s.getIntFld(this.clustered_btree_attr));
+			}
+			else {
+				key = new StringKey(t_s.getStrFld(this.clustered_btree_attr));
+			}
+        	curr_rid = hf1.insertRecord(t_s.getTupleByteArray(), this.table_attr_type, this.table_attr_size);
+        	if ( ( prev_rid.pageNo.pid != curr_rid.pageNo.pid ) && ( prev_rid.pageNo.pid != INVALID_PAGE ) ) {
+        		btf.insert(prev_key, prev_rid);
+        	}
+        	prev_rid.copyRid(curr_rid);
+        	if ( key instanceof IntegerKey )
+        		prev_key = new IntegerKey(((IntegerKey) key).getKey());
+        	else
+        		prev_key = new StringKey(((StringKey) key).getKey());
+        	t1 = sort_c.get_next();
+        }
+        if ( ( prev_rid.pageNo.pid == curr_rid.pageNo.pid ) && ( prev_rid.pageNo.pid != INVALID_PAGE ) ) {
+    		btf.insert(key, curr_rid);
+    	}
+        sort_c.close();
+        fscan.close();
+	    hf.deleteFile();
+	    System.out.println("Number of elements in the table "+hf1.getRecCnt());
+	    BT.printAllLeafPages(btf.getHeaderPage());
+	    btf.close();
+	}catch (HFException | HFBufMgrException | HFDiskMgrException | IOException e) {
+		System.err.println("*** Could not create heap file\n");
+		e.printStackTrace();
+	} catch (InvalidTypeException e1) {
+		// TODO Auto-generated catch block
+		e1.printStackTrace();
+	} catch (InvalidTupleSizeException e1) {
+		// TODO Auto-generated catch block
+		e1.printStackTrace();
+	} catch (InvalidSlotNumberException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (FileScanException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (TupleUtilsException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (InvalidRelation e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (SortException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (UnknowAttrType e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (LowMemException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (JoinsException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (Exception e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	}
+  }
+  
+  public void test() throws Exception {
+	  /* make a fake tuple and insert onto the data heap file */
+	  Tuple t = TupleUtils.getEmptyTuple(table_attr_type, table_attr_size);
+	  t.setStrFld(1, "Yash");
+	  t.setIntFld(2, 5);
+	  t.setIntFld(3, 3);
+	  t.setIntFld(4, 3);
+	  t.setIntFld(5, 3);
+	  t.setStrFld(6, "200954");
+	  t.print(table_attr_type);
+	  
+	  Tuple t1 = TupleUtils.getEmptyTuple(table_attr_type, table_attr_size);
+	  t1.setStrFld(1, "Zebra");
+	  t1.setIntFld(2, 5);
+	  t1.setIntFld(3, 3);
+	  t1.setIntFld(4, 3);
+	  t1.setIntFld(5, 3);
+	  t1.setStrFld(6, "200954");
+	  t1.print(table_attr_type);
+	  
+	  Tuple t2 = TupleUtils.getEmptyTuple(table_attr_type, table_attr_size);
+	  t2.setStrFld(1, "Modi");
+	  t2.setIntFld(2, 5);
+	  t2.setIntFld(3, 3);
+	  t2.setIntFld(4, 3);
+	  t2.setIntFld(5, 3);
+	  t2.setStrFld(6, "201954");
+	  t2.print(table_attr_type);
+	  
+	  Tuple t3 = TupleUtils.getEmptyTuple(table_attr_type, table_attr_size);
+	  t3.setStrFld(1, "Payal");
+	  t3.setIntFld(2, 5);
+	  t3.setIntFld(3, 3);
+	  t3.setIntFld(4, 3);
+	  t3.setIntFld(5, 3);
+	  t3.setStrFld(6, "201954");
+	  t3.print(table_attr_type);
+	  
+	  ClusteredHeapfile hp = new ClusteredHeapfile(this.table_heapfile);
+	  RID rid = hp.insertRecord(t, this.table_attr_type, this.table_attr_size, this.clustered_btree_attr, get_clustered_index_filename(clustered_btree_attr, "btree"));
+	  System.out.println("RID page no. "+rid.pageNo.pid);
+	  rid = hp.insertRecord(t1, this.table_attr_type, this.table_attr_size, this.clustered_btree_attr, get_clustered_index_filename(clustered_btree_attr, "btree"));
+	  System.out.println("RID page no. "+rid.pageNo.pid);
+	  rid = hp.insertRecord(t2, this.table_attr_type, this.table_attr_size, this.clustered_btree_attr, get_clustered_index_filename(clustered_btree_attr, "btree"));
+	  System.out.println("RID page no. "+rid.pageNo.pid);
+	  rid = hp.insertRecord(t3, this.table_attr_type, this.table_attr_size, this.clustered_btree_attr, get_clustered_index_filename(clustered_btree_attr, "btree"));
+	  System.out.println("RID page no. "+rid.pageNo.pid);
+  }
 }
 
 

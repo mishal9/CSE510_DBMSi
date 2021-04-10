@@ -18,23 +18,23 @@ public class BTFileScan  extends IndexFileScan
              implements  GlobalConst
 {
 
-  BTreeFile bfile; 
-  String treeFilename;     // B+ tree we're scanning 
-  BTLeafPage leafPage;   // leaf page containing current record
-  RID curRid;       // position in current leaf; note: this is 
+  public BTreeFile bfile; 
+  public String treeFilename;     // B+ tree we're scanning 
+  public BTLeafPage leafPage;   // leaf page containing current record
+  public RID curRid;       // position in current leaf; note: this is 
                              // the RID of the key/RID pair within the
                              // leaf page.                                    
-  boolean didfirst;        // false only before getNext is called
-  boolean deletedcurrent;  // true after deleteCurrent is called (read
+  public boolean didfirst;        // false only before getNext is called
+  public boolean deletedcurrent;  // true after deleteCurrent is called (read
                            // by get_next, written by deleteCurrent).
     
-  KeyClass endkey;    // if NULL, then go all the way right
+  public KeyClass endkey;    // if NULL, then go all the way right
                         // else, stop when current record > this value.
                         // (that is, implement an inclusive range 
                         // scan -- the only way to do a search for 
                         // a single value).
-  int keyType;
-  int maxKeysize;
+  public int keyType;
+  public int maxKeysize;
 
   /**
    * Iterate once (during a scan).  

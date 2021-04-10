@@ -8,6 +8,7 @@ import btree.BTreeFile;
 import btree.ConstructPageException;
 import btree.GetFileEntryException;
 import btree.IndexFileScan;
+import btree.InsertRecException;
 import btree.IntegerKey;
 import btree.IteratorException;
 import btree.KeyClass;
@@ -20,12 +21,13 @@ import btree.StringKey;
 import btree.UnpinPageException;
 import diskmgr.*;
 import bufmgr.*;
+import clustered_btree.ClusteredBTSortedPage;
 import clustered_btree.ClusteredBTreeFile;
 import global.*;
 import iterator.TupleUtils;
 
 /**  This heapfile implementation is directory-based. We maintain a
- *  directory of info about the data pages (which are of type HFPage
+ *  directory of info about the data pages (which are of type ClusteredBTSortedPage
  *  when loaded into memory).  The directory itself is also composed
  *  of HFPages, with each record being of type DataPageInfo
  *  as defined below.
@@ -52,28 +54,12 @@ import iterator.TupleUtils;
 * April 9, 1998
 */
 
-
-interface  Filetype {
-  int TEMP = 0;
-  int ORDINARY = 1;
-  
-} // end of Filetype
-
-public class Heapfile implements Filetype,  GlobalConst {
-  
-  
-  PageId      _firstDirPageId;   // page number of header page
-  int         _ftype;
-  protected     boolean     _file_deleted;
-  protected     String 	 _fileName;
-  private static int tempfilecount = 0;
-  
-  
+public class ClusteredHeapfile extends Heapfile implements GlobalConst {  
   
   /* get a new datapage from the buffer manager and initialize dpinfo
-     @param dpinfop the information in the new HFPage
+     @param dpinfop the information in the new ClusteredBTSortedPage
   */
-  protected HFPage _newDatapage(DataPageInfo dpinfop)
+  protected ClusteredBTSortedPage _newDatapage(DataPageInfo dpinfop)
     throws HFException,
 	   HFBufMgrException,
 	   HFDiskMgrException,
@@ -88,7 +74,7 @@ public class Heapfile implements Filetype,  GlobalConst {
       
       // initialize internal values of the new page:
       
-      HFPage hfpage = new HFPage();
+      ClusteredBTSortedPage hfpage = new ClusteredBTSortedPage();
       hfpage.init(pageId, apage);
       
       dpinfop.pageId.pid = pageId.pid;
@@ -105,8 +91,8 @@ public class Heapfile implements Filetype,  GlobalConst {
      If the user record cannot be found, return false.
   */
   private boolean  _findDataPage( RID rid,
-				  PageId dirPageId, HFPage dirpage,
-				  PageId dataPageId, HFPage datapage,
+				  PageId dirPageId, ClusteredBTSortedPage dirpage,
+				  PageId dataPageId, ClusteredBTSortedPage datapage,
 				  RID rpDataPageRid) 
     throws InvalidSlotNumberException, 
 	   InvalidTupleSizeException, 
@@ -117,8 +103,8 @@ public class Heapfile implements Filetype,  GlobalConst {
     {
       PageId currentDirPageId = new PageId(_firstDirPageId.pid);
       
-      HFPage currentDirPage = new HFPage();
-      HFPage currentDataPage = new HFPage();
+      ClusteredBTSortedPage currentDirPage = new ClusteredBTSortedPage();
+      ClusteredBTSortedPage currentDataPage = new ClusteredBTSortedPage();
       RID currentDataPageRid = new RID();
       PageId nextDirPageId = new PageId();
       // datapageId is stored in dpinfo.pageId 
@@ -223,9 +209,6 @@ public class Heapfile implements Filetype,  GlobalConst {
       
     } // end of _findDatapage		     
   
-  public Heapfile() {
-	  
-  }
   /** Initialize.  A null name produces a temporary heapfile which will be
    * deleted by the destructor.  If the name already denotes a file, the
    * file is opened; otherwise, a new empty file is created.
@@ -235,81 +218,14 @@ public class Heapfile implements Filetype,  GlobalConst {
    * @exception HFDiskMgrException exception thrown from diskmgr layer
    * @exception IOException I/O errors
    */
-  public  Heapfile(String name) 
+  public  ClusteredHeapfile(String name) 
     throws HFException, 
 	   HFBufMgrException,
 	   HFDiskMgrException,
 	   IOException
 	   
     {
-      // Give us a prayer of destructing cleanly if construction fails.
-      _file_deleted = true;
-      _fileName = null;
-      
-      if(name == null) 
-	{
-	  // If the name is NULL, allocate a temporary name
-	  // and no logging is required.
-	  _fileName = "tempHeapFile";
-	  String useId = new String("user.name");
-	  String userAccName;
-	  userAccName = System.getProperty(useId);
-	  _fileName = _fileName + userAccName;
-	  
-	  String filenum = Integer.toString(tempfilecount);
-	  _fileName = _fileName + filenum; 
-	  _ftype = TEMP;
-	  tempfilecount ++;
-	  
-	}
-      else
-	{
-	  _fileName = name;
-	  _ftype = ORDINARY;    
-	}
-      
-      // The constructor gets run in two different cases.
-      // In the first case, the file is new and the header page
-      // must be initialized.  This case is detected via a failure
-      // in the db->get_file_entry() call.  In the second case, the
-      // file already exists and all that must be done is to fetch
-      // the header page into the buffer pool
-      
-      // try to open the file
-      
-      Page apage = new Page();
-      _firstDirPageId = null;
-      if (_ftype == ORDINARY)
-	_firstDirPageId = get_file_entry(_fileName);
-      
-      if(_firstDirPageId==null)
-	{
-	  // file doesn't exist. First create it.
-	  _firstDirPageId = newPage(apage, 1);
-	  // check error
-	  if(_firstDirPageId == null)
-	    throw new HFException(null, "can't new page");
-	  
-	  add_file_entry(_fileName, _firstDirPageId);
-	  // check error(new exception: Could not add file entry
-	  
-	  HFPage firstDirPage = new HFPage();
-	  firstDirPage.init(_firstDirPageId, apage);
-	  PageId pageId = new PageId(INVALID_PAGE);
-	  
-	  firstDirPage.setNextPage(pageId);
-	  firstDirPage.setPrevPage(pageId);
-	  unpinPage(_firstDirPageId, true /*dirty*/ );
-	  
-	  
-	}
-      _file_deleted = false;
-      // ASSERTIONS:
-      // - ALL private data members of class Heapfile are valid:
-      //
-      //  - _firstDirPageId valid
-      //  - _fileName valid
-      //  - no datapage pinned yet    
+	  super(name);  
       
     } // end of constructor 
   
@@ -334,7 +250,7 @@ public class Heapfile implements Filetype,  GlobalConst {
       
       PageId nextDirPageId = new PageId(0);
       
-      HFPage currentDirPage = new HFPage();
+      ClusteredBTSortedPage currentDirPage = new ClusteredBTSortedPage();
       Page pageinbuffer = new Page();
       
       while(currentDirPageId.pid != INVALID_PAGE)
@@ -385,25 +301,26 @@ public class Heapfile implements Filetype,  GlobalConst {
    * @exception IOException I/O errors
    *
    * @return the rid of the record
+ * @throws InsertRecException 
    */
-  public RID insertRecord(byte[] recPtr) 
+  public RID insertRecord(byte[] recPtr, AttrType[] attrtype, short[] strsizes) 
     throws InvalidSlotNumberException,  
 	   InvalidTupleSizeException,
 	   SpaceNotAvailableException,
 	   HFException,
 	   HFBufMgrException,
 	   HFDiskMgrException,
-	   IOException
+	   IOException, InsertRecException
     {
       int dpinfoLen = 0;	
       int recLen = recPtr.length;
       boolean found;
       RID currentDataPageRid = new RID();
       Page pageinbuffer = new Page();
-      HFPage currentDirPage = new HFPage();
-      HFPage currentDataPage = new HFPage();
+      ClusteredBTSortedPage currentDirPage = new ClusteredBTSortedPage();
+      ClusteredBTSortedPage currentDataPage = new ClusteredBTSortedPage();
       
-      HFPage nextDirPage = new HFPage(); 
+      ClusteredBTSortedPage nextDirPage = new ClusteredBTSortedPage(); 
       PageId currentDirPageId = new PageId(_firstDirPageId.pid);
       PageId nextDirPageId = new PageId();  // OK
       
@@ -474,7 +391,7 @@ public class Heapfile implements Filetype,  GlobalConst {
 		  
 		  
 		  // currentDataPage is pinned: insert its record
-		  // calling a HFPage function
+		  // calling a ClusteredBTSortedPage function
 		  
 		  
 		  
@@ -547,7 +464,7 @@ public class Heapfile implements Filetype,  GlobalConst {
 		      unpinPage(currentDirPageId, true/*dirty*/);
 		      
 		      currentDirPageId.pid = nextDirPageId.pid;
-		      currentDirPage = new HFPage(nextDirPage);
+		      currentDirPage = new ClusteredBTSortedPage(nextDirPage);
 		      
 		      // remark that MINIBASE_BM->newPage already
 		      // pinned the new directory page!
@@ -596,7 +513,7 @@ public class Heapfile implements Filetype,  GlobalConst {
       
       
       RID rid;
-      rid = currentDataPage.insertRecord(recPtr);
+      rid = currentDataPage.insertRecord(recPtr, attrtype, strsizes, 1);
       
       dpinfo.recct++;
       dpinfo.availspace = currentDataPage.available_space();
@@ -643,9 +560,9 @@ public class Heapfile implements Filetype,  GlobalConst {
   
     {
       boolean status;
-      HFPage currentDirPage = new HFPage();
+      ClusteredBTSortedPage currentDirPage = new ClusteredBTSortedPage();
       PageId currentDirPageId = new PageId();
-      HFPage currentDataPage = new HFPage();
+      ClusteredBTSortedPage currentDataPage = new ClusteredBTSortedPage();
       PageId currentDataPageId = new PageId();
       RID currentDataPageRid = new RID();
       
@@ -721,7 +638,7 @@ public class Heapfile implements Filetype,  GlobalConst {
 	      
 	      // point previous page around deleted page:
 	      
-	      HFPage prevDirPage = new HFPage();
+		  ClusteredBTSortedPage prevDirPage = new ClusteredBTSortedPage();
 	      pinPage(pageId, prevDirPage, false);
 
 	      pageId = currentDirPage.getNextPage();
@@ -734,7 +651,7 @@ public class Heapfile implements Filetype,  GlobalConst {
 	      pageId = currentDirPage.getNextPage();
 	      if(pageId.pid != INVALID_PAGE)
 		{
-		  HFPage nextDirPage = new HFPage();
+	    	  ClusteredBTSortedPage nextDirPage = new ClusteredBTSortedPage();
 		  pageId = currentDirPage.getNextPage();
 		  pinPage(pageId, nextDirPage, false);
 		  
@@ -791,9 +708,9 @@ public class Heapfile implements Filetype,  GlobalConst {
 	   Exception
     {
       boolean status;
-      HFPage dirPage = new HFPage();
+      ClusteredBTSortedPage dirPage = new ClusteredBTSortedPage();
       PageId currentDirPageId = new PageId();
-      HFPage dataPage = new HFPage();
+      ClusteredBTSortedPage dataPage = new ClusteredBTSortedPage();
       PageId currentDataPageId = new PageId();
       RID currentDataPageRid = new RID();
       
@@ -851,9 +768,9 @@ public class Heapfile implements Filetype,  GlobalConst {
 	   Exception
     {
       boolean status;
-      HFPage dirPage = new HFPage();
+      ClusteredBTSortedPage dirPage = new ClusteredBTSortedPage();
       PageId currentDirPageId = new PageId();
-      HFPage dataPage = new HFPage();
+      ClusteredBTSortedPage dataPage = new ClusteredBTSortedPage();
       PageId currentDataPageId = new PageId();
       RID currentDataPageRid = new RID();
       
@@ -927,7 +844,7 @@ public class Heapfile implements Filetype,  GlobalConst {
       PageId nextDirPageId = new PageId();
       nextDirPageId.pid = 0;
       Page pageinbuffer = new Page();
-      HFPage currentDirPage =  new HFPage();
+      ClusteredBTSortedPage currentDirPage =  new ClusteredBTSortedPage();
       Tuple atuple;
       
       pinPage(currentDirPageId, currentDirPage, false);
@@ -965,68 +882,6 @@ public class Heapfile implements Filetype,  GlobalConst {
       
       delete_file_entry( _fileName );
     }
-  
-  /**
-   * short cut to access the pinPage function in bufmgr package.
-   * @see bufmgr.pinPage
-   */
-  protected void pinPage(PageId pageno, Page page, boolean emptyPage)
-    throws HFBufMgrException {
-    
-    try {
-    	//System.out.println("Pinning the page in heapfile");
-      SystemDefs.JavabaseBM.pinPage(pageno, page, emptyPage);
-    }
-    catch (Exception e) {
-      throw new HFBufMgrException(e,"Heapfile.java: pinPage() failed");
-    }
-    
-  } // end of pinPage
-
-  /**
-   * short cut to access the unpinPage function in bufmgr package.
-   * @see bufmgr.unpinPage
-   */
-  protected void unpinPage(PageId pageno, boolean dirty)
-    throws HFBufMgrException {
-
-    try {
-      SystemDefs.JavabaseBM.unpinPage(pageno, dirty);
-    }
-    catch (Exception e) {
-    	//System.out.println("Unpinning the page in heapfile");
-      throw new HFBufMgrException(e,"Heapfile.java: unpinPage() failed");
-    }
-
-  } // end of unpinPage
-
-  protected void freePage(PageId pageno)
-    throws HFBufMgrException {
-
-    try {
-      SystemDefs.JavabaseBM.freePage(pageno);
-    }
-    catch (Exception e) {
-      throw new HFBufMgrException(e,"Heapfile.java: freePage() failed");
-    }
-
-  } // end of freePage
-
-  protected PageId newPage(Page page, int num)
-    throws HFBufMgrException {
-
-    PageId tmpId = new PageId();
-
-    try {
-      tmpId = SystemDefs.JavabaseBM.newPage(page,num);
-    }
-    catch (Exception e) {
-      throw new HFBufMgrException(e,"Heapfile.java: newPage() failed");
-    }
-
-    return tmpId;
-
-  } // end of newPage
 
   private PageId get_file_entry(String filename)
     throws HFDiskMgrException {
@@ -1067,6 +922,565 @@ public class Heapfile implements Filetype,  GlobalConst {
     }
 
   } // end of delete_file_entry
+
+  /** Insert record into file in sorted manner, return its Rid.
+  *
+  * @param recPtr pointer of the record
+  * @param recLen the length of the record
+  * @param attrType array of attrtypes of the tuple
+  * @param strsizes array of the str sizes of the tuple
+  * @param key_index field number of the key attribute in the attrtype array
+  *
+  * @return the rid of the record
+ * @throws Exception 
+  */
+ public RID insertRecord(Tuple insert_tuple, AttrType[] attrType, short[] strsizes, int key_index, String btsfilename) 
+   throws Exception
+   {
+	 System.out.println("Into te new insert method");
+	 //t1.print(attrType);
+	 RID currentDataPageRid = new RID();
+	 RID data_inserted_rid = new RID();
+	 
+	 ClusteredBTSortedPage currentDirPage = new ClusteredBTSortedPage();
+     ClusteredBTSortedPage currentDataPage = new ClusteredBTSortedPage();
+     ClusteredBTSortedPage nextDirPage = new ClusteredBTSortedPage();
+     ClusteredBTSortedPage LastBTPage = new ClusteredBTSortedPage();
+     ClusteredBTSortedPage pageinbuffer = new ClusteredBTSortedPage();
+     ClusteredBTSortedPage newDataPage = new ClusteredBTSortedPage();
+     
+     PageId currentDirPageId = new PageId(_firstDirPageId.pid);
+     PageId lastBTPageId = new PageId();
+     PageId nextDirPageId = new PageId();
+     
+     pinPage( currentDirPageId, currentDirPage, false );
+	 
+	 /* enter data in the end of the file atleast */
+	 KeyClass key = null;
+	 KeyDataEntry nextentry = null;
+	 
+	 if ( attrType[key_index-1].attrType == AttrType.attrInteger )
+		 key = new IntegerKey(insert_tuple.getIntFld(key_index));
+	 else
+		 key = new StringKey(insert_tuple.getStrFld(key_index));
+	 
+	 ClusteredBTreeFile btf  = new ClusteredBTreeFile(btsfilename);
+	 BTFileScan indScan = ((ClusteredBTreeFile)btf).new_scan(key, null);
+	 nextentry = indScan.get_next();
+	 
+	 
+	 boolean found = false;
+	 DataPageInfo dpinfo = new DataPageInfo();
+	 DataPageInfo newdpinfo = new DataPageInfo();
+	 Tuple atuple;
+	 if ( nextentry == null ) 
+	 { //this key is going to be the highest key in the btree
+		 //Lookup the last datapage and see if there is available space
+		  lastBTPageId = new PageId(btf.headerPage.get_maxPageno());
+		  
+		  ClusteredBTSortedPage lookup_dirPage = new ClusteredBTSortedPage();
+	      PageId lookup_currentDirPageId = new PageId();
+	      ClusteredBTSortedPage lookup_dataPage = new ClusteredBTSortedPage();
+	      PageId lookup_currentDataPageId = new PageId();
+	      RID lookup_currentDataPageRid = new RID();
+	      
+	      boolean status = _findDataPage(lastBTPageId,
+				     lookup_currentDirPageId, lookup_dirPage, 
+				     lookup_currentDataPageId, lookup_dataPage,
+				     lookup_currentDataPageRid);
+	      
+	      if(status != true) return null; // record not found 
+	      
+	      atuple = lookup_dirPage.getRecord(lookup_currentDataPageRid);
+	      dpinfo = new DataPageInfo(atuple);
+	      
+	      if ( dpinfo.availspace >= insert_tuple.getTupleByteArray().length ) 
+	      {
+	    	  System.out.println("Case where key is largest so far we have seen and last datapage can hold the record");
+	    	  RID lookup_rid = lookup_dataPage.lastRecord();
+	    	  Tuple lasttuplebytes = lookup_dataPage.getRecord(lookup_rid);
+	    	  Tuple lasttuple = TupleUtils.getEmptyTuple(attrType, strsizes);
+	    	  lasttuple.tupleCopy(lasttuplebytes);
+	    	  lasttuple.print(attrType);
+	    	  KeyClass key_to_delete = null;
+	    	  if ( attrType[key_index-1].attrType == AttrType.attrInteger )
+    			 key_to_delete = new IntegerKey(lasttuple.getIntFld(key_index));
+	    	  else
+	    		  key_to_delete = new StringKey(lasttuple.getStrFld(key_index));
+	    	  btf.Delete(key_to_delete, lookup_rid);
+	    	  
+	    	  /* insert the record on the last data page */
+	    	  pinPage(lookup_currentDataPageId, lookup_dataPage, false);
+	    	  data_inserted_rid = lookup_dataPage.insertRecord(insert_tuple.getTupleByteArray());
+	    	  btf.insert(key, data_inserted_rid);
+	    	  dpinfo.recct++;
+    	      dpinfo.availspace = lookup_dataPage.available_space();
+    	      unpinPage(lookup_currentDataPageId, true);
+    	      
+    	      /* insert the dpinfo to lookup dir page */
+    	      atuple = lookup_dirPage.returnRecord(lookup_currentDataPageRid);
+    	      DataPageInfo dpinfo_ondirpage = new DataPageInfo(atuple);
+    	      dpinfo_ondirpage.availspace = dpinfo.availspace;
+    	      dpinfo_ondirpage.recct = dpinfo.recct;
+    	      dpinfo_ondirpage.pageId.pid = dpinfo.pageId.pid;
+    	      dpinfo_ondirpage.flushToTuple();
+    	      unpinPage(lookup_currentDirPageId, true /* = DIRTY */);
+    	      
+    	      unpinPage(lookup_currentDataPageId,false /*undirty*/);
+    	      unpinPage(currentDirPageId,false /*undirty*/);
+	    	  
+	      }
+	      else 
+	      {
+	    	  if ( lookup_dirPage.available_space() >= dpinfo.size ) 
+	    	  {
+	    		  System.out.println("Case where we need to insert new data page at the end and no new dir page");
+	    		  currentDataPage = _newDatapage(dpinfo);
+	    		  
+	    		  
+	    		  
+	    		  atuple = dpinfo.convertToTuple();
+	    		  
+	    		  byte [] tmpData = atuple.getTupleByteArray();
+	    		  lookup_currentDataPageRid = lookup_dirPage.insertRecord(tmpData);
+	    		  
+	    		  data_inserted_rid = currentDataPage.insertRecord(insert_tuple.getTupleByteArray());
+	    	      btf.insert(key, data_inserted_rid);
+	    	      
+	    	      dpinfo.recct++;
+	    	      dpinfo.availspace = currentDataPage.available_space();
+	    	      
+	    	      
+	    	      unpinPage(dpinfo.pageId, true /* = DIRTY */);
+	    	      
+	    	      atuple = lookup_dirPage.returnRecord(lookup_currentDataPageRid);
+	    	      DataPageInfo dpinfo_ondirpage = new DataPageInfo(atuple);
+	    	      
+	    	      
+	    	      dpinfo_ondirpage.availspace = dpinfo.availspace;
+	    	      dpinfo_ondirpage.recct = dpinfo.recct;
+	    	      dpinfo_ondirpage.pageId.pid = dpinfo.pageId.pid;
+	    	      dpinfo_ondirpage.flushToTuple();
+	    	      
+	    	      
+	    	      unpinPage(lookup_currentDirPageId, true /* = DIRTY */);
+	    	      
+	    	      unpinPage(lookup_currentDataPageId,false /*undirty*/);
+	    	      unpinPage(currentDirPageId,false /*undirty*/);
+	    	  }
+	    	  else {
+	    		  //TBD
+	    		  System.out.println("Case where we need to insert a new data page and a new dir page");
+	    		  unpinPage(lookup_currentDirPageId, false /* = DIRTY */);
+	    	      unpinPage(lookup_currentDataPageId,false /*undirty*/);
+	    	      unpinPage(currentDirPageId,false /*undirty*/);
+	    	      
+	    	      lookup_currentDirPageId = get_next_empty_slot(); // this page is already pinned
+	    		  pinPage(lookup_currentDirPageId, lookup_dirPage, false);
+	    		 
+	    		  newDataPage = _newDatapage(newdpinfo);
+	    		 
+	    		  //this is going to be the first insert inthe page
+	    		  data_inserted_rid = newDataPage.insertRecord(insert_tuple.getTupleByteArray());
+	    		  btf.insert(key, data_inserted_rid);
+	    		  newdpinfo.availspace = newDataPage.available_space();
+	    		  newdpinfo.recct = 1;
+	    		 
+	    		  lookup_currentDataPageRid = lookup_dirPage.insertRecord(newdpinfo.returnByteArray());
+	    		  unpinPage(lookup_currentDirPageId, true);
+	    		  unpinPage(lookup_currentDirPageId, false);
+	    		  unpinPage(newdpinfo.pageId, true);
+	    	  }
+	      }  
+	 }
+	 else {
+		 //next entry is not null so we have to insert in between
+		 //this might leed to a data page splitting and inturn a dir page splitting
+		 /* 3 cases
+		  * 1. No splitting of dir page, Splitting data page
+		  * 2. No splitting of dir page, No splitting of data page
+		  * 3. Splitting dir page, splitting data page
+		  */
+		 unpinPage(currentDirPageId, false);
+		 System.out.println("We are in the next entry != null scnenario");
+		 data_inserted_rid = handle_splitting_cases(insert_tuple, attrType, strsizes, key, nextentry, btf, key_index);
+	 }
+	 indScan.DestroyBTreeFileScan();
+	 BT.printAllLeafPages(btf.getHeaderPage());
+	 btf.close();
+	 
+	 return data_inserted_rid;
+     
+   }
+ 
+ private RID handle_splitting_cases( Tuple insert_tuple, 
+		 							AttrType[] attrtype, 
+		 							short[] strsizes, 
+		 							KeyClass key, 
+		 							KeyDataEntry nextentry,
+		 							ClusteredBTreeFile btf,
+		 							int key_index)
+  throws InvalidSlotNumberException, InvalidTupleSizeException, HFException, HFBufMgrException, HFDiskMgrException, Exception
+ {
+	 /* check for which case is this */
+	 KeyClass key_bt = null;
+	 if ( key instanceof IntegerKey ) {
+		 key_bt = ((IntegerKey)nextentry.key);
+		 System.out.println("current key value of that page "+((IntegerKey)nextentry.key).getKey());
+	 }
+	 else {
+		 key_bt = ((StringKey)nextentry.key);
+		 System.out.println("current key value of that page "+((StringKey)nextentry.key).getKey());
+	 }
+	 RID rid_bt = ((LeafData)nextentry.data).getData();
+	 System.out.println("Key to be inserted onto page rid"+rid_bt.slotNo+" "+rid_bt.pageNo.pid);
+	 RID inserted_rid = new RID();
+	 
+	 //look for the page with rid_bt
+	 ClusteredBTSortedPage lookup_dirPage = new ClusteredBTSortedPage();
+     PageId lookup_currentDirPageId = new PageId();
+     ClusteredBTSortedPage lookup_dataPage = new ClusteredBTSortedPage();
+     PageId lookup_currentDataPageId = new PageId();
+     RID lookup_currentDataPageRid = new RID();
+     
+     ClusteredBTSortedPage newDataPage = new ClusteredBTSortedPage();
+     
+     DataPageInfo dpinfo = new DataPageInfo();     
+     DataPageInfo newdpinfo = new DataPageInfo();
+	 Tuple atuple;
+	 
+     boolean status = _findDataPage(rid_bt.pageNo,
+		     lookup_currentDirPageId, lookup_dirPage, 
+		     lookup_currentDataPageId, lookup_dataPage,
+		     lookup_currentDataPageRid);
+     
+     
+     if ( status == false ) {
+    	 return null;
+     }
+     else 
+     {
+    	 atuple = lookup_dirPage.getRecord(lookup_currentDataPageRid);
+	     dpinfo = new DataPageInfo(atuple);
+	     //no splitting dir page case
+	     if ( lookup_dataPage.available_space() >= insert_tuple.getTupleByteArray().length )
+	     {
+	    	 System.out.println("Case splitting: No new data page, No new dir page");
+    		 //TBD case 2: No splitting dir page, No splitting data page
+    		 //btf.Delete(key_bt, rid_bt);
+    		 inserted_rid = lookup_dataPage.insertRecord(insert_tuple.getTupleByteArray(), attrtype, strsizes, key_index);
+    		 atuple = lookup_dirPage.returnRecord(lookup_currentDataPageRid);
+    	     DataPageInfo dpinfo_ondirpage = new DataPageInfo(atuple);
+    		 dpinfo_ondirpage.recct++;
+    		 dpinfo_ondirpage.availspace = lookup_dataPage.available_space();
+    		 dpinfo_ondirpage.pageId.pid = inserted_rid.pageNo.pid;
+    	     dpinfo_ondirpage.flushToTuple();
+    	     
+    	     RID tmprid = lookup_dataPage.lastRecord();
+    	     if ( ( tmprid.pageNo.pid == rid_bt.pageNo.pid ) && ( tmprid.slotNo == rid_bt.slotNo ) )
+    	     {
+    	    	 System.out.println("Case 2.1");
+    	    	 //do nothing
+    	     }
+    	     else
+    	     {
+    	    	 System.out.println("Case 2.2");
+    	    	 btf.Delete(key_bt, rid_bt);
+	    	     Tuple itr_tuple = lookup_dataPage.getRecord(tmprid);
+	    	     Tuple itr_hdr_tuple = TupleUtils.getEmptyTuple(attrtype, strsizes);
+	    	     itr_hdr_tuple.tupleCopy(itr_tuple);
+	    	     KeyClass key_to_enter = null;
+	    	     if ( key instanceof IntegerKey ) {
+	    	    	 key_to_enter = new IntegerKey(itr_hdr_tuple.getIntFld(key_index));
+	    		 }
+	    		 else {
+	    			 key_to_enter = new StringKey(itr_hdr_tuple.getStrFld(key_index));
+	    		 }
+	    	     btf.insert(key_to_enter, tmprid);
+    	     }
+    	     unpinPage(lookup_currentDataPageId, true);
+    	     unpinPage(lookup_currentDirPageId, true);
+	     }
+	     else
+	     {
+	    	 if ( lookup_dirPage.available_space() >= dpinfo.size )
+	    	 {
+	    		 System.out.println("Case splitting: Insert a new data page and no new dir page");
+	    		 // case 1: Data page splits but dir page remains same
+	    		 //delete the record for splitting apge from the btree first
+	    		 btf.Delete(key_bt, rid_bt);
+	    		 
+	    		 newDataPage = _newDatapage(newdpinfo);
+	    		 
+	    		 //We already have the directory page where we are going to insert the new dp info pinned in loopkup
+	    		 //At this point, we have the new data page pinned, and the old data page pinned lookup_datapage
+	    		 //start iterating the old data page and decide where the new data will go
+	    		 RID itr_rid = new RID();
+	    		 itr_rid = lookup_dataPage.firstRecord();
+	    		 boolean found = false;
+	    		 int i=0; //slotcnt where new data is to be inserted
+	    		 Tuple itr_tuple = new Tuple();
+	    		 Tuple itr_hdr_tuple = TupleUtils.getEmptyTuple(attrtype, strsizes);
+	    		 while ( ( found!=true ) && ( itr_rid!=null ) )
+	    		 {
+	    			 itr_tuple = lookup_dataPage.getRecord(itr_rid);
+	    			 itr_hdr_tuple.tupleCopy(itr_tuple);
+	    			 KeyClass itr_key = null;
+	    			 if ( key instanceof IntegerKey )
+	    				 itr_key = new IntegerKey(itr_hdr_tuple.getIntFld(key_index));
+	    			 else
+	    				 itr_key = new StringKey(itr_hdr_tuple.getStrFld(key_index));
+	    			 if ( BT.keyCompare(key, itr_key) > 0 ) {
+	    				 System.out.println("Key greater");
+	    				 itr_rid = lookup_dataPage.nextRecord(itr_rid);
+	    				 i++;
+	    				 continue;
+	    			 }
+	    			 itr_hdr_tuple.print(attrtype);
+	    			 break;
+	    		 }
+	    		 
+	    		 //now i have the count of tuple which are less than curent insert and the rid of the next
+	    		 //tuple bigger than the insert tuple
+	    		 RID tmprid = new RID();
+	    		 RID copy_itr_rid = new RID(itr_rid.pageNo, itr_rid.slotNo);
+	    		 while ( true ) {
+	    			 itr_tuple = lookup_dataPage.getRecord(copy_itr_rid);
+	    			 itr_hdr_tuple.tupleCopy(itr_tuple);
+	    			 tmprid = newDataPage.insertRecord(itr_hdr_tuple.getTupleByteArray());
+	    			 newdpinfo.recct++;
+	    			 newdpinfo.availspace = newDataPage.available_space();
+	    			 lookup_dataPage.deleteRecord(copy_itr_rid);
+	    			 dpinfo.recct--;
+	    			 dpinfo.availspace = lookup_dataPage.available_space();
+	    			 copy_itr_rid = lookup_dataPage.nextRecord(copy_itr_rid);
+	    			 if ( copy_itr_rid == null )
+	    				 break;
+	    		 }
+	    		 inserted_rid = lookup_dataPage.insertRecord(insert_tuple.getTupleByteArray());
+	    		 btf.insert(key, inserted_rid);
+	    		 itr_tuple = newDataPage.getRecord(newDataPage.lastRecord());
+	    		 btf.insert(key_bt, newDataPage.lastRecord());
+	    		 
+	    		 atuple = lookup_dirPage.returnRecord(lookup_currentDataPageRid);
+	    	     DataPageInfo dpinfo_ondirpage = new DataPageInfo(atuple);
+	    	     dpinfo_ondirpage.availspace = dpinfo.availspace;
+	    	     dpinfo_ondirpage.recct = dpinfo.recct;
+	    	     dpinfo_ondirpage.pageId.pid = dpinfo.pageId.pid;
+	    	     dpinfo_ondirpage.flushToTuple();
+	    	     
+	    	     atuple = newdpinfo.convertToTuple();
+	   		  	 byte [] tmpData = atuple.getTupleByteArray();
+	   		     tmprid = lookup_dirPage.insertRecord(tmpData);
+	   		     
+	   		     unpinPage(lookup_currentDirPageId, true);
+	   		     unpinPage(newdpinfo.pageId, true);
+	   		     unpinPage(lookup_currentDataPageId, true);
+	    	 }
+	    	 else
+	    	 {
+	    		 System.out.println("Case splitting: Insert a new data page and a new dir page");
+	    		 unpinPage(lookup_currentDirPageId, false);
+	    		 unpinPage(lookup_currentDataPageId, false);
+
+	    		 lookup_currentDirPageId = get_next_empty_slot(); // this page is already pinned
+	    		 pinPage(lookup_currentDirPageId, lookup_dirPage, false);
+	    		 
+	    		 newDataPage = _newDatapage(newdpinfo);
+	    		 
+	    		 //this is going to be the first insert inthe page
+	    		 inserted_rid = newDataPage.insertRecord(insert_tuple.getTupleByteArray());
+	    		 btf.insert(key, inserted_rid);
+	    		 newdpinfo.availspace = newDataPage.available_space();
+	    		 newdpinfo.recct = newDataPage.getSlotCnt();
+	    		 
+	    		 atuple = newdpinfo.convertToTuple();
+	   		  
+	   		  	 byte [] tmpData = atuple.getTupleByteArray();
+	    		 lookup_currentDataPageRid = lookup_dirPage.insertRecord(tmpData);
+	    		 unpinPage(lookup_currentDirPageId, true);
+	    		 unpinPage(lookup_currentDirPageId, true);
+	    		 unpinPage(newdpinfo.pageId, true);
+	    	 }
+	     }
+     }
+	 return inserted_rid;
+ }
+ 
+ /* returns a pinned page ID */
+ private PageId get_next_empty_slot() throws HFBufMgrException, IOException, HFException {
+	 boolean found = false;
+
+     RID currentDataPageRid = new RID();
+     Page pageinbuffer = new Page();
+     ClusteredBTSortedPage currentDirPage = new ClusteredBTSortedPage();
+     ClusteredBTSortedPage currentDataPage = new ClusteredBTSortedPage();
+     
+     ClusteredBTSortedPage nextDirPage = new ClusteredBTSortedPage(); 
+     PageId currentDirPageId = new PageId(_firstDirPageId.pid);
+     PageId nextDirPageId = new PageId();  // OK
+     PageId prevDirPageId = new PageId();  // OK
+          
+     DataPageInfo dpinfo = new DataPageInfo();
+     pinPage(currentDirPageId, currentDirPage, false/*Rdisk*/);
+     
+     while ( ( found == false ) && ( currentDirPageId.pid != INVALID_PAGE ) ) {
+    	 if ( currentDirPage.available_space() >= dpinfo.size )
+    	 {
+    		 return currentDirPageId;
+    	 }
+    	 else
+    	 {
+    		 prevDirPageId = new PageId(currentDirPageId.pid);
+    		 nextDirPageId = currentDirPage.getNextPage();
+    		 unpinPage(currentDirPageId, false);
+    		 currentDirPageId = new PageId(nextDirPageId.pid);
+    		 if ( currentDirPageId.pid != INVALID_PAGE ) {
+    			 pinPage(currentDirPageId, currentDirPage, false);
+    		 }
+    	 }
+     }
+	 
+	 
+	 nextDirPageId = newPage(pageinbuffer, 1);
+     // need check error!
+     if(nextDirPageId == null)
+    	 throw new HFException(null, "can't new pae");
+     
+     // initialize new directory page
+     nextDirPage.init(nextDirPageId, pageinbuffer);
+     pinPage(prevDirPageId, currentDirPage, false);
+     PageId temppid = new PageId(INVALID_PAGE);
+     nextDirPage.setNextPage(temppid);
+     nextDirPage.setPrevPage(currentDirPageId);
+     currentDirPage.setNextPage(nextDirPageId);
+     unpinPage(prevDirPageId, true);
+     return nextDirPageId;
+ }
+ 
+ /* Internal HeapFile function (used in getRecord and updateRecord):
+ returns pinned directory page and pinned data page of the specified 
+ user record(rid) and true if record is found.
+ If the user record cannot be found, return false.
+*/
+private boolean  _findDataPage( PageId pageno,
+			  PageId dirPageId, ClusteredBTSortedPage dirpage,
+			  PageId dataPageId, ClusteredBTSortedPage datapage,
+			  RID rpDataPageRid) 
+throws InvalidSlotNumberException, 
+   InvalidTupleSizeException, 
+   HFException,
+   HFBufMgrException,
+   HFDiskMgrException,
+   Exception
+{
+  PageId currentDirPageId = new PageId(_firstDirPageId.pid);
+  
+  ClusteredBTSortedPage currentDirPage = new ClusteredBTSortedPage();
+  ClusteredBTSortedPage currentDataPage = new ClusteredBTSortedPage();
+  RID currentDataPageRid = new RID();
+  PageId nextDirPageId = new PageId();
+  // datapageId is stored in dpinfo.pageId 
+  
+  
+  pinPage(currentDirPageId, currentDirPage, false/*read disk*/);
+  
+  Tuple atuple = new Tuple();
+  
+  while (currentDirPageId.pid != INVALID_PAGE)
+{// Start While01
+  // ASSERTIONS:
+  //  currentDirPage, currentDirPageId valid and pinned and Locked.
+  
+  for( currentDataPageRid = currentDirPage.firstRecord();
+       currentDataPageRid != null;
+       currentDataPageRid = currentDirPage.nextRecord(currentDataPageRid))
+    {
+      try{
+	atuple = currentDirPage.getRecord(currentDataPageRid);
+      }
+      catch (InvalidSlotNumberException e)// check error! return false(done) 
+	{
+	  return false;
+	}
+      
+      DataPageInfo dpinfo = new DataPageInfo(atuple);
+      try{
+	pinPage(dpinfo.pageId, currentDataPage, false/*Rddisk*/);
+	
+	
+	//check error;need unpin currentDirPage
+      }catch (Exception e)
+	{
+	  unpinPage(currentDirPageId, false/*undirty*/);
+	  dirpage = null;
+	  datapage = null;
+	  throw e;
+	}
+      
+      
+      
+      // ASSERTIONS:
+      // - currentDataPage, currentDataPageRid, dpinfo valid
+      // - currentDataPage pinned
+      
+      if(dpinfo.pageId.pid==pageno.pid)
+	{
+	  // found user's record on the current datapage which itself
+	  // is indexed on the current dirpage.  Return both of these.
+	  
+	  dirpage.setpage(currentDirPage.getpage());
+	  dirPageId.pid = currentDirPageId.pid;
+	  
+	  datapage.setpage(currentDataPage.getpage());
+	  dataPageId.pid = dpinfo.pageId.pid;
+	  
+	  rpDataPageRid.pageNo.pid = currentDataPageRid.pageNo.pid;
+	  rpDataPageRid.slotNo = currentDataPageRid.slotNo;
+	  return true;
+	}
+      else
+	{
+	  // user record not found on this datapage; unpin it
+	  // and try the next one
+	  unpinPage(dpinfo.pageId, false /*undirty*/);
+	  
+	}
+      
+    }
+  
+  // if we would have found the correct datapage on the current
+  // directory page we would have already returned.
+  // therefore:
+  // read in next directory page:
+  
+  nextDirPageId = currentDirPage.getNextPage();
+  try{
+    unpinPage(currentDirPageId, false /*undirty*/);
+  }
+  catch(Exception e) {
+    throw new HFException (e, "heapfile,_find,unpinpage failed");
+  }
+  
+  currentDirPageId.pid = nextDirPageId.pid;
+  if(currentDirPageId.pid != INVALID_PAGE)
+    {
+      pinPage(currentDirPageId, currentDirPage, false/*Rdisk*/);
+      if(currentDirPage == null)
+	throw new HFException(null, "pinPage return null page");  
+    }
+  
+  
+} // end of While01
+  // checked all dir pages and all data pages; user record not found:(
+  
+  dirPageId.pid = dataPageId.pid = INVALID_PAGE;
+  
+  return false;   
+  
+  
+} // end of _findDatapage		     
+
 
 }// End of HeapFile 
 

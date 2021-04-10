@@ -102,6 +102,7 @@ public class Scan implements GlobalConst{
     }
     
     catch (Exception e) {
+    	System.out.println("Scanning rid slot "+rid.slotNo+" page "+rid.pageNo.pid);
   //    System.err.println("SCAN: Error in Scan" + e);
       e.printStackTrace();
     }   

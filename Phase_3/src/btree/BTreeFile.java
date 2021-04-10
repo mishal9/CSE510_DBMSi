@@ -21,12 +21,12 @@ import heap.*;
 public class BTreeFile extends IndexFile 
   implements GlobalConst {
   
-  private final static int MAGIC0=1989;
+  protected final static int MAGIC0=1989;
   
-  private final static String lineSep=System.getProperty("line.separator");
+  protected final static String lineSep=System.getProperty("line.separator");
   
-  private static FileOutputStream fos;
-  private static DataOutputStream trace;
+  protected static FileOutputStream fos;
+  protected static DataOutputStream trace;
   
   
   /** It causes a structured trace to be written to a
@@ -57,9 +57,9 @@ public class BTreeFile extends IndexFile
     }
   
   
-  private BTreeHeaderPage headerPage;
-  private  PageId  headerPageId;
-  private String  dbname;  
+  public BTreeHeaderPage headerPage;
+  public  PageId  headerPageId;
+  public String  dbname;  
   
   /**
    * Access method to data member.
@@ -84,7 +84,7 @@ public class BTreeFile extends IndexFile
   
   
   
-  private Page pinPage(PageId pageno) 
+  protected Page pinPage(PageId pageno) 
     throws PinPageException
     {
       try {
@@ -110,7 +110,7 @@ public class BTreeFile extends IndexFile
       }      
     }
   
-  private void unpinPage(PageId pageno) 
+  protected void unpinPage(PageId pageno) 
     throws UnpinPageException
     { 
       try{
@@ -122,7 +122,7 @@ public class BTreeFile extends IndexFile
       } 
     }
   
-  private void freePage(PageId pageno) 
+  protected void freePage(PageId pageno) 
     throws FreePageException
     {
       try{
@@ -146,7 +146,7 @@ public class BTreeFile extends IndexFile
       } 
     }
   
-  private void unpinPage(PageId pageno, boolean dirty) 
+  protected void unpinPage(PageId pageno, boolean dirty) 
     throws UnpinPageException
     {
       try{
@@ -310,7 +310,7 @@ public class BTreeFile extends IndexFile
       
     }
   
-  private void  updateHeader(PageId newRoot)
+  protected void  updateHeader(PageId newRoot)
     throws   IOException, 
 	     PinPageException,
 	     UnpinPageException
@@ -536,7 +536,7 @@ public class BTreeFile extends IndexFile
   
   
   
-  private KeyDataEntry  _insert(KeyClass key, RID rid,  
+  protected KeyDataEntry  _insert(KeyClass key, RID rid,  
 				PageId currentPageId) 
     throws  PinPageException,  
 	    IOException,
@@ -1021,7 +1021,7 @@ public class BTreeFile extends IndexFile
    *        null if no key was found.
    */
   
-  BTLeafPage findRunStart (KeyClass lo_key, 
+  protected BTLeafPage findRunStart (KeyClass lo_key, 
 			   RID startrid)
     throws IOException, 
 	   IteratorException,  
@@ -1154,7 +1154,7 @@ public class BTreeFile extends IndexFile
    * BTLeafPage::delUserRid.
    */
   
-  private boolean NaiveDelete ( KeyClass key, RID rid)
+  protected boolean NaiveDelete ( KeyClass key, RID rid)
     throws LeafDeleteException,  
 	   KeyNotMatchException,  
 	   PinPageException,
@@ -1259,7 +1259,7 @@ public class BTreeFile extends IndexFile
    *@return false if no such record; true if succees 
    */
   
-  private boolean FullDelete (KeyClass key,  RID rid)
+  protected boolean FullDelete (KeyClass key,  RID rid)
     throws IndexInsertRecException,
 	   RedistributeException,
 	   IndexSearchException, 
@@ -1798,7 +1798,7 @@ public class BTreeFile extends IndexFile
       return scan;
     }
   
-  void trace_children(PageId id)
+  protected void trace_children(PageId id)
     throws  IOException, 
 	    IteratorException, 
 	    ConstructPageException,
