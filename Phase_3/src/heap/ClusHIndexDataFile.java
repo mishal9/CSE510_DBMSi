@@ -47,11 +47,11 @@ public class ClusHIndexDataFile extends Heapfile {
 					found = true;
 					if(recLen <= dpinfo.availspace)
 					{
-						HashUtils.log("data page has enough space");
+						//HashUtils.log("data page has enough space");
 						ridOfPageInDirPage = new RID(new PageId(rid.pageNo.pid), rid.slotNo);
 						canBeStored = true;
 					}else {
-						HashUtils.log("not enough space in data page :"+pageToInsertId.pid);
+						//HashUtils.log("not enough space in data page :"+pageToInsertId.pid);
 						canBeStored = false;
 					}
 
@@ -84,10 +84,8 @@ public class ClusHIndexDataFile extends Heapfile {
 		
 		RID rid;
 		rid = dataPageToInsert.insertRecord(record);
-		System.out.println("dpinfo.availspace: "+dpinfo.availspace);
 		dpinfo.recct++;
 		dpinfo.availspace = dataPageToInsert.available_space();
-		System.out.println("after dpinfo.availspace: "+dpinfo.availspace);
 		dpinfo.flushToTuple();
 		unpinPage(dpinfo.pageId, true /* = DIRTY */);
 		
@@ -102,18 +100,19 @@ public class ClusHIndexDataFile extends Heapfile {
 	      
 		unpinPage(currentDirPageId, true /* = DIRTY */);
 
-
 		return rid;
 
 	}
 	
 	public RID insertRecordToNewPage(byte[] record) throws Exception {
-
 		//create new page and insert data to it
 
 		DataPageInfo newPageInfo = new DataPageInfo();
 		HFPage newDataPage = _newDatapage(newPageInfo );
-		pinPage(newPageInfo.pageId, newDataPage, false);
+		
+		//have commented the below line as _newDatapage already pins the page
+		//pinPage(newPageInfo.pageId, newDataPage, false);
+		
 		RID insertedRecordLocation;
 		insertedRecordLocation = newDataPage.insertRecord(record);
 		newPageInfo.recct++;
@@ -130,7 +129,6 @@ public class ClusHIndexDataFile extends Heapfile {
 		{
 			//HashUtils.log("checking dir page id :"+currentDirPageId.pid);
 			pinPage(currentDirPageId, currentDirPage, false);
-
 			
 			if(currentDirPage.available_space() >= newPageInfo.size) {
 				foundSpaceInDirectoryPage = true;
@@ -187,7 +185,6 @@ public class ClusHIndexDataFile extends Heapfile {
 
 		//cleanup
 		unpinPage(newPageInfo.pageId, true /* = DIRTY */);
-
 
 		return insertedRecordLocation;
 

@@ -91,7 +91,7 @@ public class ClusHIndex implements GlobalConst{
 		HashUtils.log("targetUtilization: " + targetUtilization);
 		if (currentUtilization >= targetUtilization) {
 			HashUtils.log("Adding a bucket page to HIndex");
-
+			//System.out.println("currentUtilization: " + currentUtilization);
 			headerPage.set_NumberOfBuckets(headerPage.get_NumberOfBuckets() + 1);
 			// rehash element in bucket splitPointer
 

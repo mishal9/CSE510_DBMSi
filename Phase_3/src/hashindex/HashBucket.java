@@ -62,7 +62,7 @@ public class HashBucket implements GlobalConst {
 		}
 		scan.closescan();
 		if (foundLocation == null) {
-			System.out.println("Not found in hashbucket");
+			//HashUtils.log("Not found in hashbucket");
 			return false;
 		}
 		HashUtils.log("foundLocation: " + foundLocation);

@@ -42,10 +42,16 @@ public class HashUtils {
 
 	//util function to debug log stuff
 	// if no debug log wanted, comment the print statement
-	public static void log(Object str) {
-		System.out.println(str);
+	public static void log(String str) {
+		if(true)System.out.println(str); //comment this line to disable logs
+		return;
 	}
 
+	public static void printPinnedPages() {
+		System.out.println(Thread.currentThread().getStackTrace()[2].getMethodName()+"pin: "+(SystemDefs.JavabaseBM.getNumBuffers()- SystemDefs.JavabaseBM.getNumUnpinnedBuffers()));
+
+	}
+	
 	// static methods ///////
 	public static PageId get_file_entry(String filename) throws GetFileEntryException {
 		try {

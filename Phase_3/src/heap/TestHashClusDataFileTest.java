@@ -2,11 +2,8 @@ package heap;
 
 
 import java.io.File;
-import java.io.IOException;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
-import btree.KeyNotMatchException;
 import global.AttrType;
 import global.GlobalConst;
 import global.RID;
@@ -14,7 +11,6 @@ import global.SystemDefs;
 import hashindex.ClusHIndex;
 import hashindex.ClusHIndexScan;
 import hashindex.HashBucket;
-import hashindex.HashEntry;
 import hashindex.HashKey;
 import hashindex.HashUtils;
 
@@ -37,21 +33,25 @@ public class TestHashClusDataFileTest implements GlobalConst {
 	}
 	
 	private void testInsert() throws Exception {
-		ClusHIndex index = new ClusHIndex("huehuehue",AttrType.attrInteger, 4,80);
-		for (int k = 10; k < 15; k++) {
-			System.out.println("------------------------------------------------------");
+		String INDEX_NAME = "huehuehue";
+		ClusHIndex index = new ClusHIndex(INDEX_NAME,AttrType.attrString, 4,80);
+		System.out.println("\n\nNOW INSERTING SOME DATA IN INDEX \n");
+		for (int k = 10; k < 10; k++) {
+			HashUtils.log("------------------------------------------------------");
 			for (int i = 0; i < 10; i++) {
-				System.out.println("\nooooooooooooooo");
-				// HashKey key= new HashKey(i+"laskdhlaskdlaskhdlaskdhlaskdlaskhdalskdhlaskdhalskdhlaskdhlahdlaskdhalksaskdhaskdhaskdhlaskdhlahsd"+i);
-				HashKey key = new HashKey(k);
+				HashUtils.log("\nooooooooooooooo");
+				
+				HashKey key= new HashKey(generateRandomChars(5));
+				//HashKey key = new HashKey(k);
 				byte[] arr = new byte[key.size()];
 				key.writeToByteArray(arr, 0);
 				Tuple tup = new Tuple(arr, 0, arr.length);
 				RID loc = index.insert(key, tup);
-
+//				printPinnedPages();
 			}
-			System.out.println("------------------------------------------------------\n");
+			HashUtils.log("------------------------------------------------------\n");
 		}
+		//System.out.println(index.getHeaderPage().get_EntriesCount());
 		Function<byte[],String> mapper= (a)->{
 			try {
 				return new HashKey(a, 0).toString();
@@ -60,12 +60,16 @@ public class TestHashClusDataFileTest implements GlobalConst {
 				return e.getMessage();
 			}
 		};
+		System.out.println("\n\nPRINTING ALL BUCKETS OF THE INDEX \n");
 		for(int i =0;i<index.getHeaderPage().get_NumberOfBuckets();i++) {
 			System.out.println("BUCKET: "+i);
 			HashBucket bucket = new HashBucket(index.getHeaderPage().get_NthBucketName(i));
-			bucket.printToConsole();
+			//bucket.printToConsole();
 		}
-		index.getDataFile().printToConsole(mapper);
+		System.out.println("\n\nPRINTING THE DATA FILE \n");
+		//index.getDataFile().printToConsole(mapper);
+		index.close();
+		index = new ClusHIndex(INDEX_NAME);
 		System.out.println("\n\nNOW TESTING SCAN OF INDEX WITH SEARCH KEY \n");
 		ClusHIndexScan scan = index.new_scan(new HashKey(13));
 		Tuple tup= null;
@@ -77,9 +81,19 @@ public class TestHashClusDataFileTest implements GlobalConst {
 			}
 			System.out.println("scan.get_next(): "+mapper.apply(tup.getTupleByteArray()));
 		} while (tup!=null);
-
+		index.close();
 	}
-	
+	public static String generateRandomChars( int length) {
+		String candidateChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+	    StringBuilder sb = new StringBuilder();
+	    java.util.Random random = new java.util.Random();
+	    for (int i = 0; i < length; i++) {
+	        sb.append(candidateChars.charAt(random.nextInt(candidateChars
+	                .length())));
+	    }
+
+	    return sb.toString();
+	}
 	
 	private void testFile() throws Exception {
 		ClusHIndexDataFile file = new ClusHIndexDataFile("whateveer");
