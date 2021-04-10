@@ -8,7 +8,7 @@ import global.GlobalConst;
 import global.PageId;
 import global.RID;
 import global.SystemDefs;
-import heap.HashClustDataFile;
+import heap.ClusHIndexDataFile;
 import heap.Heapfile;
 import heap.Scan;
 import heap.Tuple;
@@ -17,7 +17,7 @@ public class ClusHIndex implements GlobalConst{
 
 	HIndexHeaderPage headerPage;
 	PageId headerPageId;
-	HashClustDataFile dataFile;
+	ClusHIndexDataFile dataFile;
 
 	final float targetUtilization;
 
@@ -45,7 +45,7 @@ public class ClusHIndex implements GlobalConst{
 			headerPage = new HIndexHeaderPage(headerPageId);
 		}
 		this.targetUtilization = (float) ((float)headerPage.get_TargetUtilization()/100.0);
-		this.dataFile = new HashClustDataFile("clhdf"+fileName);
+		this.dataFile = new ClusHIndexDataFile("clhdf"+fileName);
 
 
 	}
@@ -57,7 +57,7 @@ public class ClusHIndex implements GlobalConst{
 		}
 		headerPage = new HIndexHeaderPage(headerPageId);
 		this.targetUtilization = (float) ((float)headerPage.get_TargetUtilization()/100.0);
-		this.dataFile = new HashClustDataFile("clhdf"+fileName);
+		this.dataFile = new ClusHIndexDataFile("clhdf"+fileName);
 	}
 
 	public RID insert(HashKey key,Tuple tup) throws Exception {
@@ -225,7 +225,7 @@ public class ClusHIndex implements GlobalConst{
 	public HIndexHeaderPage getHeaderPage() {
 		return headerPage;
 	}
-	public HashClustDataFile getDataFile() {
+	public ClusHIndexDataFile getDataFile() {
 		return dataFile;
 	}
 }

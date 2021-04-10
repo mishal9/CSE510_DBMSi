@@ -9,9 +9,9 @@ import global.RID;
 import hashindex.HashKey;
 import hashindex.HashUtils;
 
-public class HashClustDataFile extends Heapfile {
+public class ClusHIndexDataFile extends Heapfile {
 
-	public HashClustDataFile(String name) throws HFException, HFBufMgrException, HFDiskMgrException, IOException {
+	public ClusHIndexDataFile(String name) throws HFException, HFBufMgrException, HFDiskMgrException, IOException {
 		super(name);
 		//HashUtils.log("Created ClustDataFile" + name);
 	}

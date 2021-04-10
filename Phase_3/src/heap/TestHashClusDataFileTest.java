@@ -78,7 +78,7 @@ public class TestHashClusDataFileTest implements GlobalConst {
 	
 	
 	private void testFile() throws Exception {
-		HashClustDataFile file = new HashClustDataFile("whateveer");
+		ClusHIndexDataFile file = new ClusHIndexDataFile("whateveer");
 		for (int i = 10; i < 100; i++) {
 			//HashKey key = new HashKey(i+"laskdhlaskdlaskhdlaskdhlaskdlaskhdalskdhlaskdhalskdhlaskdhlahdlaskdhalksaskdhaskdhaskdhlaskdhlahsd"+i);
 			HashKey key = new HashKey(i);
