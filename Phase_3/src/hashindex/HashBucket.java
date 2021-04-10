@@ -62,7 +62,7 @@ public class HashBucket implements GlobalConst {
 		}
 		scan.closescan();
 		if (foundLocation == null) {
-			System.out.println("Not found in hashbucket");
+			//HashUtils.log("Not found in hashbucket");
 			return false;
 		}
 		HashUtils.log("foundLocation: " + foundLocation);
@@ -94,6 +94,11 @@ public class HashBucket implements GlobalConst {
 		}
 		System.out.println("] count: " + count);
 		scan.closescan();
+	}
+
+	@Override
+	public String toString() {
+		return "HashBucket [heapfileName=" + heapfileName + "]";
 	}
 
 }

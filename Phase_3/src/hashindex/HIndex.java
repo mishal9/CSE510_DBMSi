@@ -29,7 +29,7 @@ public class HIndex implements GlobalConst {
 		if (headerPageId == null) // file not exist
 		{
 			HashUtils.log("Creating new HIndex header page");
-			//creating new header page with filename and number of buckets 1
+			//creating new header page with filename and number of buckets 2
 			headerPage = new HIndexHeaderPage(fileName,2);
 			headerPageId = headerPage.getPageId();
 			add_file_entry(fileName, headerPageId);
@@ -195,27 +195,10 @@ public class HIndex implements GlobalConst {
 				HashBucket bucket = new HashBucket(this.headerPage.get_NthBucketName(i));
 				bucket.printToConsole();
 			}
-		} catch (HFException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (HFBufMgrException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (HFDiskMgrException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
 	
-	public void scan_index() {
-		
-	}
-
 
 }

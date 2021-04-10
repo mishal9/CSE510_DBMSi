@@ -15,6 +15,9 @@ import iterator.TupleUtils;
 
 public class HashIndexGeneratorUtil implements GlobalConst {
 
+	/**
+	 * NOT TESTED YET, MAY NOT WORK
+	 */
 	public static void createUnclusteredHashIndex(String hashIndexName, String heapFileName, AttrType[] attrType, short[] t1_str_sizes,
 			int keyNoForIndex) throws Exception {
 		Scan scan = new Heapfile(heapFileName).openScan();
