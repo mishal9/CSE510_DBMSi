@@ -17,8 +17,8 @@ import java.io.*;
  * The algorithm is extremely simple:
  * <p>
  * foreach tuple r in R do
- *   foreach s in index lookup in S do
- *     if (ri == sj) then add (r, s) to the result.
+ * foreach s in index lookup in S do
+ * if (ri == sj) then add (r, s) to the result.
  */
 
 public class IndexNestedLoopJoin extends Iterator {
@@ -40,9 +40,10 @@ public class IndexNestedLoopJoin extends Iterator {
 
     private BTreeFile btreefile;
     private BTFileScan b_inner;
-    private KeyClass hi_key=null, lo_key=null;
+    private KeyClass hi_key = null, lo_key = null;
     private Operand temp_op;
-    private boolean index_found;
+    private boolean index_found;  //TODO: Write code to modify this variable
+
     /**
      * constructor
      * Initialize the two relations which are joined, including relation type,
@@ -64,18 +65,18 @@ public class IndexNestedLoopJoin extends Iterator {
      * @throws NestedLoopException exception from this class
      */
     public IndexNestedLoopJoin(AttrType in1[],
-                            int len_in1,
-                            short t1_str_sizes[],
-                            AttrType in2[],
-                            int len_in2,
-                            short t2_str_sizes[],
-                            int amt_of_mem,
-                            Iterator am1,
-                            String relationName,
-                            CondExpr outFilter[],
-                            CondExpr rightFilter[],
-                            FldSpec proj_list[],
-                            int n_out_flds
+                               int len_in1,
+                               short t1_str_sizes[],
+                               AttrType in2[],
+                               int len_in2,
+                               short t2_str_sizes[],
+                               int amt_of_mem,
+                               Iterator am1,
+                               String relationName,
+                               CondExpr outFilter[],
+                               CondExpr rightFilter[],
+                               FldSpec proj_list[],
+                               int n_out_flds
     ) throws IOException, NestedLoopException {
 
         _in1 = new AttrType[in1.length];
@@ -111,11 +112,13 @@ public class IndexNestedLoopJoin extends Iterator {
         } catch (TupleUtilsException e) {
             throw new NestedLoopException(e, "TupleUtilsException is caught by NestedLoopsJoins.java");
         }
-
+        index_found = true; //TODO: Logic to modify this
 
         try {
             hf = new Heapfile(relationName);
-            btreefile = new BTreeFile(relationName + ".unclusteredindex");
+            if (index_found) {
+                btreefile = new BTreeFile(relationName + ".unclustered");
+            }
 
         } catch (Exception e) {
             throw new NestedLoopException(e, "Create new heapfile failed.");
@@ -177,19 +180,17 @@ public class IndexNestedLoopJoin extends Iterator {
                 } catch (Exception e) {
                     throw new NestedLoopException(e, "openScan failed");
                 }
-
                 if ((outer_tuple = outer.get_next()) == null) {
                     done = true;
                     if (inner != null) {
-
                         inner = null;
                     }
-
                     return null;
                 }
-
-                set_keys(outer_tuple);  // set hi_key and lo_key
-                b_inner = btreefile.new_scan(lo_key, hi_key);
+                if (index_found == true) {
+                    set_keys(outer_tuple);  // set hi_key and lo_key
+                    b_inner = btreefile.new_scan(lo_key, hi_key);
+                }
             }  // ENDS: if (get_from_outer == TRUE)
 
 
@@ -197,19 +198,26 @@ public class IndexNestedLoopJoin extends Iterator {
             // while the inner is not completely scanned && there
             // is no match (with pred),get a tuple from the inner.
 
+            RID rid = null;
+            if (index_found) {
+                KeyDataEntry kde = b_inner.get_next();
+                if(kde == null){
+                    get_from_outer = true;
+                    continue;
+                }
+                LeafData ld = (LeafData) kde.data;
 
-            RID rid = new RID();
-            if (index_found){
-                rid = ((LeafData) b_inner.get_next().data).getData());
-            }
-            else{
+                rid = (ld).getData();
+                inner_tuple = hf.getRecord(rid);
+            } else {
                 rid = new RID();
+                inner_tuple = inner.getNext(rid);
             }
-            while ((inner_tuple = inner.getNext(rid) != null) {
+            while (inner_tuple != null) {
                 inner_tuple.setHdr((short) in2_len, _in2, t2_str_sizescopy);
                 // these inner checks makes sure of conditions other than the index attribute => having or not having index doesnot matter
-                if (PredEval.Eval(RightFilter, inner_tuple, null, _in2, null) == true) {
-                    if (PredEval.Eval(OutputFilter, outer_tuple, inner_tuple, _in1, _in2) == true) {
+                if (PredEval.Eval(RightFilter, inner_tuple, null, _in2, null)) {
+                    if (PredEval.Eval(OutputFilter, outer_tuple, inner_tuple, _in1, _in2)) {
                         // Apply a projection on the outer and inner tuples.
                         Projection.Join(outer_tuple, _in1,
                                 inner_tuple, _in2,
@@ -217,11 +225,18 @@ public class IndexNestedLoopJoin extends Iterator {
                         return Jtuple;
                     }
                 }
-                if (index_found){
-                    rid = ((LeafData) b_inner.get_next().data).getData());
-                }
-                else{
+                if (index_found) {
+                    KeyDataEntry kde = b_inner.get_next();
+                    if(kde == null){
+                        get_from_outer = true;
+                        continue;
+                    }
+                    LeafData ld = (LeafData) kde.data;
+                    rid = (ld).getData();
+                    inner_tuple = hf.getRecord(rid);
+                } else {
                     rid = new RID();
+                    inner_tuple = inner.getNext(rid);
                 }
             }
             lo_key = null;
@@ -235,11 +250,11 @@ public class IndexNestedLoopJoin extends Iterator {
     }
 
     /*
-    * uses the filter on Output table to get the key for index lookup.
+     * uses the filter on Output table to get the key for index lookup.
      */
-    private void set_keys(Tuple outer){
+    private void set_keys(Tuple outer) {
         CondExpr temp_ptr = OutputFilter[0];
-        try{
+        try {
             switch (temp_ptr.op.attrOperator) {
                 case AttrOperator.aopEQ:
                     break;
@@ -279,7 +294,7 @@ public class IndexNestedLoopJoin extends Iterator {
                     break;
             }
 
-            switch(temp_ptr.type1.attrType){
+            switch (temp_ptr.type1.attrType) {
                 case AttrType.attrInteger:
                     lo_key = new IntegerKey(temp_ptr.operand1.integer);
                     break;
@@ -291,7 +306,7 @@ public class IndexNestedLoopJoin extends Iterator {
                     break;
                 case AttrType.attrSymbol:
                     int fld1 = temp_ptr.operand1.symbol.offset;
-                    switch(_in1[fld1-1].attrType){
+                    switch (_in1[fld1 - 1].attrType) {
                         case AttrType.attrInteger:
                             lo_key = new IntegerKey(outer_tuple.getIntFld(fld1));
                             break;
@@ -307,7 +322,7 @@ public class IndexNestedLoopJoin extends Iterator {
                     break;
             }
 
-            switch(temp_ptr.type2.attrType){
+            switch (temp_ptr.type2.attrType) {
                 case AttrType.attrInteger:
                     hi_key = new IntegerKey(temp_ptr.operand2.integer);
                     break;
@@ -319,7 +334,7 @@ public class IndexNestedLoopJoin extends Iterator {
                     break;
                 case AttrType.attrSymbol:
                     int fld2 = temp_ptr.operand2.symbol.offset;
-                    switch(_in1[fld2-1].attrType){
+                    switch (_in1[fld2 - 1].attrType) {
                         case AttrType.attrInteger:
                             hi_key = new IntegerKey(outer_tuple.getIntFld(fld2));
                             break;
@@ -334,7 +349,7 @@ public class IndexNestedLoopJoin extends Iterator {
                     }
                     break;
             }
-        } catch(Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -349,9 +364,11 @@ public class IndexNestedLoopJoin extends Iterator {
      */
     public void close() throws JoinsException, IOException, IndexException {
         if (!closeFlag) {
-
             try {
                 outer.close();
+                if(index_found){
+                    btreefile.close();
+                }
             } catch (Exception e) {
                 throw new JoinsException(e, "NestedLoopsJoin.java: error in closing iterator.");
             }

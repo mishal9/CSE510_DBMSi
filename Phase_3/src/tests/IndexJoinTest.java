@@ -330,7 +330,7 @@ class JoinsDriver implements GlobalConst {
 
         int keyType=AttrType.attrInteger;
         try{
-            btree_index = new BTreeFile("reserves.in"+".unclusteredindex", keyType, 100, 0);
+            btree_index = new BTreeFile("reserves.in"+".unclustered", keyType, 100, 0);
         }catch(Exception e){
             e.printStackTrace();
         }
@@ -350,6 +350,7 @@ class JoinsDriver implements GlobalConst {
             try {
                 rid = f.insertRecord(t.returnTupleByteArray());
                 btree_index.insert(new IntegerKey(t.getIntFld(1)), rid);
+//                System.out.println(t.noOfFlds() + " RID: " + rid.pageNo + "." + rid.slotNo);
             } catch (Exception e) {
                 System.err.println("*** error in Heapfile.insertRecord() ***");
                 status = FAIL;
@@ -432,12 +433,6 @@ class JoinsDriver implements GlobalConst {
 
         short[] Rsizes = new short[1];
         Rsizes[0] = 15;
-        AttrType[] Btypes = {
-                new AttrType(AttrType.attrInteger),
-                new AttrType(AttrType.attrString),
-                new AttrType(AttrType.attrString),
-        };
-
 
         short[] JJsize = new short[1];
         JJsize[0] = 30;
@@ -478,11 +473,41 @@ class JoinsDriver implements GlobalConst {
             System.err.println("*** Error setting up scan for sailors");
             Runtime.getRuntime().exit(1);
         }
+        // Just checking if index is created properly
+//        try{
+//            Heapfile hf = new Heapfile("reserves.in");
+//            BTFileScan scan = (new BTreeFile("reserves.in"+".unclusteredindex")).new_scan(null, null);
+//            KeyDataEntry entry;
+//            RID rid = new RID();
+//            t = null;
+//
+//            System.out.println("HF Scan: ");
+//            Scan hf_scan = hf.openScan();
+//            while((t = hf_scan.getNext(rid))!=null){
+//                System.out.println(t.noOfFlds() + " RID: " + rid.pageNo + "." + rid.slotNo);
+//            }
+//
+//            hf_scan.closescan();
+//
+//            hf = new Heapfile("reserves.in");
+//            entry = scan.get_next();
+//            while(entry!=null){
+//                Tuple temp = getEmptyTuple();
+//                rid = ((LeafData) entry.data).getData();
+//                temp.tupleCopy(hf.getRecord(rid));
+//                System.out.println(temp.noOfFlds());
+//                temp.printTuple(Rtypes);
+//                entry = scan.get_next();
+//            }
+//        }catch (Exception e){
+//            e.printStackTrace();
+//        }
 
 
-        NestedLoopsJoins inl = null;
+
+        IndexNestedLoopJoin inl = null, inl2 = null;
         try {
-            inl = new NestedLoopsJoins(Stypes, 4, Ssizes,
+            inl = new IndexNestedLoopJoin(Stypes, 4, Ssizes,
                     Rtypes, 3, Rsizes,
                     5,
                     am, "reserves.in",
@@ -506,7 +531,7 @@ class JoinsDriver implements GlobalConst {
             while ((t = inl.get_next()) != null) {
                 t.print(JJtype);
             }
-
+            inl.close();
         }catch (Exception e) {
             System.err.println("*** Error preparing for nested_loop_join");
             System.err.println("" + e);
@@ -520,6 +545,25 @@ class JoinsDriver implements GlobalConst {
             Runtime.getRuntime().exit(1);
         }
 
+    }
+    private Tuple getEmptyTuple() throws InvalidTypeException, InvalidTupleSizeException, IOException {
+        AttrType[] Rtypes = new AttrType[3];
+        Rtypes[0] = new AttrType(AttrType.attrInteger);
+        Rtypes[1] = new AttrType(AttrType.attrInteger);
+        Rtypes[2] = new AttrType(AttrType.attrString);
+
+        short[] Rsizes = new short[1];
+        Rsizes[0] = 15;
+        Tuple t = new Tuple();
+        try {
+            t.setHdr((short) 3, Rtypes, Rsizes);
+        } catch (Exception e) {
+            System.err.println("*** error in Tuple.setHdr() ***");
+        }
+        int size = t.size();
+        t = new Tuple(size);
+        t.setHdr((short) Rtypes.length, Rtypes, Rsizes);
+        return t;
     }
 
     private void Disclaimer() {
