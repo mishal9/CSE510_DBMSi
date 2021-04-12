@@ -1685,8 +1685,26 @@ throws InvalidSlotNumberException,
     	  }
     	  else {
     		  RID lookup_rid = null;
+    		  lookup_rid = nelookup_dataPage.firstRecord();
     		  Tuple atuple_entry = new Tuple();
     		  Tuple atuple_hdr_entry = TupleUtils.getEmptyTuple(attrtype, strsizes);
+    		  
+    		  /* see if the tuple belongs here */
+    		  atuple_entry = nelookup_dataPage.getRecord(lookup_rid);
+    		  atuple_hdr_entry.tupleCopy(atuple_entry);
+    		  KeyClass key_lowest = null;
+    		  if ( key instanceof IntegerKey ) {
+    			  key_lowest = new IntegerKey(atuple_hdr_entry.getIntFld(key_index));
+    		  }
+    		  else {
+    			  key_lowest = new StringKey(atuple_hdr_entry.getStrFld(key_index));
+    		  }
+    		  if ( BT.keyCompare(key_lowest, key) > 0 ) {
+    			  btf.close();
+    			  unpinPage(nelookup_currentDirPageId, false);
+    			  unpinPage(nelookup_currentDataPageId, false);
+    			  return false;
+    		  }
     		  DataPageInfo dpinfo_entry = new DataPageInfo();
     		  atuple_entry = nelookup_dirPage.getRecord(nelookup_currentDataPageRid);
   		      dpinfo_entry = new DataPageInfo(atuple_entry);
@@ -1710,6 +1728,8 @@ throws InvalidSlotNumberException,
 		    			unpinPage(nelookup_currentDataPageId, true);
 		    			freePage(nelookup_currentDataPageId);
 		    			unpinPage(nelookup_currentDirPageId, true);
+		    			
+		    			deleteRecord(delete_tuple, btsfilename, attrtype, strsizes, key_index);
 		    			return true;
 		    		}
   		    	  }
@@ -1735,6 +1755,8 @@ throws InvalidSlotNumberException,
   		      dpinfo_ondirpage.flushToTuple();
   		      unpinPage(nelookup_currentDirPageId, true);
   		      unpinPage(nelookup_currentDataPageId, true);
+  		      
+  		      deleteRecord(delete_tuple, btsfilename, attrtype, strsizes, key_index);
   		      return true;
     	  }
       }
