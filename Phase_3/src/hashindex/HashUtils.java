@@ -5,7 +5,11 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import btree.AddFileEntryException;
+import btree.GetFileEntryException;
 import global.AttrType;
+import global.PageId;
+import global.SystemDefs;
 
 public class HashUtils {
 
@@ -35,11 +39,36 @@ public class HashUtils {
 		bos.close();
 		return int_bytes;
 	}
-	
+
 	//util function to debug log stuff
 	// if no debug log wanted, comment the print statement
-	public static void log(Object str) {
-		System.out.println(str);
+	public static void log(String str) {
+		if(true)System.out.println(str); //comment this line to disable logs
+		return;
+	}
+
+	public static void printPinnedPages() {
+		System.out.println(Thread.currentThread().getStackTrace()[2].getMethodName()+"pin: "+(SystemDefs.JavabaseBM.getNumBuffers()- SystemDefs.JavabaseBM.getNumUnpinnedBuffers()));
+
 	}
 	
+	// static methods ///////
+	public static PageId get_file_entry(String filename) throws GetFileEntryException {
+		try {
+			return SystemDefs.JavabaseDB.get_file_entry(filename);
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new GetFileEntryException(e, "");
+		}
+	}
+
+	public static void add_file_entry(String fileName, PageId pageno) throws AddFileEntryException {
+		try {
+			SystemDefs.JavabaseDB.add_file_entry(fileName, pageno);
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new AddFileEntryException(e, "");
+		}
+	}
+
 }

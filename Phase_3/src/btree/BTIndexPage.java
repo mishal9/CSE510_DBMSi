@@ -105,7 +105,7 @@ public class BTIndexPage extends BTSortedPage{
    * any reason
    *@return  RID of the record deleted. Can not return null.
    */
-  RID deleteKey(KeyClass key) 
+  public RID deleteKey(KeyClass key) 
     throws IndexFullDeleteException 
     {
       KeyDataEntry  entry;
@@ -153,7 +153,7 @@ public class BTIndexPage extends BTSortedPage{
    *@return It returns the page_no of the child to be searched next.
    *@exception IndexSearchException Index search failed;
    */
-  PageId getPageNoByKey(KeyClass key) 
+  public PageId getPageNoByKey(KeyClass key) 
     throws IndexSearchException         
     {
       KeyDataEntry entry;
@@ -260,7 +260,7 @@ public class BTIndexPage extends BTSortedPage{
    *@return It returns the left most link. 
    *@exception IOException error from the lower layer
    */
-  protected PageId getLeftLink() 
+  public PageId getLeftLink() 
     throws IOException
     {
       return getPrevPage(); 
@@ -289,7 +289,7 @@ public class BTIndexPage extends BTSortedPage{
    *@exception IndexFullDeleteException delete failed
    */  
   
-  int  getSibling(KeyClass key, PageId pageNo)
+  public int  getSibling(KeyClass key, PageId pageNo)
     throws IndexFullDeleteException
     {
       
@@ -396,7 +396,7 @@ public class BTIndexPage extends BTSortedPage{
    *@exception  IndexSearchException index search failed 
    * 
    */
-  KeyClass findKey(KeyClass key) 
+  public KeyClass findKey(KeyClass key) 
     throws IndexSearchException
     {
       return findKeyData(key).key;
@@ -413,7 +413,7 @@ public class BTIndexPage extends BTSortedPage{
    *@exception RedistributeException Redistribution failed
    *@return true if redistrbution success. false if we can not redistribute them.
    */
-  boolean redistribute(BTIndexPage indexPage, BTIndexPage parentIndexPage,
+  public boolean redistribute(BTIndexPage indexPage, BTIndexPage parentIndexPage,
 		       int direction, KeyClass deletedKey)
     throws RedistributeException
     {

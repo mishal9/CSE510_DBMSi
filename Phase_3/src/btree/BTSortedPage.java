@@ -92,7 +92,7 @@ public class BTSortedPage  extends HFPage{
    *@return its rid where the entry was inserted; null if no space left.
    *@exception  InsertRecException error when insert
    */
-   protected RID insertRecord( KeyDataEntry entry)
+   public RID insertRecord( KeyDataEntry entry)
           throws InsertRecException 
    {
      int i;
@@ -192,7 +192,7 @@ public class BTSortedPage  extends HFPage{
    *@param return the number of records.
    *@exception IOException I/O errors
    */
-  protected int numberOfRecords() 
+  public int numberOfRecords() 
     throws IOException
     {
       return getSlotCnt();

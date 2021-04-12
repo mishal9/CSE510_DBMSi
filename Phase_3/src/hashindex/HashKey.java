@@ -97,9 +97,7 @@ public class HashKey {
 	}
 
 	/**
-	 * this function just return the last n bytes of the key
-	 * @param n
-	 * @return
+	 * this function just return the last n bits of the key
 	 */
 	public int getHash(int n) {
 
@@ -112,13 +110,14 @@ public class HashKey {
 			return primIntValue & bitMask;
 
 		case AttrType.attrString:
-
-			byte[] s = ((String) value).getBytes();
-			int bitsOfStr = 0;
-			for (int i = 0; i < s.length; i++) {
-				bitsOfStr |= (s[i] << (i * Byte.SIZE));
-			}
-			return bitsOfStr & bitMask;
+			int bla = ((String) value).hashCode();
+//			System.out.println("hhhhhhhhhhhhhhhhhhhhhhhhhhh "+bla);
+//			byte[] s = ((String) value).getBytes();
+//			int bitsOfStr = 0;
+//			for (int i = 0; i < s.length; i++) {
+//				bitsOfStr |= (s[i] << (i * Byte.SIZE));
+//			}
+			return bla & bitMask;
 			
 
 		case AttrType.attrReal:

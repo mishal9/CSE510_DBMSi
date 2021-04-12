@@ -43,6 +43,8 @@ public interface GlobalConst {
   
   public static final int INVALID_PAGE = -1;
   
+  public static final int INVALID_SLOT = -1;
+  
   /* target utilisation for index */
   public static int TARGET_UTILISATION = 80;
 }

@@ -529,6 +529,29 @@ public class HFPage extends Page
       
       return rid;
     }
+
+  /**
+   * @return RID of last record on the page, null if no records
+   * records exist on the page
+   * @exception  IOException I/O errors
+   * in C++ Status nextRecord (RID curRid, RID& nextRid)
+   */
+  public RID lastRecord () 
+    throws IOException 
+    {
+      RID rid = new RID();
+      slotCnt = Convert.getShortValue (SLOT_CNT, data);
+      if ( slotCnt ==0 )
+    	  return null;
+      
+      // found a non-empty slot
+      
+      rid.slotNo = slotCnt-1;
+      curPage.pid = Convert.getIntValue(CUR_PAGE, data);
+      rid.pageNo.pid = curPage.pid;
+      
+      return rid;
+    }
   
   /**
    * copies out record with RID rid into record pointer.
