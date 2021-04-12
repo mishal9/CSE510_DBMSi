@@ -319,6 +319,12 @@ class DriverPhase3 extends TestDriver implements GlobalConst
     	String tablename = tokens[1];
     	System.out.println("Deleting data of file "+filename+" from table "+tablename);
     	//TBD delete the data from the mentioned table and update the index structures accordingly
+    	Table table = SystemDefs.JavabaseDB.get_relation(tablename);
+    	if ( table == null ) {
+    		System.err.println("ERROR: Table does not exist**");
+    		return;
+    	}
+    	table.delete_table(filename);
     }
     
     /* parses the output_table query for the exact structure 
