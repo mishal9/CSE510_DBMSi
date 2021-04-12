@@ -30,11 +30,6 @@ public class HashBucket implements GlobalConst {
 		RID hashLocation = heapfile.insertRecord(byteArr);
 	}
 
-	public boolean deleteEntry(HashKey key)
-			throws InvalidSlotNumberException, HFException, HFBufMgrException, HFDiskMgrException, Exception {
-		return deleteEntry(new HashEntry(key, new RID()));
-	}
-
 	public boolean deleteEntry(HashEntry entryToDelete)
 			throws InvalidSlotNumberException, HFException, HFBufMgrException, HFDiskMgrException, Exception {
 		RID foundLocation = null;
@@ -53,7 +48,7 @@ public class HashBucket implements GlobalConst {
 			
 			HashEntry scannedHashEntry = new HashEntry(tup.returnTupleByteArray(), 0);
 			// System.out.println(i+" scannedRid: "+scannedRID);
-			if (scannedHashEntry.key.equals(entryToDelete.key)) {
+			if (scannedHashEntry.equals(entryToDelete)) {
 				done = true;
 				foundLocation = new RID(new PageId(rid.pageNo.pid), rid.slotNo);
 				break;
@@ -89,7 +84,7 @@ public class HashBucket implements GlobalConst {
 				break;
 			}
 			HashEntry scannedHashEntry = new HashEntry(tup.returnTupleByteArray(), 0);
-			System.out.println("  " + scannedHashEntry + " @ " + rid);
+			System.out.println("  " + scannedHashEntry + " @ IN-BUCKET LOCATION:  " + rid);
 			count++;
 		}
 		System.out.println("] count: " + count);

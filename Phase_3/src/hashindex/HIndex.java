@@ -1,7 +1,5 @@
 package hashindex;
 
-import java.io.IOException;
-
 import btree.AddFileEntryException;
 import btree.GetFileEntryException;
 import btree.KeyNotMatchException;
@@ -9,9 +7,6 @@ import global.GlobalConst;
 import global.PageId;
 import global.RID;
 import global.SystemDefs;
-import heap.HFBufMgrException;
-import heap.HFDiskMgrException;
-import heap.HFException;
 import heap.Heapfile;
 import heap.Scan;
 import heap.Tuple;
@@ -103,9 +98,45 @@ public class HIndex implements GlobalConst {
 		}
 	}
 
-	public boolean delete(HashKey key)  throws Exception{
-		HashBucket bucket = new HashBucket(headerPage.get_NthBucketName(0));
-		boolean status = bucket.deleteEntry(key);
+	public boolean delete(HashKey key,RID rid)  throws Exception{
+		int hash = key.getHash(headerPage.get_H0Deapth());
+		int splitPointer = headerPage.get_SplitPointerLocation();
+		if (hash < splitPointer) {
+			hash = key.getHash(headerPage.get_H0Deapth() + 1);
+			//HashUtils.log("new hash: " + hash);
+		}
+
+		int bucketNumber = hash;
+		String bucketName = headerPage.get_NthBucketName(bucketNumber);
+		HashBucket bucket = new HashBucket(bucketName);
+		HashEntry entry = new HashEntry(key, rid);
+
+		HashUtils.log("Deleting entry: "+entry+" from bucket: "+bucketNumber);
+		boolean status = bucket.deleteEntry(entry);
+		headerPage.set_EntriesCount(headerPage.get_EntriesCount() - 1);
+		
+		//now shrink index if reqd
+		float maxPossibleEntries = (headerPage.get_NumberOfBuckets() * MINIBASE_PAGESIZE) / entry.size();
+		float currentUtilization = headerPage.get_EntriesCount() / maxPossibleEntries;
+		HashUtils.log("currentUtilization: " + currentUtilization);
+		float deletionTargetUtilization = (float) (targetUtilization - 0.1 < 0 ? 0 : targetUtilization - 0.1) ;
+		HashUtils.log("deletionTargetUtilization: " + deletionTargetUtilization);
+		if (headerPage.get_NumberOfBuckets() > 2 && currentUtilization <= deletionTargetUtilization) {
+			HashUtils.log("Shrinking the index");
+			System.out.println("sp: "+splitPointer);
+			rehashBucket(headerPage.get_NthBucketName(splitPointer+1), headerPage.get_H0Deapth());
+			splitPointer --;
+			if (splitPointer == -1) {
+				splitPointer = (1 << headerPage.get_H0Deapth()) - 1;
+				headerPage.set_H0Deapth(headerPage.get_H0Deapth() - 1);
+				HashUtils.log("resetting split pointer to  "+splitPointer);
+			}
+			headerPage.set_NumberOfBuckets(headerPage.get_NumberOfBuckets()-1);
+			headerPage.set_SplitPointerLocation(splitPointer);
+			HashUtils.log("after shrink splitPointer: " + splitPointer);
+		}
+		
+		
 		return status;
 	}
 
