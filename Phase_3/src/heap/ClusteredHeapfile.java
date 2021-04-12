@@ -937,6 +937,9 @@ public class ClusteredHeapfile extends Heapfile implements GlobalConst {
  public RID insertRecord(Tuple insert_tuple, AttrType[] attrType, short[] strsizes, int key_index, String btsfilename) 
    throws Exception
    {
+	 if ( btsfilename == null ) {
+		 insertRecord(insert_tuple.getTupleByteArray());
+	 }
 	 System.out.println("Into te new insert method");
 	 //t1.print(attrType);
 	 RID currentDataPageRid = new RID();
@@ -1556,6 +1559,7 @@ throws InvalidSlotNumberException,
 		    	entry = new KeyDataEntry(key_nextentry, nextentry.data);
 				continue;
 		    }
+			System.out.println("Hitting merge");
 			newDataPage = _newDatapage(newdpinfo);
 			Tuple itr = new Tuple();
 			Tuple itr_hdr = TupleUtils.getEmptyTuple(attrtype, strsizes);
