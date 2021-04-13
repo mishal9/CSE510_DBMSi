@@ -1,6 +1,7 @@
 package iterator;
 
 import bufmgr.PageNotReadException;
+import diskmgr.PCounter;
 import global.AggType;
 import global.AttrType;
 import global.RID;
@@ -189,6 +190,9 @@ public class GroupByWithSort extends Iterator{
                     System.out.println("Aggregation in grp " + lastPolled + " : "+grp_result);
                     System.out.println("Skyline in group "+lastPolled+" : " +_skyline_grp_heap.getRecCnt());
 
+                    // Compute Skyline here
+                    skyline_Aggregation(_skyline_grp_heap, agg_list, _attrType, _attr_sizes, 20);
+
                     // Construct result tuple
                     Tuple result = new Tuple(this._tuple_size);
                     try {
@@ -281,6 +285,8 @@ public class GroupByWithSort extends Iterator{
 
         try {
             System.out.println("Skyline in group "+lastPolled+" : " +_skyline_grp_heap.getRecCnt());
+            // Compute Skyline here
+            skyline_Aggregation(_skyline_grp_heap, agg_list, _attrType, _attr_sizes, 20);
         } catch (InvalidSlotNumberException e) {
             e.printStackTrace();
         } catch (InvalidTupleSizeException e) {
@@ -356,6 +362,52 @@ public class GroupByWithSort extends Iterator{
             }
         }
 
+    }
+
+    public void skyline_Aggregation(Heapfile skyline_grp_heap, FldSpec[] pref_list, AttrType[] attrType, short[] attrSize, int buffer){
+        BlockNestedLoopsSky blockNestedLoopsSky = null;
+        int numSkyEle = 0;
+
+        int[] preference_list = new int[pref_list.length];
+        for(int i=0; i<pref_list.length; i++){
+            preference_list[i] = pref_list[i].offset;
+        }
+
+        try {
+            blockNestedLoopsSky = new BlockNestedLoopsSky(attrType,
+                    (short)3,
+                    attrSize,
+                    null,
+                    "skyline_group_by.in",
+                    preference_list,
+                    preference_list.length,
+                    buffer);
+
+            System.out.println("Printing the Block Nested Loop Skyline");
+            Tuple temp;
+            try {
+                temp = blockNestedLoopsSky.get_next();
+                while (temp!=null) {
+                    float[] outval = new float[3];
+                    outval[0] = temp.getFloFld(1);
+                    outval[1] = temp.getFloFld(2);
+                    outval[2] = temp.getFloFld(3);
+
+                    System.out.println("Skyline Result: " + outval[0] + " " + outval[1] + " " + outval[2]);
+                    numSkyEle++;
+                    temp = blockNestedLoopsSky.get_next();
+                }
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+        } catch (IOException | FileScanException | TupleUtilsException | InvalidRelation e) {
+            e.printStackTrace();
+        } finally {
+            blockNestedLoopsSky.close();
+        }
+        System.out.println("Skyline Length: "+numSkyEle);
     }
 
     @Override

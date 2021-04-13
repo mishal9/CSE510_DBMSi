@@ -27,7 +27,7 @@ class GroupBySortDriver extends TestDriver
             {1, 2, 3},
             {2, 7, 8},
             {2, 3, 4},
-            {3, 5, 8}
+            {2, 5, 10}
     };
 
     private static float[][] data2 = {              // AVG
@@ -280,9 +280,10 @@ class GroupBySortDriver extends TestDriver
 
         FldSpec groupByAttr = new FldSpec(new RelSpec(RelSpec.outer), 1);
 
-        FldSpec[] aggList = new FldSpec[1];
+        FldSpec[] aggList = new FldSpec[2];
         rel = new RelSpec(RelSpec.outer);
         aggList[0] = new FldSpec(rel, 2);
+        aggList[1] = new FldSpec(rel, 3);
 
         // create an iterator by open a file scan
         FldSpec[] projlist = new FldSpec[3];
