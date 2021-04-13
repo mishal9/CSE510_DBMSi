@@ -36,7 +36,7 @@ public class TestHashClusDataFileTest implements GlobalConst {
 		String INDEX_NAME = "huehuehue";
 		ClusHIndex index = new ClusHIndex("clhdf"+INDEX_NAME, INDEX_NAME,AttrType.attrString, 4,80);
 		System.out.println("\n\nNOW INSERTING SOME DATA IN INDEX \n");
-		for (int k = 10; k < 10; k++) {
+		for (int k = 10; k < 15; k++) {
 			HashUtils.log("------------------------------------------------------");
 			for (int i = 0; i < 10; i++) {
 				HashUtils.log("\nooooooooooooooo");
@@ -61,11 +61,7 @@ public class TestHashClusDataFileTest implements GlobalConst {
 			}
 		};
 		System.out.println("\n\nPRINTING ALL BUCKETS OF THE INDEX \n");
-		for(int i =0;i<index.getHeaderPage().get_NumberOfBuckets();i++) {
-			System.out.println("BUCKET: "+i);
-			HashBucket bucket = new HashBucket(index.getHeaderPage().get_NthBucketName(i));
-			//bucket.printToConsole();
-		}
+		index.printBucketInfo();
 		System.out.println("\n\nPRINTING THE DATA FILE \n");
 		//index.getDataFile().printToConsole(mapper);
 		index.close();

@@ -594,7 +594,7 @@ public class Table implements GlobalConst{
 			temp = scan.getNext(rid);
 		}
 		scan.closescan();
-		hasher.print_bucket_names();
+		hasher.printBucketInfo();
 		hasher.close();
 		
 		/* mark the unclustered index exist key */
@@ -1404,7 +1404,7 @@ public class Table implements GlobalConst{
 		  System.out.println("*******************Printing unclustered hash index*******************");
 		  String hsfilename = get_unclustered_index_filename(att_number, "hash");
 		  HIndex hasher = new HIndex(hsfilename);
-		  hasher.print_bucket_names();
+		  hasher.printBucketInfo();
 		  hasher.close();
 	  }
 	  if ( clustered_index_exist(att_number, "hash") ) {

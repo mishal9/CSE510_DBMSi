@@ -72,11 +72,7 @@ public class HashTest implements GlobalConst {
 			RID rid = new RID(new PageId(i),i);
 			h.insert(key, rid);
 		}
-		for(int i =0;i<h.headerPage.get_NumberOfBuckets();i++) {
-			System.out.println("BUCKET: "+i);
-			HashBucket bucket = new HashBucket(h.headerPage.get_NthBucketName(i));
-			bucket.printToConsole();
-		}
+		h.printBucketInfo();
 		System.out.println("\n DELETING ------------------------------------------------------------------\n");
 		for (int i = 5; i < 45; i++) {
 			//HashKey key = new HashKey(i+"laskdhlaskdlaskhdlaskdhlaskdlaskhdalskdhlaskdhalskdhlaskdhlahdlaskdhalksaskdhaskdhaskdhlaskdhlahsd"+i);
@@ -84,12 +80,7 @@ public class HashTest implements GlobalConst {
 			RID rid = new RID(new PageId(i),i);
 			h.delete(key, rid);
 		}
-		for(int i =0;i<h.headerPage.get_NumberOfBuckets();i++) {
-			System.out.println("BUCKET: "+i);
-			HashBucket bucket = new HashBucket(h.headerPage.get_NthBucketName(i));
-			bucket.printToConsole();
-		}
-		
+		h.printBucketInfo();
 //		
 //		h.delete(new HashKey(13));
 //		bucket.printToConsole();

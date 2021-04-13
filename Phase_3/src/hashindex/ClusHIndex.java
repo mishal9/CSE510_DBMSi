@@ -217,6 +217,11 @@ public class ClusHIndex implements GlobalConst{
 		tempheapfile.deleteFile();
 	}
 	
+	/**
+	 * Create an equality scan for the key<br>
+	 * use this to search the index for a key
+	 * @param key
+	 */
 	public ClusHIndexScan new_scan(HashKey key) throws Exception {
 		ClusHIndexScan scan = new ClusHIndexScan(this, key);
 		return scan;
@@ -228,4 +233,40 @@ public class ClusHIndex implements GlobalConst{
 	public ClusHIndexDataFile getDataFile() {
 		return dataFile;
 	}
+	
+	/**
+	 * just print the contents of the buckets, ie the key,pageId pairs in each bucket
+	 */
+	public void printBucketInfo() {
+		try {
+			for( int i=0; i<this.headerPage.get_NumberOfBuckets(); i++ ) {
+				HashBucket bucket = new HashBucket(this.headerPage.get_NthBucketName(i));
+				
+				Scan scan = bucket.heapfile.openScan();
+				RID rid = new RID();
+				Tuple tup;
+				int count = 0;
+				boolean done = false;
+				System.out.println("BUCKET: "+i+" HashBucket [ ");
+				while (!done) {
+					tup = scan.getNext(rid);
+					if (tup == null) {
+						done = true;
+						break;
+					}
+					HashEntry scannedHashEntry = new HashEntry(tup.returnTupleByteArray(), 0);
+					//System.out.println("  " + scannedHashEntry + " @ IN-BUCKET LOCATION:  " + rid);
+					System.out.println("  <"+scannedHashEntry.key.value+","+scannedHashEntry.rid.pageNo.pid+">");
+					count++;
+				}
+				System.out.println("] count: " + count);
+				scan.closescan();
+			
+				
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
 }

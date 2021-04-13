@@ -3,6 +3,7 @@ package hashindex;
 import btree.AddFileEntryException;
 import btree.GetFileEntryException;
 import btree.KeyNotMatchException;
+import global.AttrType;
 import global.GlobalConst;
 import global.PageId;
 import global.RID;
@@ -11,6 +12,10 @@ import heap.Heapfile;
 import heap.Scan;
 import heap.Tuple;
 
+/**
+ * Unclustered Linear Hash Index Implementation
+ * 
+ */
 public class HIndex implements GlobalConst {
 
 	HIndexHeaderPage headerPage;
@@ -19,6 +24,14 @@ public class HIndex implements GlobalConst {
 	
 	final float targetUtilization;
 
+	/**
+	 * Create a new unclustered linear hash index or reopen existing
+	 * @param fileName
+	 * @param keyType {@link AttrType}
+	 * @param keySize
+	 * @param targetUtilization a value between 0 and 100
+	 * @throws Exception
+	 */
 	public HIndex(String fileName, int keyType, int keySize,int targetUtilization) throws Exception {
 		headerPageId = get_file_entry(fileName);
 		if (headerPageId == null) // file not exist
@@ -44,6 +57,9 @@ public class HIndex implements GlobalConst {
 				
 	}
 	
+	/**
+	 * Reopen an existing index
+	 */
 	public HIndex(String fileName) throws Exception {
 		headerPageId = get_file_entry(fileName);
 		if(headerPageId == null) {
@@ -54,6 +70,12 @@ public class HIndex implements GlobalConst {
 	}
 
 
+	/**
+	 * Insert a key and a pointer to a data file location <br>
+	 * Insert a new bucket if page utilization > targetUtilization
+	 * @param key key to insert
+	 * @param rid pointer to the tuple in the data file
+	 */
 	public void insert(HashKey key, RID rid) throws Exception {
 		if (key.type != headerPage.get_keyType()) {
 			throw new KeyNotMatchException("Key types dont match!");
@@ -98,6 +120,13 @@ public class HIndex implements GlobalConst {
 		}
 	}
 
+	/**
+	 * Delete the first occurrence of the key,rid pair in this hash index <br>
+	 * Shrink the linear hash index if utilization goes < (targetUtilization - 10%)
+	 * @param key key of the entry to delete
+	 * @param rid rid
+	 * @return true if deleted, else false
+	 */
 	public boolean delete(HashKey key,RID rid)  throws Exception{
 		int hash = key.getHash(headerPage.get_H0Deapth());
 		int splitPointer = headerPage.get_SplitPointerLocation();
@@ -187,7 +216,10 @@ public class HIndex implements GlobalConst {
 		tempheapfile.deleteFile();
 	}
 	
-	
+	/**
+	 * Get a scan of all entries whose key matches key
+	 * @param key
+	 */
 	public HIndexScan new_scan(HashKey key) throws Exception {
 		HIndexScan scan = new HIndexScan(this, key);
 		return scan;
@@ -219,12 +251,36 @@ public class HIndex implements GlobalConst {
 		}
 	}
 	
-	public void print_bucket_names() {
+	/**
+	 * Print the bucket contents, ie key,RID pairs in each bucket
+	 */
+	public void printBucketInfo() {
 		try {
 			for( int i=0; i<this.headerPage.get_NumberOfBuckets(); i++ ) {
 				System.out.println("BUCKET: "+i);
 				HashBucket bucket = new HashBucket(this.headerPage.get_NthBucketName(i));
-				bucket.printToConsole();
+				
+				Scan scan = bucket.heapfile.openScan();
+				RID rid = new RID();
+				Tuple tup;
+				int count = 0;
+				boolean done = false;
+				System.out.println("HashBucket [ ");
+				while (!done) {
+					tup = scan.getNext(rid);
+					if (tup == null) {
+						done = true;
+						break;
+					}
+					HashEntry scannedHashEntry = new HashEntry(tup.returnTupleByteArray(), 0);
+					//System.out.println("  " + scannedHashEntry + " @ IN-BUCKET LOCATION:  " + rid);
+					System.out.println("  <"+scannedHashEntry.key.value+","+scannedHashEntry.rid+">");
+					count++;
+				}
+				System.out.println("] count: " + count);
+				scan.closescan();
+			
+				
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
