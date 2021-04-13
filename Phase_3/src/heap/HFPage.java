@@ -544,9 +544,24 @@ public class HFPage extends Page
       if ( slotCnt ==0 )
     	  return null;
       
+      int i=0;
+      short length; 
+      int last_non_empty_slot = -1;
+      // find the next non-empty slot
+      for (i=0; i < slotCnt;  i++)
+      {
+    	  length = getSlotLength(i);
+    	  if (length != EMPTY_SLOT) {
+    		  last_non_empty_slot = i;
+    	  }
+      }
+      
+      if(last_non_empty_slot >= slotCnt)
+    	  return null;
+      
       // found a non-empty slot
       
-      rid.slotNo = slotCnt-1;
+      rid.slotNo = last_non_empty_slot;
       curPage.pid = Convert.getIntValue(CUR_PAGE, data);
       rid.pageNo.pid = curPage.pid;
       

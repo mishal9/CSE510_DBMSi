@@ -741,6 +741,54 @@ public class Table implements GlobalConst{
 	  }
   }
   
+  /* attr_number --> 1,2,3,4... */
+  public boolean clustered_index_exist( String clustered_index_type ) {
+	  if ( clustered_index_type.equals("btree") ) {
+		  if ( this.clustered_btree_attr == -1 ) {
+			  return false;
+		  }
+		  else {
+			  return true;
+		  }
+	  }
+	  else if ( clustered_index_type.equals("hash") ) {
+		  if ( this.clustered_hash_attr == -1 ) {
+			  return false;
+		  }
+		  else {
+			  return true;
+		  }
+	  }
+	  else {
+		  return false;
+	  }
+  }
+  
+  
+  /* attr_number --> 1,2,3,4... */
+  public boolean clustered_index_exist( int attr_number, String clustered_index_type ) {
+	  if ( clustered_index_type.equals("btree") ) {
+		  if ( this.clustered_btree_attr == -1 ) {
+			  return false;
+		  }
+		  else if ( this.clustered_btree_attr == attr_number ) {
+			  return true;
+		  }
+	  }
+	  else if ( clustered_index_type.equals("hash") ) {
+		  if ( this.clustered_hash_attr == -1 ) {
+			  return false;
+		  }
+		  else if ( this.clustered_hash_attr == attr_number ) {
+			  return true;
+		  }
+	  }
+	  else {
+		  return false;
+	  }
+	  return false;
+  }
+  
   /* inserts data into an already existing table */
   public void insert_data( String filename ) {
 	  /* created a temp heap file of the data */
@@ -751,17 +799,14 @@ public class Table implements GlobalConst{
 		
 	try {
 		/* initialising the heapfile for the table */
-		Heapfile hf = new Heapfile(this.table_heapfile);
+		ClusteredHeapfile hf = new ClusteredHeapfile(this.table_heapfile);
 		
 		/* opening the data file for reading */
 		File file = new File(data_folder + filename);
 	    Scanner sc = new Scanner(file);
 	    
 	    /* initialising the number of attributes in the table */
-	    int temp_table_num_attr = sc.nextInt();
-	    if ( temp_table_num_attr != table_num_attr ) {
-	    	System.out.println("ERROR: number of attributes does not match the existing table attributes*********");
-	    }
+	    assert ( this.table_num_attr == sc.nextInt() );
 	    
 	    /* moving to next line to skip the first line read above */
 	    sc.nextLine();
@@ -770,6 +815,9 @@ public class Table implements GlobalConst{
 	    int counter = 0;
 	    while ( sc.hasNextLine() && ( counter < table_num_attr ) ) {
 	    	String next_line = sc.nextLine();
+	    	String[] tokens_next_line = next_line.split("\\s+");
+	    	assert ( table_attr_name[counter] == tokens_next_line[0] );
+	    	assert (table_attr_type[counter].attrType == (tokens_next_line[1].equals("STR") ? AttrType.attrString : AttrType.attrInteger) );
 	    	counter++;
 	    }
 	    
@@ -798,8 +846,19 @@ public class Table implements GlobalConst{
 		    	}
 		    	RID rid = new RID();
 		    	try {
-					rid = hf.insertRecord(t.returnTupleByteArray());
-					update_index(t, rid);
+		    		if ( clustered_index_exist("btree") ) {
+		    			rid = hf.insertRecord(t, this.table_attr_type, 
+		    								  this.table_attr_size, 
+		    								  this.clustered_btree_attr, 
+		    								  this.get_clustered_index_filename(this.clustered_btree_attr, "btree") );
+		    		}
+		    		else if ( clustered_index_exist("hash") ) {
+		    			
+		    		}
+		    		else {
+		    			rid = hf.insertRecord(t.returnTupleByteArray());
+		    		}
+					update_unclustered_index(t, rid);
 				} catch (InvalidSlotNumberException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -821,7 +880,7 @@ public class Table implements GlobalConst{
 	}
   }
   
-  private void update_index( Tuple t, RID rid ) {
+  private void update_unclustered_index( Tuple t, RID rid ) {
 	  // TBD/* update all the btree clustered indexes */
 	  
 	  /* update the unclustered btree indexes */
@@ -841,16 +900,13 @@ public class Table implements GlobalConst{
 						key = new StringKey(t.getStrFld(i+1));
 					}
 					btf.insert(key, rid);
-					BT.printBTree(btf.getHeaderPage());
-					BT.printAllLeafPages(btf.getHeaderPage());
+					//BT.printBTree(btf.getHeaderPage());
+					//BT.printAllLeafPages(btf.getHeaderPage());
 					btf.close();
 			  }
 			  if ( hash_unclustered_attr[i] ) {
 				  
-				  HIndex hasher = new HIndex(this.get_unclustered_index_filename(i+1, "hash"),
-					  	   this.table_attr_type[i].attrType, 
-					  	    this.table_attr_size[i],
-					  	    TARGET_UTILISATION);
+				  	HIndex hasher = new HIndex(this.get_unclustered_index_filename(i+1, "hash") );
 					HashKey keyh;
 					if ( table_attr_type[i].attrType == AttrType.attrInteger ) {
 						keyh = new HashKey(t.getIntFld(i+1));
@@ -859,7 +915,7 @@ public class Table implements GlobalConst{
 						keyh = new HashKey(t.getStrFld(i+1));
 					}
 					hasher.insert(keyh, rid);
-					hasher.print_bucket_names();
+					//hasher.print_bucket_names();
 					hasher.close();
 			  }
 		  }
@@ -1167,6 +1223,113 @@ public class Table implements GlobalConst{
 		// TODO Auto-generated catch block
 		e.printStackTrace();
 	}
+  }
+  
+  /* this function deletes the records from the existing data heap files and index 
+   * Main function to be called in driver for delete
+   * */
+  public void delete_table( String delete_data_file_name ) {
+	  try {
+			/* print out the table name under process */
+			System.out.println("Deleting elements from table "+tablename);
+			
+			/* opening the data file for reading 
+			 * TBD might need a change in case we need to input paths of the files*/
+			File file = new File(data_folder + delete_data_file_name);
+		    Scanner sc = new Scanner(file);
+		    
+		    /* initialising the number of attributes in the table */
+		    assert ( this.table_num_attr == sc.nextInt() );
+		    
+		    /* moving to next line to skip the firs tline read above */
+		    sc.nextLine();
+		    
+		    /* parse the attributes from the data file */
+		    int counter = 0;
+		    while ( sc.hasNextLine() && ( counter < table_num_attr ) ) {
+		    	String next_line = sc.nextLine();
+		    	String[] tokens_next_line = next_line.split("\\s+");
+		    	assert ( table_attr_name[counter] == tokens_next_line[0] );
+		    	assert (table_attr_type[counter].attrType == (tokens_next_line[1].equals("STR") ? AttrType.attrString : AttrType.attrInteger) );
+		    	counter++;
+		    }
+		    
+		    Tuple t = TupleUtils.getEmptyTuple(this.table_attr_type, this.table_attr_size);
+		    if ( this.clustered_index_exist("btree") ) 
+		    {
+		    	/* parse the data and store it in the heapfile */
+		    	ClusteredHeapfile hf = new ClusteredHeapfile(this.table_heapfile);
+			    while ( sc.hasNextLine() ) 
+			    {
+			    	String temp_next_line = sc.nextLine().trim();
+			    	String[] token_next_line = temp_next_line.split("\\s+");
+			    	for ( int i=0; i<table_num_attr; i++ ) {
+			    		try {
+				    		switch ( table_attr_type[i].attrType ) {
+				    			case AttrType.attrString:
+				    				t.setStrFld(i+1, token_next_line[i]);
+				    				break;
+				    			case AttrType.attrInteger:
+				    				t.setIntFld(i+1, Integer.parseInt(token_next_line[i]));
+				    				break;
+				    			default:
+				    				break;	    			
+				    		}
+			    		} catch (Exception e) {
+		                    e.printStackTrace();
+		                }
+			    	}
+			    	RID rid = new RID();
+			    	try {
+						boolean status = hf.deleteRecord(t, this.get_clustered_index_filename(this.clustered_btree_attr, "btree"),
+											 this.table_attr_type, this.table_attr_size, this.clustered_btree_attr);
+					} catch (InvalidSlotNumberException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (InvalidTupleSizeException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (SpaceNotAvailableException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+			    }
+		    }
+		    
+	  }catch (Exception e1) {
+		  e1.printStackTrace();
+	  }
+  }
+  
+  /* prints all the indexes on the attribute */
+  public void print_index(int att_number) throws Exception {
+	  System.out.println("*******************Printing all indices on attribute "+this.table_attr_name[att_number-1]+" *******************\n\n");
+	  
+	  /* print the btree index first */
+	  if ( unclustered_index_exist(att_number, "btree") ) {
+		  System.out.println("*******************Printing unclustered btree index*******************");
+		  String btsfilename = get_unclustered_index_filename(att_number, "btree");
+		  BTreeFile btf  = new BTreeFile(btsfilename);
+		  BT.printBTree(btf.getHeaderPage());
+		  BT.printAllLeafPages(btf.getHeaderPage());
+		  btf.close();
+	  }
+	  if ( clustered_index_exist(att_number, "btree") ) {
+		  System.out.println("********************Printing clustered btree index********************");
+		  String btsfilename = get_clustered_index_filename(att_number, "btree");
+		  ClusteredBTreeFile btf  = new ClusteredBTreeFile(btsfilename);
+		  BT.printBTree(btf.getHeaderPage());
+		  BT.printAllLeafPages(btf.getHeaderPage());
+		  btf.close();
+	  }
+	  if ( unclustered_index_exist(att_number, "hash") ) {
+		  System.out.println("*******************Printing unclustered hash index*******************");
+		  String hsfilename = get_unclustered_index_filename(att_number, "hash");
+		  HIndex hasher = new HIndex(hsfilename);
+		  hasher.print_bucket_names();
+		  hasher.close();
+	  }
+	  //TBD clustered hash index print remaining 
   }
   
   public void test() throws Exception {

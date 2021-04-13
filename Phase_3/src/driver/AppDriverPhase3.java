@@ -319,6 +319,12 @@ class DriverPhase3 extends TestDriver implements GlobalConst
     	String tablename = tokens[1];
     	System.out.println("Deleting data of file "+filename+" from table "+tablename);
     	//TBD delete the data from the mentioned table and update the index structures accordingly
+    	Table table = SystemDefs.JavabaseDB.get_relation(tablename);
+    	if ( table == null ) {
+    		System.err.println("ERROR: Table does not exist**");
+    		return;
+    	}
+    	table.delete_table(filename);
     }
     
     /* parses the output_table query for the exact structure 
@@ -357,7 +363,46 @@ class DriverPhase3 extends TestDriver implements GlobalConst
     	String tablename = tokens[1];
     	int index_att_no = Integer.parseInt(tokens[2]);
     	System.out.println("Printing the indices on attribute "+index_att_no+" on table "+tablename);
+    	Table table = SystemDefs.JavabaseDB.get_relation(tablename);
+    	if ( table == null ) {
+    		System.err.println("ERROR: Table does not exist**");
+    		return;
+    	}
+    	try {
+			table.print_index(index_att_no);
+		} catch (GetFileEntryException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (PinPageException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (ConstructPageException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
     	//TBD print all the indices on table specified
+ catch (IteratorException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (HashEntryNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InvalidFrameNumberException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (PageUnpinnedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (ReplacerException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
     }
     
     /* parses the skyline query for the exact structure 

@@ -43,7 +43,7 @@ public class HIndexScan implements GlobalConst {
 			}
 			HashEntry scannedHashEntry = new HashEntry(tup.returnTupleByteArray(), 0);
 			if (scannedHashEntry.key.equals(keyToSearch)) {
-				RID foundLocation = new RID(new PageId(rid.pageNo.pid), rid.slotNo);
+				RID foundLocation = new RID(new PageId(scannedHashEntry.rid.pageNo.pid), scannedHashEntry.rid.slotNo);
 				ent = new HashEntry(keyToSearch, foundLocation);
 				break;
 			}
