@@ -364,9 +364,6 @@ public class BT  implements GlobalConst{
 			System.out.println("The Tree is Empty!!!");
 			return;
 		}
-
-		System.out.println("");
-		System.out.println("");
 		System.out.println("");
 		System.out.println("---------------The B+ Tree Structure---------------");
 
@@ -376,7 +373,6 @@ public class BT  implements GlobalConst{
 		_printTree(header.get_rootId(), "     ", 1, header.get_keyType());
 
 		System.out.println("--------------- End ---------------");
-		System.out.println("");
 		System.out.println("");
 	}
 
@@ -437,17 +433,13 @@ public class BT  implements GlobalConst{
 		}
 
 		System.out.println("");
-		System.out.println("");
-		System.out.println("");
 		System.out.println("---------------The B+ Tree Leaf Pages---------------");
 
 
 		_printAllLeafPages(header.get_rootId(), header.get_keyType());
 
 		System.out.println("");
-		System.out.println("");
 		System.out.println("------------- All Leaf Pages Have Been Printed --------");
-		System.out.println("");
 		System.out.println("");
 	}
 

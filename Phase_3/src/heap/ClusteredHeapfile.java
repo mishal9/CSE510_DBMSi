@@ -937,6 +937,9 @@ public class ClusteredHeapfile extends Heapfile implements GlobalConst {
  public RID insertRecord(Tuple insert_tuple, AttrType[] attrType, short[] strsizes, int key_index, String btsfilename) 
    throws Exception
    {
+	 if ( btsfilename == null ) {
+		 insertRecord(insert_tuple.getTupleByteArray());
+	 }
 	 System.out.println("Into te new insert method");
 	 //t1.print(attrType);
 	 RID currentDataPageRid = new RID();
@@ -1556,6 +1559,7 @@ throws InvalidSlotNumberException,
 		    	entry = new KeyDataEntry(key_nextentry, nextentry.data);
 				continue;
 		    }
+			System.out.println("Hitting merge");
 			newDataPage = _newDatapage(newdpinfo);
 			Tuple itr = new Tuple();
 			Tuple itr_hdr = TupleUtils.getEmptyTuple(attrtype, strsizes);
@@ -1618,6 +1622,150 @@ throws InvalidSlotNumberException,
 		}
 	}
 
+  /** Delete record from file with given rid.
+   *
+   * @exception InvalidSlotNumberException invalid slot number
+   * @exception InvalidTupleSizeException invalid tuple size
+   * @exception HFException heapfile exception
+   * @exception HFBufMgrException exception thrown from bufmgr layer
+   * @exception HFDiskMgrException exception thrown from diskmgr layer
+   * @exception Exception other exception
+   *
+   * @return true record deleted  false:record not found
+   */
+  public boolean deleteRecord(Tuple delete_tuple, String btsfilename, AttrType[] attrtype, short[] strsizes, int key_index)  
+    throws InvalidSlotNumberException, 
+	   InvalidTupleSizeException, 
+	   HFException, 
+	   HFBufMgrException,
+	   HFDiskMgrException,
+	   Exception
+  
+    {
+      boolean status = false;
+      System.out.println("Initiating delete for tuple");
+      delete_tuple.print(attrtype);
+      
+      //look for the page with rid_next_entry
+	  ClusteredBTSortedPage nelookup_dirPage = new ClusteredBTSortedPage();
+	  PageId nelookup_currentDirPageId = new PageId();
+	  ClusteredBTSortedPage nelookup_dataPage = new ClusteredBTSortedPage();
+	  PageId nelookup_currentDataPageId = new PageId();
+	  RID nelookup_currentDataPageRid = new RID();
+      
+	  KeyClass key = null;
+	  if ( attrtype[key_index-1].attrType == AttrType.attrInteger ) {
+		  key = new IntegerKey(delete_tuple.getIntFld(key_index));
+	  }
+	  else {
+		  key = new StringKey(delete_tuple.getStrFld(key_index));
+	  }
+	  
+      ClusteredBTreeFile btf  = new ClusteredBTreeFile(btsfilename);
+      BTFileScan indScan = ((ClusteredBTreeFile)btf).new_scan(key, null);
+      KeyDataEntry nextentry = indScan.get_next();
+      if ( nextentry == null ) {
+    	  indScan.DestroyBTreeFileScan();
+    	  btf.close();
+    	  return false;
+      }
+      else {
+    	  indScan.DestroyBTreeFileScan();
+    	  RID rid_nextentry = ((LeafData)nextentry.data).getData();
+    	  KeyClass key_nextentry = null;
+    	  if ( attrtype[key_index-1].attrType == AttrType.attrInteger ) {
+    		  key_nextentry = ((IntegerKey)nextentry.key);
+    	  }
+    	  else {
+    		  key_nextentry = ((StringKey)nextentry.key);
+    	  }
+    	  boolean status_nextentry = _findDataPage(rid_nextentry.pageNo,
+				     nelookup_currentDirPageId, nelookup_dirPage, 
+				     nelookup_currentDataPageId, nelookup_dataPage,
+				     nelookup_currentDataPageRid);
+    	  if ( status_nextentry == false ) {
+    		  btf.close();
+    		  return false;
+    	  }
+    	  else {
+    		  RID lookup_rid = null;
+    		  lookup_rid = nelookup_dataPage.firstRecord();
+    		  Tuple atuple_entry = new Tuple();
+    		  Tuple atuple_hdr_entry = TupleUtils.getEmptyTuple(attrtype, strsizes);
+    		  
+    		  /* see if the tuple belongs here */
+    		  atuple_entry = nelookup_dataPage.getRecord(lookup_rid);
+    		  atuple_hdr_entry.tupleCopy(atuple_entry);
+    		  KeyClass key_lowest = null;
+    		  if ( key instanceof IntegerKey ) {
+    			  key_lowest = new IntegerKey(atuple_hdr_entry.getIntFld(key_index));
+    		  }
+    		  else {
+    			  key_lowest = new StringKey(atuple_hdr_entry.getStrFld(key_index));
+    		  }
+    		  if ( BT.keyCompare(key_lowest, key) > 0 ) {
+    			  btf.close();
+    			  unpinPage(nelookup_currentDirPageId, false);
+    			  unpinPage(nelookup_currentDataPageId, false);
+    			  return false;
+    		  }
+    		  DataPageInfo dpinfo_entry = new DataPageInfo();
+    		  atuple_entry = nelookup_dirPage.getRecord(nelookup_currentDataPageRid);
+  		      dpinfo_entry = new DataPageInfo(atuple_entry);
+  		      btf.Delete(key_nextentry, rid_nextentry);
+  		      lookup_rid = nelookup_dataPage.firstRecord();
+  		      while ( lookup_rid != null ) {
+  		    	  System.out.println("inside the while loop");
+  		    	  atuple_entry = nelookup_dataPage.getRecord(lookup_rid);
+  		    	  atuple_hdr_entry.tupleCopy(atuple_entry);
+  		    	  if ( TupleUtils.Equal(atuple_hdr_entry, delete_tuple, attrtype, attrtype.length) ) 
+  		    	  {
+		    		System.out.println("delete record found. deleting it");
+		    		nelookup_dataPage.deleteRecord(lookup_rid);
+		    		dpinfo_entry.availspace = nelookup_dataPage.available_space();
+		    		dpinfo_entry.recct--;
+		    		status = true;
+		    		if ( dpinfo_entry.recct == 0 ) {
+		    			nelookup_dirPage.deleteRecord(nelookup_currentDataPageRid);
+		    			
+		    			btf.close();
+		    			unpinPage(nelookup_currentDataPageId, true);
+		    			freePage(nelookup_currentDataPageId);
+		    			unpinPage(nelookup_currentDirPageId, true);
+		    			
+		    			deleteRecord(delete_tuple, btsfilename, attrtype, strsizes, key_index);
+		    			return true;
+		    		}
+  		    	  }
+  		    	  lookup_rid = nelookup_dataPage.nextRecord(lookup_rid);
+  		      }
+  		      lookup_rid = nelookup_dataPage.lastRecord();
+  		      atuple_entry = nelookup_dataPage.getRecord(lookup_rid);
+  		      atuple_hdr_entry.tupleCopy(atuple_entry);
+  		      KeyClass key_new = null;
+  		      if ( key instanceof IntegerKey ) {
+  		    	  key_new = new IntegerKey( atuple_hdr_entry.getIntFld(key_index) );
+  		      }
+  		      else {
+  		    	  key_new = new StringKey( atuple_hdr_entry.getStrFld(key_index) );
+  		      }
+  		      btf.insert(key_new, lookup_rid);
+  		      btf.close();
+  		      Tuple atuple = nelookup_dirPage.returnRecord(nelookup_currentDataPageRid);
+  		      DataPageInfo dpinfo_ondirpage = new DataPageInfo(atuple);
+  		      dpinfo_ondirpage.availspace = dpinfo_entry.availspace;
+  		      dpinfo_ondirpage.recct = dpinfo_entry.recct;
+  		      dpinfo_ondirpage.pageId.pid = dpinfo_entry.pageId.pid;
+  		      dpinfo_ondirpage.flushToTuple();
+  		      unpinPage(nelookup_currentDirPageId, true);
+  		      unpinPage(nelookup_currentDataPageId, true);
+  		      
+  		      deleteRecord(delete_tuple, btsfilename, attrtype, strsizes, key_index);
+  		      return true;
+    	  }
+      }
+    }
+	  
 }// End of HeapFile 
 
 
