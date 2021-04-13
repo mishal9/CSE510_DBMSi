@@ -23,11 +23,11 @@ class GroupBySortDriver extends TestDriver
     private static float[][] data1 = {
             {1, 6, 8},
             {1, 4, 5},
-            {2, 4, 3},
-            {3, 2, 3},
-            {4, 7, 8},
-            {5, 3, 4},
-            {6, 5, 8}
+            {1, 4, 3},
+            {1, 2, 3},
+            {2, 7, 8},
+            {2, 3, 4},
+            {3, 5, 8}
     };
 
     private static float[][] data2 = {              // AVG
@@ -313,7 +313,7 @@ class GroupBySortDriver extends TestDriver
                     fscan,
                     groupByAttr,
                     aggList,
-                    aggType[2],
+                    aggType[3],
                     projlist,
                     3,
                     20);

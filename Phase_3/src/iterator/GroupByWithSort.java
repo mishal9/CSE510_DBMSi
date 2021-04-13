@@ -3,6 +3,7 @@ package iterator;
 import bufmgr.PageNotReadException;
 import global.AggType;
 import global.AttrType;
+import global.RID;
 import global.TupleOrder;
 import heap.*;
 import index.IndexException;
@@ -34,7 +35,7 @@ public class GroupByWithSort extends Iterator{
     private Tuple        tuple_candidate;
 
     /* heap file containing our data on which skyline is computed */
-    private Heapfile _temp_file;
+    private Heapfile _skyline_grp_heap;
 
     /* size of the tuples in the skyline/window/temporary_heap_file */
     private int          _tuple_size;
@@ -76,16 +77,16 @@ public class GroupByWithSort extends Iterator{
             e.printStackTrace();
         }
 
-        try {
-            _temp_file = new Heapfile(System.currentTimeMillis() + "temp_group_by.in");
-        }
-        catch (Exception e) {
-            System.err.println("Could not open the temp heapfile");
-            e.printStackTrace();
-        }
-
         _window_size = ((int)(MINIBASE_PAGESIZE/this._tuple_size))*(_n_pages - buffer_pages);
         _result = new Tuple[_window_size];
+
+        try {
+            _skyline_grp_heap = new Heapfile("skyline_group_by.in");
+        }
+        catch (Exception e) {
+            System.err.println("Could not open the skyline heapfile");
+            e.printStackTrace();
+        }
 
         try {
             _sort = new Sort(_attrType, (short) _len_in, _attr_sizes, (FileScan) am1, group_by_attr.offset, new TupleOrder(TupleOrder.Descending), 32, buffer_pages);
@@ -145,6 +146,16 @@ public class GroupByWithSort extends Iterator{
                     float aggr_val = _agg_type.aggType == AggType.AVG ? 0.0f : _agg_type.aggType == AggType.MIN ? Float.MAX_VALUE : -Float.MIN_VALUE;
                     int group_size = 1;
                     float grp_result = 0.0f;
+                    try {
+                        _skyline_grp_heap = new Heapfile("skyline_group_by.in");
+                    }
+                    catch (Exception e) {
+                        System.err.println("Could not open the skyline heapfile");
+                        e.printStackTrace();
+                    }
+
+                    RID rid;
+
                     while(!_queue.isEmpty()){
                         Tuple inner = _queue.poll();
 
@@ -159,11 +170,24 @@ public class GroupByWithSort extends Iterator{
                         else if(_agg_type.aggType == AggType.AVG) {
                             aggr_val += inner.getFloFld(agg_list[0].offset);
                             grp_result = aggr_val / group_size;
+                        }else if(_agg_type.aggType == AggType.SKYLINE){
+                            // pass on the result tuples to the existing skyline computation method
+
+                            try {
+                                rid = _skyline_grp_heap.insertRecord(inner.returnTupleByteArray());
+                            }
+                            catch (Exception e) {
+                                status = false;
+                                e.printStackTrace();
+                            }
+
+
                         }
                         group_size += 1;
                     }
 
                     System.out.println("Aggregation in grp " + lastPolled + " : "+grp_result);
+                    System.out.println("Skyline in group "+lastPolled+" : " +_skyline_grp_heap.getRecCnt());
 
                     // Construct result tuple
                     Tuple result = new Tuple(this._tuple_size);
@@ -184,6 +208,7 @@ public class GroupByWithSort extends Iterator{
                     if(idx < _window_size)
                         _result[idx++] = result;
 
+                    _skyline_grp_heap.deleteFile();
                     System.out.println();
                 }
 
@@ -208,6 +233,15 @@ public class GroupByWithSort extends Iterator{
         float aggr_val = _agg_type.aggType == AggType.AVG ? 0.0f : _agg_type.aggType == AggType.MIN ? Float.MAX_VALUE : -Float.MIN_VALUE;
         int group_size = 1;
         float grp_result = 0.0f;
+        RID rid;
+        try {
+            _skyline_grp_heap = new Heapfile("skyline_group_by.in");
+        }
+        catch (Exception e) {
+            System.err.println("Could not open the skyline heapfile");
+            e.printStackTrace();
+        }
+
         while(!_queue.isEmpty()){
             Tuple inner = _queue.poll();
 
@@ -223,6 +257,17 @@ public class GroupByWithSort extends Iterator{
                 else if(_agg_type.aggType == AggType.AVG) {
                     aggr_val += inner.getFloFld(agg_list[0].offset);
                     grp_result = aggr_val / group_size;
+                }else if(_agg_type.aggType == AggType.SKYLINE){
+                    // pass on the result tuples to the existing skyline computation method
+
+                    try {
+                        rid = _skyline_grp_heap.insertRecord(inner.returnTupleByteArray());
+                    }
+                    catch (Exception e) {
+                        status = false;
+                        e.printStackTrace();
+                    }
+
                 }
 
             group_size += 1;
@@ -234,19 +279,41 @@ public class GroupByWithSort extends Iterator{
             }
         }
 
-        // Construct result tuple
-        Tuple result = new Tuple(this._tuple_size);
         try {
-            result.setHdr((short) _len_in, _attrType, _attr_sizes);
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (InvalidTypeException e) {
+            System.out.println("Skyline in group "+lastPolled+" : " +_skyline_grp_heap.getRecCnt());
+        } catch (InvalidSlotNumberException e) {
             e.printStackTrace();
         } catch (InvalidTupleSizeException e) {
+            e.printStackTrace();
+        } catch (HFDiskMgrException e) {
+            e.printStackTrace();
+        } catch (HFBufMgrException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
             e.printStackTrace();
         }
 
         try {
+            _skyline_grp_heap.deleteFile();
+        } catch (InvalidSlotNumberException e) {
+            e.printStackTrace();
+        } catch (FileAlreadyDeletedException e) {
+            e.printStackTrace();
+        } catch (InvalidTupleSizeException e) {
+            e.printStackTrace();
+        } catch (HFBufMgrException e) {
+            e.printStackTrace();
+        } catch (HFDiskMgrException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
+        // Construct result tuple
+        Tuple result = new Tuple(this._tuple_size);
+        try {
+            result.setHdr((short) _len_in, _attrType, _attr_sizes);
             result.setFloFld(group_by_attr.offset, lastPolled);
             result.setFloFld(agg_list[0].offset, grp_result);
 
@@ -254,12 +321,16 @@ public class GroupByWithSort extends Iterator{
                 _result[idx++] = result;
 
             System.out.println("Aggregation in grp " + lastPolled + " : "+grp_result);
-
         } catch (IOException e) {
             e.printStackTrace();
         } catch (FieldNumberOutOfBoundException e) {
             e.printStackTrace();
+        } catch (InvalidTypeException e) {
+            e.printStackTrace();
+        } catch (InvalidTupleSizeException e) {
+            e.printStackTrace();
         }
+
         // workflow for SKYLINE
         /*
         1. Keep polling the queue until empty
