@@ -3,8 +3,10 @@ package tests;
 import java.io.*;
 
 import bufmgr.*;
+import diskmgr.PCounter;
 import global.*;
 import heap.*;
+import index.IndexException;
 import iterator.*;
 
 import java.util.Arrays;
@@ -14,88 +16,47 @@ import java.util.Scanner;
 class GroupBySortDriver extends TestDriver
         implements GlobalConst {
 
-    // [0,1]
+    // groupBy_attr: 1
+    // agg_list: 2
+    // agg_types: MIN | MAX | AVG | SKYLINE
 
     private static float[][] data1 = {
-            {0.825f, 0.823f, 0.453f, 0.122f, 0.356f},   // 1.648
-            {0.855f, 0.316f, 0.782f, 0.478f, 0.758f},   // 1.171
-            {0.011f, 0.268f, 0.348f, 0.646f, 0.161f},   // 0.279
-            {0.896f, 0.572f, 0.281f, 0.592f, 0.166f},   // 1.468
-            {0.852f, 0.194f, 0.613f, 0.846f, 0.846f},   // 1.046
-            {0.110f, 0.758f, 0.221f, 0.234f, 0.169f},   // 0.868
-            {0.259f, 0.550f, 0.837f, 0.138f, 0.960f},   // 0.809
-            {0.821f, 0.814f, 0.104f, 0.106f, 0.475f},   // 1.635
-            {0.192f, 0.975f, 0.761f, 0.157f, 0.899f},   // 1.167
-            {0.627f, 0.043f, 0.133f, 0.690f, 0.272f}    // 0.67
+            {1, 6, 8},
+            {1, 4, 5},
+            {2, 4, 3},
+            {3, 2, 3},
+            {4, 7, 8},
+            {5, 3, 4},
+            {6, 5, 8}
     };
 
-    private static float[][] data2 = {
-            {0.011f, 0.268f, 0.348f, 0.646f, 0.161f},   // 0.279
-            {0.627f, 0.043f, 0.133f, 0.690f, 0.272f},   // 0.67
-            {0.259f, 0.550f, 0.837f, 0.138f, 0.960f},   // 0.809
-            {0.110f, 0.758f, 0.221f, 0.234f, 0.169f},   // 0.868
-            {0.852f, 0.194f, 0.613f, 0.846f, 0.846f},   // 1.046
-            {0.192f, 0.975f, 0.761f, 0.157f, 0.899f},   // 1.167
-            {0.855f, 0.316f, 0.782f, 0.478f, 0.758f},   // 1.171
-            {0.896f, 0.572f, 0.281f, 0.592f, 0.166f},   // 1.468
-            {0.821f, 0.814f, 0.104f, 0.106f, 0.475f},   // 1.635
-            {0.825f, 0.823f, 0.453f, 0.122f, 0.356f},   // 1.648
+    private static float[][] data2 = {              // AVG
+            {1, 10/3, 13/3},
+            {2, 10/2, 12/2},
+            {5, 5, 8},
+            {9, 6, 8}
     };
 
-    private static float[][] data3 = {
-            {0.825f, 0.823f, 0.453f, 0.122f, 0.356f},   // 1.648
-            {0.821f, 0.814f, 0.104f, 0.106f, 0.475f},   // 1.635
-            {0.896f, 0.572f, 0.281f, 0.592f, 0.166f},   // 1.468
-            {0.855f, 0.316f, 0.782f, 0.478f, 0.758f},   // 1.171
-            {0.192f, 0.975f, 0.761f, 0.157f, 0.899f},   // 1.167
-            {0.852f, 0.194f, 0.613f, 0.846f, 0.846f},   // 1.046
-            {0.110f, 0.758f, 0.221f, 0.234f, 0.169f},   // 0.868
-            {0.259f, 0.550f, 0.837f, 0.138f, 0.960f},   // 0.809
-            {0.627f, 0.043f, 0.133f, 0.690f, 0.272f},   // 0.67
-            {0.011f, 0.268f, 0.348f, 0.646f, 0.161f}    // 0.279
+    private static float[][] data3 = {              // SKYLINE
+            {1, 4, 5},
+            {2, 7, 8},
+            {5, 5, 8},
+            {9, 6, 8}
     };
 
-    // [0,1,2]
-
-    private static float[][] data4 = {
-            {0.825f, 0.823f, 0.453f, 0.122f, 0.356f, 2.101f},
-            {0.855f, 0.316f, 0.782f, 0.478f, 0.758f, 1.953f},
-            {0.011f, 0.268f, 0.348f, 0.646f, 0.161f, 0.627f},
-            {0.896f, 0.572f, 0.281f, 0.592f, 0.166f, 1.749f},
-            {0.852f, 0.194f, 0.613f, 0.846f, 0.846f, 1.659f},
-            {0.110f, 0.758f, 0.221f, 0.234f, 0.169f, 1.089f},
-            {0.259f, 0.550f, 0.837f, 0.138f, 0.960f, 1.646f},
-            {0.821f, 0.814f, 0.104f, 0.106f, 0.475f, 1.739f},
-            {0.192f, 0.975f, 0.761f, 0.157f, 0.899f, 1.928f},
-            {0.627f, 0.043f, 0.133f, 0.690f, 0.272f, 0.803f}
+    private static float[][] data4 = {              // MIN
+            {1, 2, 3},
+            {2, 3, 4},
+            {5, 5, 8},
+            {9, 6, 8}
     };
 
-    private static float[][] data5 = {
-            {0.011f, 0.268f, 0.348f, 0.646f, 0.161f},   // 0.627
-            {0.627f, 0.043f, 0.133f, 0.690f, 0.272f},   // 0.803
-            {0.110f, 0.758f, 0.221f, 0.234f, 0.169f},   // 1.089
-            {0.259f, 0.550f, 0.837f, 0.138f, 0.960f},   // 1.646
-            {0.852f, 0.194f, 0.613f, 0.846f, 0.846f},   // 1.659
-            {0.821f, 0.814f, 0.104f, 0.106f, 0.475f},   // 1.739
-            {0.896f, 0.572f, 0.281f, 0.592f, 0.166f},   // 1.749
-            {0.192f, 0.975f, 0.761f, 0.157f, 0.899f},   // 1.928
-            {0.855f, 0.316f, 0.782f, 0.478f, 0.758f},   // 1.953
-            {0.825f, 0.823f, 0.453f, 0.122f, 0.356f},   // 2.101
+    private static float[][] data5 = {              // MAX
+            {1, 4, 5},
+            {2, 7, 8},
+            {5, 5, 8},
+            {9, 6, 8}
     };
-
-    private static float[][] data6 = {
-            {0.825f, 0.823f, 0.453f, 0.122f, 0.356f},   // 2.101
-            {0.855f, 0.316f, 0.782f, 0.478f, 0.758f},   // 1.953
-            {0.192f, 0.975f, 0.761f, 0.157f, 0.899f},   // 1.928
-            {0.896f, 0.572f, 0.281f, 0.592f, 0.166f},   // 1.749
-            {0.821f, 0.814f, 0.104f, 0.106f, 0.475f},   // 1.739
-            {0.852f, 0.194f, 0.613f, 0.846f, 0.846f},   // 1.659
-            {0.259f, 0.550f, 0.837f, 0.138f, 0.960f},   // 1.646
-            {0.110f, 0.758f, 0.221f, 0.234f, 0.169f},   // 1.089
-            {0.627f, 0.043f, 0.133f, 0.690f, 0.272f},   // 0.803
-            {0.011f, 0.268f, 0.348f, 0.646f, 0.161f}    // 0.627
-    };
-
 
     private static int COLS;
     private static final String hFile = "hFile.in";
@@ -104,7 +65,7 @@ class GroupBySortDriver extends TestDriver
     private static Heapfile  f = null;
     private static RID   rid;
 
-    private static int   NUM_RECORDS = data2.length;
+    private static int   NUM_RECORDS = data1.length;
     private static short REC_LEN1 = 32;
     private static short REC_LEN2 = 32;
     private static short REC_LEN3 = 32;
@@ -117,12 +78,19 @@ class GroupBySortDriver extends TestDriver
     boolean status = false;
 
     TupleOrder[] order = new TupleOrder[2];
+    AggType[] aggType = new AggType[4];
 
     public GroupBySortDriver() {
-        super("sorttest");
+        super("groupBySortTest");
         order[0] = new TupleOrder(TupleOrder.Ascending);
         order[1] = new TupleOrder(TupleOrder.Descending);
+
+        aggType[0] = new AggType(AggType.MIN);
+        aggType[1] = new AggType(AggType.MAX);
+        aggType[2] = new AggType(AggType.AVG);
+        aggType[3] = new AggType(AggType.SKYLINE);
     }
+
     private void readDataIntoHeap(String fileName)
             throws IOException, InvalidTupleSizeException, InvalidTypeException, InvalidSlotNumberException, HFDiskMgrException, HFBufMgrException, HFException, HashOperationException, PageUnpinnedException, PagePinnedException, PageNotFoundException, BufMgrException, SpaceNotAvailableException {
 
@@ -249,24 +217,20 @@ class GroupBySortDriver extends TestDriver
 
         boolean status = OK;
 
-        AttrType[] attrType = new AttrType[5];
-        attrType[0] = new AttrType(AttrType.attrReal);
-        attrType[1] = new AttrType(AttrType.attrReal);
-        attrType[2] = new AttrType(AttrType.attrReal);
-        attrType[3] = new AttrType(AttrType.attrReal);
-        attrType[4] = new AttrType(AttrType.attrReal);
+        AttrType[] attrType = new AttrType[3];
+        attrType[0] = new AttrType(AttrType.attrInteger);
+        attrType[1] = new AttrType(AttrType.attrInteger);
+        attrType[2] = new AttrType(AttrType.attrInteger);
 
-        short[] attrSize = new short[5];
+        short[] attrSize = new short[3];
         attrSize[0] = REC_LEN1;
         attrSize[1] = REC_LEN2;
         attrSize[2] = REC_LEN3;
-        attrSize[3] = REC_LEN4;
-        attrSize[4] = REC_LEN5;
 
         // create a tuple of appropriate size
         Tuple t = new Tuple();
         try {
-            t.setHdr((short) 5, attrType, attrSize);
+            t.setHdr((short) 3, attrType, attrSize);
         }
         catch (Exception e) {
             status = FAIL;
@@ -288,7 +252,7 @@ class GroupBySortDriver extends TestDriver
 
         t = new Tuple(size);
         try {
-            t.setHdr((short) 5, attrType, attrSize);
+            t.setHdr((short) 3, attrType, attrSize);
         }
         catch (Exception e) {
             status = FAIL;
@@ -297,7 +261,7 @@ class GroupBySortDriver extends TestDriver
 
         for (int i=0; i<NUM_RECORDS; i++) {
             try {
-                for(int j=0; j<5; j++)
+                for(int j=0; j<3; j++)
                     t.setFloFld(j+1, data1[i][j]);
             }
             catch (Exception e) {
@@ -314,104 +278,73 @@ class GroupBySortDriver extends TestDriver
             }
         }
 
+        FldSpec groupByAttr = new FldSpec(new RelSpec(RelSpec.outer), 1);
+
+        FldSpec[] aggList = new FldSpec[1];
+        rel = new RelSpec(RelSpec.outer);
+        aggList[0] = new FldSpec(rel, 2);
+
         // create an iterator by open a file scan
-        FldSpec[] projlist = new FldSpec[5];
-        RelSpec rel = new RelSpec(RelSpec.outer);
+        FldSpec[] projlist = new FldSpec[3];
+        rel = new RelSpec(RelSpec.outer);
         projlist[0] = new FldSpec(rel, 1);
         projlist[1] = new FldSpec(rel, 2);
         projlist[2] = new FldSpec(rel, 3);
-        projlist[3] = new FldSpec(rel, 4);
-        projlist[4] = new FldSpec(rel, 5);
+
 
         FileScan fscan = null;
 
         try {
-            fscan = new FileScan("test1GroupBySort.in", attrType, attrSize, (short) 5, 5, projlist, null);
+            fscan = new FileScan("test1GroupBySort.in", attrType, attrSize, (short) 3, 3, projlist, null);
         }
         catch (Exception e) {
             status = FAIL;
             e.printStackTrace();
         }
 
-        // Sort "test1sortPref.in"
-        Sort sort = null;
+        // Sort operator working verified till here
 
+        GroupByWithSort grpSort = null;
+        PCounter.initialize();
         try {
-            sort = new Sort(attrType, (short) 5, attrSize, fscan, 2, order[1], REC_LEN1, SORTPGNUM);
-        }
-        catch (Exception e) {
-            status = FAIL;
-            e.printStackTrace();
-        }
+            grpSort = new GroupByWithSort(attrType,
+                    3,
+                    attrSize,
+                    fscan,
+                    groupByAttr,
+                    aggList,
+                    aggType[2],
+                    projlist,
+                    3,
+                    20);
 
-        int count = 0;
-        t = null;
-        float[] outval = new float[5];
-
-        try {
-            t = sort.get_next();
-        }
-        catch (Exception e) {
-            status = FAIL;
-            e.printStackTrace();
-        }
-
-        boolean flag = true;
-
-        while (t != null) {
-            if (count >= NUM_RECORDS) {
-                System.err.println("Test1 -- OOPS! too many records");
-                status = FAIL;
-                flag = false;
-                break;
-            }
-
+            /*
+            System.out.println("Printing the Group By Sort Results");
+            Tuple temp;
             try {
-                outval[0] = t.getFloFld(1);
-                outval[1] = t.getFloFld(2);
-                outval[2] = t.getFloFld(3);
-                outval[3] = t.getFloFld(4);
-                outval[4] = t.getFloFld(5);
-
-                System.out.println("Got row: "+outval[0]+" "+outval[1]+" "+outval[2]+" "+outval[3]+" "+outval[4]+" ");
-            }
-            catch (Exception e) {
-                status = FAIL;
+                temp = grpSort.get_next();
+                while (temp!=null) {
+                    temp.print(attrType);
+                    temp = grpSort.get_next();
+                }
+            } catch (Exception e) {
                 e.printStackTrace();
             }
+            */
 
-            if (!Arrays.equals(outval, data2[count])) {
-                System.err.println("outval = " + outval[0] + "\tdata2[count] = " + data2[count][0]);
-
-                System.err.println("Test1 -- OOPS! test1.out not sorted");
-                status = FAIL;
-            }
-            count++;
-
+        } finally {
             try {
-                t = sort.get_next();
-            }
-            catch (Exception e) {
-                status = FAIL;
+                grpSort.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (SortException e) {
                 e.printStackTrace();
             }
         }
-        if (count < NUM_RECORDS) {
-            System.err.println("Test1 -- OOPS! too few records");
-            status = FAIL;
-        }
-        else if (flag && status) {
-            System.err.println("Test1 -- Sorting OK");
-        }
 
-        // clean up
-        try {
-            sort.close();
-        }
-        catch (Exception e) {
-            status = FAIL;
-            e.printStackTrace();
-        }
+        System.out.println("Number of Disk reads: "+ PCounter.get_rcounter());
+        System.out.println("Number of Disk writes: "+ PCounter.get_wcounter());
+        PCounter.initialize();
 
         System.err.println("------------------- TEST 1 completed ---------------------\n");
 
@@ -425,24 +358,21 @@ class GroupBySortDriver extends TestDriver
 
         boolean status = OK;
 
-        AttrType[] attrType = new AttrType[5];
+        AttrType[] attrType = new AttrType[3];
         attrType[0] = new AttrType(AttrType.attrReal);
         attrType[1] = new AttrType(AttrType.attrReal);
         attrType[2] = new AttrType(AttrType.attrReal);
-        attrType[3] = new AttrType(AttrType.attrReal);
-        attrType[4] = new AttrType(AttrType.attrReal);
 
-        short[] attrSize = new short[5];
+        short[] attrSize = new short[3];
         attrSize[0] = REC_LEN1;
         attrSize[1] = REC_LEN2;
         attrSize[2] = REC_LEN3;
-        attrSize[3] = REC_LEN4;
-        attrSize[4] = REC_LEN5;
+
 
         // create a tuple of appropriate size
         Tuple t = new Tuple();
         try {
-            t.setHdr((short) 5, attrType, attrSize);
+            t.setHdr((short) 3, attrType, attrSize);
         }
         catch (Exception e) {
             status = FAIL;
@@ -464,7 +394,7 @@ class GroupBySortDriver extends TestDriver
 
         t = new Tuple(size);
         try {
-            t.setHdr((short) 5, attrType, attrSize);
+            t.setHdr((short) 3, attrType, attrSize);
         }
         catch (Exception e) {
             status = FAIL;
@@ -473,7 +403,7 @@ class GroupBySortDriver extends TestDriver
 
         for (int i=0; i<NUM_RECORDS; i++) {
             try {
-                for(int j=0; j<5; j++)
+                for(int j=0; j<3; j++)
                     t.setFloFld(j+1, data1[i][j]);
             }
             catch (Exception e) {
@@ -491,18 +421,17 @@ class GroupBySortDriver extends TestDriver
         }
 
         // create an iterator by open a file scan
-        FldSpec[] projlist = new FldSpec[5];
+        FldSpec[] projlist = new FldSpec[3];
         RelSpec rel = new RelSpec(RelSpec.outer);
         projlist[0] = new FldSpec(rel, 1);
         projlist[1] = new FldSpec(rel, 2);
         projlist[2] = new FldSpec(rel, 3);
-        projlist[3] = new FldSpec(rel, 4);
-        projlist[4] = new FldSpec(rel, 5);
+
 
         FileScan fscan = null;
 
         try {
-            fscan = new FileScan("test2sortPref.in", attrType, attrSize, (short) 5, 5, projlist, null);
+            fscan = new FileScan("test2sortPref.in", attrType, attrSize, (short) 3, 3, projlist, null);
         }
         catch (Exception e) {
             status = FAIL;
@@ -512,7 +441,7 @@ class GroupBySortDriver extends TestDriver
         // Sort "test1sortPref.in"
         SortPref sort = null;
         try {
-            sort = new SortPref(attrType, (short) 5, attrSize, fscan, order[1], new int[]{1,2}, 2, SORTPGNUM);
+            sort = new SortPref(attrType, (short) 3, attrSize, fscan, order[1], new int[]{1,2}, 2, SORTPGNUM);
         }
         catch (Exception e) {
             status = FAIL;
@@ -522,7 +451,7 @@ class GroupBySortDriver extends TestDriver
 
         int count = 0;
         t = null;
-        float[] outval = new float[5];
+        float[] outval = new float[3];
 
         try {
             t = sort.get_next();
@@ -546,22 +475,22 @@ class GroupBySortDriver extends TestDriver
                 outval[0] = t.getFloFld(1);
                 outval[1] = t.getFloFld(2);
                 outval[2] = t.getFloFld(3);
-                outval[3] = t.getFloFld(4);
-                outval[4] = t.getFloFld(5);
 
-                System.out.println("Got row: "+outval[0]+" "+outval[1]+" "+outval[2]+" "+outval[3]+" "+outval[4]+" ");
+                System.out.println("Got row: "+outval[0]+" "+outval[1]+" "+outval[2]+" ");
             }
             catch (Exception e) {
                 status = FAIL;
                 e.printStackTrace();
             }
-
+            /*
             if (!Arrays.equals(outval, data3[count])) {
                 System.err.println("outval = " + outval[0] + "\tdata3[count] = " + data3[count][0]);
 
                 System.err.println("Test2 -- OOPS! test2.out not sorted");
                 status = FAIL;
             }
+
+             */
             count++;
 
             try {
@@ -597,7 +526,7 @@ class GroupBySortDriver extends TestDriver
 
     protected  boolean test3()
     {
-        System.out.println("------------------------ TEST 5 --------------------------");
+        System.out.println("------------------------ TEST 3 --------------------------");
         try{
             readDataIntoHeap("../../data/data3.txt");
         }catch (Exception e){
@@ -660,7 +589,7 @@ class GroupBySortDriver extends TestDriver
                 outval[1] = t.getFloFld(2);
                 outval[2] = t.getFloFld(3);
                 outval[3] = t.getFloFld(4);
-                outval[4] = 0;//t.getFloFld(5);
+                outval[4] = 0;//t.getFloFld(3);
 
                 System.out.println("Got row: "+outval[0]+" "+outval[1]+" "+outval[2]+" "+outval[3]+" "+outval[4]+" "+" | "+(outval[0]+outval[1]));
             }
@@ -684,7 +613,7 @@ class GroupBySortDriver extends TestDriver
 
     protected String testName()
     {
-        return "SortPref";
+        return "GroupBySort";
     }
 }
 
