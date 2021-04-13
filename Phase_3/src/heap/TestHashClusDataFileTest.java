@@ -34,7 +34,7 @@ public class TestHashClusDataFileTest implements GlobalConst {
 	
 	private void testInsert() throws Exception {
 		String INDEX_NAME = "huehuehue";
-		ClusHIndex index = new ClusHIndex(INDEX_NAME,AttrType.attrString, 4,80);
+		ClusHIndex index = new ClusHIndex("clhdf"+INDEX_NAME, INDEX_NAME,AttrType.attrString, 4,80);
 		System.out.println("\n\nNOW INSERTING SOME DATA IN INDEX \n");
 		for (int k = 10; k < 10; k++) {
 			HashUtils.log("------------------------------------------------------");
@@ -69,7 +69,7 @@ public class TestHashClusDataFileTest implements GlobalConst {
 		System.out.println("\n\nPRINTING THE DATA FILE \n");
 		//index.getDataFile().printToConsole(mapper);
 		index.close();
-		index = new ClusHIndex(INDEX_NAME);
+		index = new ClusHIndex("clhdf"+INDEX_NAME, INDEX_NAME);
 		System.out.println("\n\nNOW TESTING SCAN OF INDEX WITH SEARCH KEY \n");
 		ClusHIndexScan scan = index.new_scan(new HashKey(13));
 		Tuple tup= null;

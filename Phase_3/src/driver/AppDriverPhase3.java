@@ -242,7 +242,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
      * part of task 1/2
      * structure: create_table [CLUSTERED BTREE/HASH ATT_NO] FILENAME
      * */
-    public void parse_create_table() {
+    public void parse_create_table() throws Exception {
     	boolean is_index_required = query.contains("CLUSTERED");
     	boolean btree_type_index = query.contains("BTREE");
     	boolean hash_type_index = query.contains("HASH");
@@ -263,11 +263,17 @@ class DriverPhase3 extends TestDriver implements GlobalConst
         			System.out.println("Error: Table already exists**************");
         			return;
         		}
-        		table.create_table(index_att_no);
+        		table.create_clustered_table(index_att_no, "btree");
     		}
     		else if ( hash_type_index ) {
     			System.out.println("Creating a table of file "+ filename+" and a clustered hash index on attribute "+index_att_no);
     			//TBD create CLUSTERED HASH INDEX on attribute
+    			Table table = new Table(filename);
+        		if ( SystemDefs.JavabaseDB.get_relation(table.getTablename()) != null ) {
+        			System.out.println("Error: Table already exists**************");
+        			return;
+        		}
+        		table.create_clustered_table(index_att_no, "hash");
     		}
     	}
     	else {
@@ -737,7 +743,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
     }
     
     /* This function runs the main query interface which reads and processes all the queries */
-    public void startQueryInterface() {
+    public void startQueryInterface() throws Exception {
     	boolean exit_interface = false;
     	while (!exit_interface) {
     		query = readNextCommand();

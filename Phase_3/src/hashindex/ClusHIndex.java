@@ -22,16 +22,16 @@ public class ClusHIndex implements GlobalConst{
 	final float targetUtilization;
 
 
-	public ClusHIndex(String fileName, int keyType, int keySize,int targetUtilization) throws Exception {
+	public ClusHIndex(String datafilename, String indexfileName, int keyType, int keySize,int targetUtilization) throws Exception {
 
-		headerPageId = HashUtils.get_file_entry(fileName);
+		headerPageId = HashUtils.get_file_entry(indexfileName);
 		if (headerPageId == null) // file not exist
 		{
 			HashUtils.log("Creating new HIndex header page");
 			//creating new header page with filename and number of buckets 2
-			headerPage = new HIndexHeaderPage(fileName,2);
+			headerPage = new HIndexHeaderPage(indexfileName,2);
 			headerPageId = headerPage.getPageId();
-			HashUtils.add_file_entry(fileName, headerPageId);
+			HashUtils.add_file_entry(indexfileName, headerPageId);
 
 			headerPage.set_keyType( keyType);
 			headerPage.set_H0Deapth(1);
@@ -45,19 +45,19 @@ public class ClusHIndex implements GlobalConst{
 			headerPage = new HIndexHeaderPage(headerPageId);
 		}
 		this.targetUtilization = (float) ((float)headerPage.get_TargetUtilization()/100.0);
-		this.dataFile = new ClusHIndexDataFile("clhdf"+fileName);
+		this.dataFile = new ClusHIndexDataFile(datafilename);
 
 
 	}
 
-	public ClusHIndex(String fileName) throws Exception {
-		headerPageId = HashUtils.get_file_entry(fileName);
+	public ClusHIndex(String datafilename, String indexfileName) throws Exception {
+		headerPageId = HashUtils.get_file_entry(indexfileName);
 		if(headerPageId == null) {
-			throw new IllegalArgumentException("No index found with name "+fileName);
+			throw new IllegalArgumentException("No index found with name "+indexfileName);
 		}
 		headerPage = new HIndexHeaderPage(headerPageId);
 		this.targetUtilization = (float) ((float)headerPage.get_TargetUtilization()/100.0);
-		this.dataFile = new ClusHIndexDataFile("clhdf"+fileName);
+		this.dataFile = new ClusHIndexDataFile(datafilename);
 	}
 
 	public RID insert(HashKey key,Tuple tup) throws Exception {
