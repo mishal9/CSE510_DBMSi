@@ -384,6 +384,7 @@ public class Table implements GlobalConst{
   }
   
   public void print_table() throws InvalidTupleSizeException {
+	  print_table_attr();
 	  for( int i=0; i<table_num_attr; i++ ) {
 		  System.out.print(table_attr_name[i]+table_sep);
 	  }
@@ -794,7 +795,7 @@ public class Table implements GlobalConst{
   }
   
   /* inserts data into an already existing table */
-  public void insert_data( String filename ) {
+  public void insert_data( String filename ) throws Exception {
 	  /* created a temp heap file of the data */
 	  //create_table(this.temp_heap_file, filename);
 	  
@@ -804,7 +805,11 @@ public class Table implements GlobalConst{
 	try {
 		/* initialising the heapfile for the table */
 		ClusteredHeapfile hf = new ClusteredHeapfile(this.table_heapfile);
-		
+		String hsfilename = get_clustered_index_filename(this.clustered_hash_attr, "hash");
+		ClusHIndex hasher = null;
+		if ( clustered_index_exist("hash") ) {
+			hasher = new ClusHIndex(this.table_heapfile, hsfilename);
+		}
 		/* opening the data file for reading */
 		File file = new File(data_folder + filename);
 	    Scanner sc = new Scanner(file);
@@ -857,7 +862,14 @@ public class Table implements GlobalConst{
 		    								  this.get_clustered_index_filename(this.clustered_btree_attr, "btree") );
 		    		}
 		    		else if ( clustered_index_exist("hash") ) {
-		    			//rid = ((ClusHIndexDataFile)hf).insertRecord(null);
+		    			HashKey key;
+		    			if ( table_attr_type[this.clustered_hash_attr-1].attrType == AttrType.attrInteger ) {
+		    				key = new HashKey(t.getIntFld(this.clustered_hash_attr));
+		    			}
+		    			else {
+		    				key = new HashKey(t.getStrFld(this.clustered_hash_attr));
+		    			}
+		    			rid = hasher.insert(key, t);
 		    		}
 		    		else {
 		    			rid = hf.insertRecord(t.returnTupleByteArray());
@@ -873,6 +885,9 @@ public class Table implements GlobalConst{
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
+		    }
+		    if ( clustered_index_exist("hash") ) {
+		    	hasher.close();
 		    }
         }
         catch (Exception e) {
@@ -1112,8 +1127,12 @@ public class Table implements GlobalConst{
   }
   
   private void print_table_attr() {
-	  System.out.println("Table attrypes: "+ Arrays.toString(this.table_attr_type));
+	  System.out.println("Tablename: "+this.tablename);
 	  System.out.println("Table num attr: "+ Integer.toString(table_num_attr));
+	  System.out.println("Table attrypes: "+ Arrays.toString(this.table_attr_type));
+	  System.out.println("Table strsizes: "+Arrays.toString(this.table_attr_size));
+	  System.out.println("Table tuple size: "+this.table_tuple_size);
+	  System.out.println("\n");
   }
   
   /* writes the sorted data into the table heap file and returns

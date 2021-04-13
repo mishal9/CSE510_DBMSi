@@ -296,7 +296,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
      * part of task 
      * structure: insert_data TABLENAME FILENAME
      * */
-    public void parse_insert_data() {
+    public void parse_insert_data() throws Exception {
     	if ( validate_token_length(3, "insert_data") == false ) {
 			return;
 		}
