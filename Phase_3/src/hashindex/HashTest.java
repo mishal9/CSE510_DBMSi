@@ -74,11 +74,13 @@ public class HashTest implements GlobalConst {
 		}
 		h.printBucketInfo();
 		System.out.println("\n DELETING ------------------------------------------------------------------\n");
-		for (int i = 5; i < 45; i++) {
+		for (int i = 1; i < 47; i++) {
 			//HashKey key = new HashKey(i+"laskdhlaskdlaskhdlaskdhlaskdlaskhdalskdhlaskdhalskdhlaskdhlahdlaskdhalksaskdhaskdhaskdhlaskdhlahsd"+i);
 			HashKey key = new HashKey(i);
+			
 			RID rid = new RID(new PageId(i),i);
-			h.delete(key, rid);
+			boolean val = h.delete(key, rid);
+			//System.out.println("del"+key+"status: "+val);
 		}
 		h.printBucketInfo();
 //		

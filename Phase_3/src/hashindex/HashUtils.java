@@ -43,7 +43,7 @@ public class HashUtils {
 	//util function to debug log stuff
 	// if no debug log wanted, comment the print statement
 	public static void log(String str) {
-		if(true)System.out.println(str); //comment this line to disable logs
+		if(false)System.out.println(str); //comment this line to disable logs
 		return;
 	}
 
@@ -71,4 +71,20 @@ public class HashUtils {
 		}
 	}
 
+	/**
+	 * A wrapper to store 2 values<br>
+	 * useful if we want to return 2 values from a function
+	 * <pre>{@code
+	 * Pair<String,Integer> pair = new Pair<>();
+	 * pair.first="hello";
+	 * pair.second=1;
+	 * return pair;
+	 * }</pre>
+	 * @param <M>
+	 * @param <N>
+	 */
+	public static class Pair<M,N> {
+		public M first;
+		public N second;
+	}
 }

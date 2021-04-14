@@ -142,6 +142,9 @@ public class HIndex implements GlobalConst {
 
 		HashUtils.log("Deleting entry: "+entry+" from bucket: "+bucketNumber);
 		boolean status = bucket.deleteEntry(entry);
+		if(status == false) { //nothing to delete, return false
+			return false;
+		}
 		headerPage.set_EntriesCount(headerPage.get_EntriesCount() - 1);
 		
 		//now shrink index if reqd
@@ -152,17 +155,17 @@ public class HIndex implements GlobalConst {
 		HashUtils.log("deletionTargetUtilization: " + deletionTargetUtilization);
 		if (headerPage.get_NumberOfBuckets() > 2 && currentUtilization <= deletionTargetUtilization) {
 			HashUtils.log("Shrinking the index");
-			System.out.println("sp: "+splitPointer);
-			rehashBucket(headerPage.get_NthBucketName(splitPointer+1), headerPage.get_H0Deapth());
+			//System.out.println("shrink: "+headerPage.get_NumberOfBuckets()+" sp: "+splitPointer+" h0:"+headerPage.get_H0Deapth());
+			rehashBucket(headerPage.get_NthBucketName(headerPage.get_NumberOfBuckets()-1), headerPage.get_H0Deapth() - 1);
 			splitPointer --;
 			if (splitPointer == -1) {
-				splitPointer = (1 << headerPage.get_H0Deapth()) - 1;
 				headerPage.set_H0Deapth(headerPage.get_H0Deapth() - 1);
+				splitPointer = (1 << headerPage.get_H0Deapth()) - 1;
 				HashUtils.log("resetting split pointer to  "+splitPointer);
 			}
 			headerPage.set_NumberOfBuckets(headerPage.get_NumberOfBuckets()-1);
 			headerPage.set_SplitPointerLocation(splitPointer);
-			HashUtils.log("after shrink splitPointer: " + splitPointer);
+			//System.out.println("after shrink: "+headerPage.get_NumberOfBuckets()+" sp: "+splitPointer+" h0:"+headerPage.get_H0Deapth());
 		}
 		
 		
@@ -170,6 +173,7 @@ public class HIndex implements GlobalConst {
 	}
 
 	private void rehashBucket(String bucketToBeRehashedName,int newDeapth) throws Exception {
+		//System.out.println("buc:"+bucketToBeRehashedName+" d:"+newDeapth);
 		Heapfile tempheapfile = new Heapfile("temp");
 		HashBucket bucketToBeRehashed = new HashBucket(bucketToBeRehashedName);
 		Scan scan = bucketToBeRehashed.heapfile.openScan();
@@ -187,7 +191,7 @@ public class HIndex implements GlobalConst {
 			tempheapfile.insertRecord(tup.returnTupleByteArray());
 			i++;
 		}
-		HashUtils.log("entries added to temp heapfile: "+i);
+		//System.out.println("entries added to temp heapfile: "+i);
 		scan.closescan();
 		bucketToBeRehashed.heapfile.deleteFile();
 		Scan tempHeapScan = tempheapfile.openScan();
@@ -207,11 +211,11 @@ public class HIndex implements GlobalConst {
 			String newBucketName = headerPage.get_NthBucketName(hash1);
 			HashBucket newBucket = new HashBucket(newBucketName );
 			newBucket.insertEntry(scannedHashEntry);
-			HashUtils.log("Rehashing "+scannedHashEntry.key+" to bucket "+newBucketName);
+			//System.out.println("Rehashing "+scannedHashEntry.key+" to bucket "+newBucketName);
 			
 			i++;
 		}
-		HashUtils.log("entries rehashed: "+i);
+		//System.out.println("entries rehashed: "+i);
 		tempHeapScan.closescan();
 		tempheapfile.deleteFile();
 	}
