@@ -27,7 +27,7 @@ public class RID{
 	 */
 	public RID (PageId pageno, int slotno)
 	{
-		pageNo = pageno;
+		pageNo.pid = pageno.pid;
 		slotNo = slotno;
 	}
 
@@ -36,7 +36,7 @@ public class RID{
 	 */
 	public void copyRid (RID rid)
 	{
-		pageNo = rid.pageNo;
+		pageNo.pid = rid.pageNo.pid;
 		slotNo = rid.slotNo;
 	}
 

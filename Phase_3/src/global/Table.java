@@ -3,7 +3,9 @@ package global;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
@@ -1343,9 +1345,10 @@ public class Table implements GlobalConst{
 		    }
 		    
 		    Tuple t = TupleUtils.getEmptyTuple(this.table_attr_type, this.table_attr_size);
-		    
+		    List<RID> rids_deleted = new ArrayList<>();
 		    while ( sc.hasNextLine() ) 
 		    {
+		    	rids_deleted.clear();
 		    	String temp_next_line = sc.nextLine().trim();
 		    	String[] token_next_line = temp_next_line.split("\\s+");
 		    	for ( int i=0; i<table_num_attr; i++ ) {
@@ -1367,7 +1370,7 @@ public class Table implements GlobalConst{
 		    	RID rid = new RID();
 		    	try {
 		    		if ( clustered_index_exist("btree") ) {
-		    			boolean status = hf.deleteRecord(t, this.get_clustered_index_filename(this.clustered_btree_attr, "btree"),
+		    			rids_deleted = hf.deleteRecord(t, this.get_clustered_index_filename(this.clustered_btree_attr, "btree"),
 								 this.table_attr_type, this.table_attr_size, this.clustered_btree_attr);
 		    		}
 		    		else if ( clustered_index_exist("hash") ) {
@@ -1382,9 +1385,9 @@ public class Table implements GlobalConst{
 		    		}
 		    		else {
 		    			//TBD delete the record from the heap file
-		    			delete_record_from_heapfile(this.table_heapfile, t);
+		    			rids_deleted.addAll( delete_record_from_heapfile(this.table_heapfile, t) );
 		    		}
-		    		update_delete_index_from_queue();
+		    		update_delete_index_from_queue(rids_deleted, t);
 		    		//TBD update the unclustered index
 				} catch (InvalidSlotNumberException e) {
 					// TODO Auto-generated catch block
@@ -1490,8 +1493,9 @@ public class Table implements GlobalConst{
 	  System.out.println("RID page no. "+rid.pageNo.pid);
   }
   
-  private void delete_record_from_heapfile(String heapfilename, Tuple t) throws InvalidSlotNumberException, Exception {
+  private List<RID> delete_record_from_heapfile(String heapfilename, Tuple t) throws InvalidSlotNumberException, Exception {
 	  //TBD keep a list of all the deleted rids
+	  List<RID> deleted = new ArrayList<>();
 	  Heapfile hf = new Heapfile(heapfilename);
 	  Scan scan = hf.openScan();
 	  Tuple itr, itr_hdr;
@@ -1500,39 +1504,35 @@ public class Table implements GlobalConst{
 	  itr = scan.getNext(temp);
 	  while ( itr != null ) {
 		  itr_hdr.tupleCopy(itr);
-		  if ( TupleUtils.Equal(itr_hdr, t, this.table_attr_type, this.table_num_attr) ) {			  
-			  hf = new Heapfile(heapfilename);
+		  if ( TupleUtils.Equal(itr_hdr, t, this.table_attr_type, this.table_num_attr) ) {
+			  deleted.add(new RID(temp.pageNo, temp.slotNo));
 			  hf.deleteRecord(temp);
 		  }
 		  itr = scan.getNext(temp);
 	  }
 	  scan.closescan();
+	  return deleted;
   }
   
-  private void update_delete_index_from_queue() {
+  private void update_delete_index_from_queue(List<RID> deleted, Tuple deleted_tuple) {
 	  // TBD/* update all the btree clustered indexes */
 	  
 	  /* update the unclustered btree indexes */
 	  try {
 		  /* keep the key ready for insertion */
-		  while ( !SystemDefs.JavabaseDB.deletion_key_queue.isEmpty() ) 
+		  Iterator<RID> itr = deleted.iterator();
+		  while ( itr.hasNext() ) 
 		  {
-			  Tuple tuple_hdr = TupleUtils.getEmptyTuple(this.table_attr_type, this.table_attr_size);
-			  Tuple tuple = SystemDefs.JavabaseDB.deletion_key_queue.poll();
-			  tuple_hdr.tupleCopy(tuple);
-			  RID rid_delete = SystemDefs.JavabaseDB.deletion_rid_queue.poll();
-			  System.out.println( "Attempting to delete tuple ");
-			  tuple_hdr.print(table_attr_type);
-			  System.out.println("delete rid page "+rid_delete.pageNo.pid+" slot "+rid_delete.slotNo);
+			  RID rid_delete = itr.next();
 			  for ( int i=0; i<btree_unclustered_attr.length; i++ ) {
 				  if ( btree_unclustered_attr[i] ) {
 					  	KeyClass key;
 						BTreeFile btf  = new BTreeFile(this.get_unclustered_index_filename(i+1, "btree"));
 						if ( table_attr_type[i].attrType == AttrType.attrInteger ) {
-							key = new IntegerKey( tuple_hdr.getIntFld(i+1) );
+							key = new IntegerKey( deleted_tuple.getIntFld(i+1) );
 						}
 						else {
-							key = new StringKey( tuple_hdr.getStrFld(i+1) );
+							key = new StringKey( deleted_tuple.getStrFld(i+1) );
 						}
 						btf.Delete(key, rid_delete);
 						//BT.printBTree(btf.getHeaderPage());
@@ -1544,10 +1544,10 @@ public class Table implements GlobalConst{
 					  	HIndex hasher = new HIndex(this.get_unclustered_index_filename(i+1, "hash") );
 						HashKey keyh;
 						if ( table_attr_type[i].attrType == AttrType.attrInteger ) {
-							keyh = new HashKey( tuple_hdr.getIntFld(i+1) );
+							keyh = new HashKey( deleted_tuple.getIntFld(i+1) );
 						}
 						else {
-							keyh = new HashKey( tuple_hdr.getStrFld(i+1) );
+							keyh = new HashKey( deleted_tuple.getStrFld(i+1) );
 						}
 						//hasher.delete(keyh, rid);
 						//hasher.print_bucket_names();

@@ -24,14 +24,6 @@ import heap.SpaceNotAvailableException;
 import heap.Tuple;
 
 public class DB implements GlobalConst {
-
-	/* list of all the key, rid pairs to be deleted from everywhere */
-	public Queue<Tuple> deletion_key_queue = new LinkedList<>();
-	public Queue<RID> deletion_rid_queue = new LinkedList<>();
-	
-	/* list of all the key, rid pairs to be entered into the table/indexes */
-	public Queue<Tuple> insertion_key_queue = new LinkedList<>();
-	public Queue<RID> insertion_rid_queue = new LinkedList<>();
 	
 	/* list of all the new key, rid pairs to be added everywhere */
 	/* list of all the tables in the database */

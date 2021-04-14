@@ -1,6 +1,8 @@
 package heap;
 
 import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
 
 import btree.BT;
 import btree.BTFileScan;
@@ -1633,7 +1635,7 @@ throws InvalidSlotNumberException,
    *
    * @return true record deleted  false:record not found
    */
-  public boolean deleteRecord(Tuple delete_tuple, String btsfilename, AttrType[] attrtype, short[] strsizes, int key_index)  
+  public List<RID> deleteRecord(Tuple delete_tuple, String btsfilename, AttrType[] attrtype, short[] strsizes, int key_index)  
     throws InvalidSlotNumberException, 
 	   InvalidTupleSizeException, 
 	   HFException, 
@@ -1642,6 +1644,7 @@ throws InvalidSlotNumberException,
 	   Exception
   
     {
+	  List<RID> deleted_rids = new ArrayList<>();
       boolean status = false;
       //System.out.println("Initiating delete for tuple");
       //delete_tuple.print(attrtype);
@@ -1667,7 +1670,7 @@ throws InvalidSlotNumberException,
       if ( nextentry == null ) {
     	  indScan.DestroyBTreeFileScan();
     	  btf.close();
-    	  return false;
+    	  return deleted_rids;
       }
       else {
     	  indScan.DestroyBTreeFileScan();
@@ -1685,7 +1688,7 @@ throws InvalidSlotNumberException,
 				     nelookup_currentDataPageRid);
     	  if ( status_nextentry == false ) {
     		  btf.close();
-    		  return false;
+    		  return deleted_rids;
     	  }
     	  else {
     		  RID lookup_rid = null;
@@ -1707,7 +1710,7 @@ throws InvalidSlotNumberException,
     			  btf.close();
     			  unpinPage(nelookup_currentDirPageId, false);
     			  unpinPage(nelookup_currentDataPageId, false);
-    			  return false;
+    			  return deleted_rids;
     		  }
     		  DataPageInfo dpinfo_entry = new DataPageInfo();
     		  atuple_entry = nelookup_dirPage.getRecord(nelookup_currentDataPageRid);
@@ -1722,8 +1725,7 @@ throws InvalidSlotNumberException,
   		    	  {
 		    		//System.out.println("delete record found. deleting it");
 		    		nelookup_dataPage.deleteRecord(lookup_rid);
-		    		SystemDefs.JavabaseDB.deletion_key_queue.add( new Tuple(atuple_hdr_entry.getTupleByteArray(), 0, atuple_hdr_entry.size()) );
-		    		SystemDefs.JavabaseDB.deletion_rid_queue.add( new RID(lookup_rid.pageNo, lookup_rid.slotNo) );
+		    		deleted_rids.add(new RID(lookup_rid.pageNo, lookup_rid.slotNo));
 		    		dpinfo_entry.availspace = nelookup_dataPage.available_space();
 		    		dpinfo_entry.recct--;
 		    		status = true;
@@ -1735,8 +1737,9 @@ throws InvalidSlotNumberException,
 		    			freePage(nelookup_currentDataPageId);
 		    			unpinPage(nelookup_currentDirPageId, true);
 		    			
-		    			deleteRecord(delete_tuple, btsfilename, attrtype, strsizes, key_index);
-		    			return true;
+		    			List<RID> temp_deleted = deleteRecord(delete_tuple, btsfilename, attrtype, strsizes, key_index);
+		    			deleted_rids.addAll(temp_deleted);
+		    			return deleted_rids;
 		    		}
   		    	  }
   		    	  lookup_rid = nelookup_dataPage.nextRecord(lookup_rid);
@@ -1762,8 +1765,9 @@ throws InvalidSlotNumberException,
   		      unpinPage(nelookup_currentDirPageId, true);
   		      unpinPage(nelookup_currentDataPageId, true);
   		      
-  		      deleteRecord(delete_tuple, btsfilename, attrtype, strsizes, key_index);
-  		      return true;
+  		      List<RID> temp_deleted = deleteRecord(delete_tuple, btsfilename, attrtype, strsizes, key_index);
+  		      deleted_rids.addAll(temp_deleted);
+  		      return deleted_rids;
     	  }
       }
     }
