@@ -88,9 +88,9 @@ public class TopK_HashJoin extends Iterator implements GlobalConst {
 	    
 		    outFilter[0].next  = null;
 		    outFilter[0].op    = new AttrOperator(AttrOperator.aopEQ);
-		    outFilter[0].type1 = new AttrType(AttrType.attrReal);
+		    outFilter[0].type1 = new AttrType(AttrType.attrSymbol);
 		    outFilter[0].operand1.symbol = new FldSpec (new RelSpec(RelSpec.outer), 1);
-		    outFilter[0].type2 = new AttrType(AttrType.attrReal);
+		    outFilter[0].type2 = new AttrType(AttrType.attrSymbol);
 		    outFilter[0].operand2.symbol = new FldSpec (new RelSpec(RelSpec.innerRel),1);
 		    outFilter[1] = null;
 	    
@@ -113,13 +113,8 @@ public class TopK_HashJoin extends Iterator implements GlobalConst {
 	    temp[3] = new AttrType (AttrType.attrReal);
 	    
 	    nlj.get_next().print(temp);
-	    
-	    
-//	    t = am.get_next();
-//	    while(t != null) {
-//	    	t.print(in1);
-//	    	t = am.get_next();
-//	    }
+	    nlj.get_next().print(temp);
+	    nlj.get_next().print(temp);
 	    
 	}
 
