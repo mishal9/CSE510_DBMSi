@@ -330,7 +330,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
     		System.err.println("ERROR: Table does not exist**");
     		return;
     	}
-    	table.delete_table(filename);
+    	table.delete_data(filename);
     }
     
     /* parses the output_table query for the exact structure 
