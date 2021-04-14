@@ -875,7 +875,7 @@ public class Table implements GlobalConst{
 		    		else {
 		    			rid = hf.insertRecord(t.returnTupleByteArray());
 		    		}
-					update_unclustered_index(t, rid);
+		    		update_insert_unclustered_index(t, rid);
 				} catch (InvalidSlotNumberException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -900,7 +900,7 @@ public class Table implements GlobalConst{
 	}
   }
   
-  private void update_unclustered_index( Tuple t, RID rid ) {
+  private void update_insert_unclustered_index( Tuple t, RID rid ) {
 	  // TBD/* update all the btree clustered indexes */
 	  
 	  /* update the unclustered btree indexes */
@@ -1246,6 +1246,7 @@ public class Table implements GlobalConst{
 				key = new StringKey(t_s.getStrFld(this.clustered_btree_attr));
 			}
         	curr_rid = hf1.insertRecord(t_s.getTupleByteArray(), this.table_attr_type, this.table_attr_size);
+        	System.out.println("BTREE clustered insert rid page "+ curr_rid.pageNo.pid+" slot "+curr_rid.slotNo);
         	if ( ( prev_rid.pageNo.pid != curr_rid.pageNo.pid ) && ( prev_rid.pageNo.pid != INVALID_PAGE ) ) {
         		btf.insert(prev_key, prev_rid);
         	}
@@ -1383,6 +1384,7 @@ public class Table implements GlobalConst{
 		    			//TBD delete the record from the heap file
 		    			delete_record_from_heapfile(this.table_heapfile, t);
 		    		}
+		    		update_delete_index_from_queue();
 		    		//TBD update the unclustered index
 				} catch (InvalidSlotNumberException e) {
 					// TODO Auto-generated catch block
@@ -1496,19 +1498,135 @@ public class Table implements GlobalConst{
 	  itr_hdr = TupleUtils.getEmptyTuple(this.table_attr_type, this.table_attr_size);
 	  RID temp = new RID();
 	  itr = scan.getNext(temp);
-	  Queue<RID> rid_deletion = new LinkedList<RID>();
 	  while ( itr != null ) {
 		  itr_hdr.tupleCopy(itr);
-		  if ( TupleUtils.Equal(itr_hdr, t, this.table_attr_type, this.table_num_attr) == true ) {
-			  rid_deletion.add( new RID( temp.pageNo, temp.slotNo ) );
+		  if ( TupleUtils.Equal(itr_hdr, t, this.table_attr_type, this.table_num_attr) ) {			  
+			  hf = new Heapfile(heapfilename);
+			  hf.deleteRecord(temp);
 		  }
 		  itr = scan.getNext(temp);
 	  }
 	  scan.closescan();
-	  while ( !rid_deletion.isEmpty() ) {
-		  hf.deleteRecord(rid_deletion.remove());
-	  }
   }
+  
+  private void update_delete_index_from_queue() {
+	  // TBD/* update all the btree clustered indexes */
+	  
+	  /* update the unclustered btree indexes */
+	  try {
+		  /* keep the key ready for insertion */
+		  while ( !SystemDefs.JavabaseDB.deletion_key_queue.isEmpty() ) 
+		  {
+			  Tuple tuple_hdr = TupleUtils.getEmptyTuple(this.table_attr_type, this.table_attr_size);
+			  Tuple tuple = SystemDefs.JavabaseDB.deletion_key_queue.poll();
+			  tuple_hdr.tupleCopy(tuple);
+			  RID rid_delete = SystemDefs.JavabaseDB.deletion_rid_queue.poll();
+			  System.out.println( "Attempting to delete tuple ");
+			  tuple_hdr.print(table_attr_type);
+			  System.out.println("delete rid page "+rid_delete.pageNo.pid+" slot "+rid_delete.slotNo);
+			  for ( int i=0; i<btree_unclustered_attr.length; i++ ) {
+				  if ( btree_unclustered_attr[i] ) {
+					  	KeyClass key;
+						BTreeFile btf  = new BTreeFile(this.get_unclustered_index_filename(i+1, "btree"));
+						if ( table_attr_type[i].attrType == AttrType.attrInteger ) {
+							key = new IntegerKey( tuple_hdr.getIntFld(i+1) );
+						}
+						else {
+							key = new StringKey( tuple_hdr.getStrFld(i+1) );
+						}
+						btf.Delete(key, rid_delete);
+						//BT.printBTree(btf.getHeaderPage());
+						//BT.printAllLeafPages(btf.getHeaderPage());
+						btf.close();
+				  }
+				  if ( hash_unclustered_attr[i] ) {
+					  
+					  	HIndex hasher = new HIndex(this.get_unclustered_index_filename(i+1, "hash") );
+						HashKey keyh;
+						if ( table_attr_type[i].attrType == AttrType.attrInteger ) {
+							keyh = new HashKey( tuple_hdr.getIntFld(i+1) );
+						}
+						else {
+							keyh = new HashKey( tuple_hdr.getStrFld(i+1) );
+						}
+						//hasher.delete(keyh, rid);
+						//hasher.print_bucket_names();
+						hasher.close();
+				  }
+			  }
+		  }
+	  }catch (GetFileEntryException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (ConstructPageException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (AddFileEntryException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (FieldNumberOutOfBoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (KeyTooLongException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (KeyNotMatchException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (LeafInsertRecException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IndexInsertRecException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (UnpinPageException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (PinPageException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (NodeNotMatchException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (ConvertException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (DeleteRecException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IndexSearchException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IteratorException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (LeafDeleteException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InsertException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (HashEntryNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InvalidFrameNumberException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (PageUnpinnedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (ReplacerException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+  }
+
 }
 
 

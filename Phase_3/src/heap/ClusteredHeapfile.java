@@ -1643,8 +1643,8 @@ throws InvalidSlotNumberException,
   
     {
       boolean status = false;
-      System.out.println("Initiating delete for tuple");
-      delete_tuple.print(attrtype);
+      //System.out.println("Initiating delete for tuple");
+      //delete_tuple.print(attrtype);
       
       //look for the page with rid_next_entry
 	  ClusteredBTSortedPage nelookup_dirPage = new ClusteredBTSortedPage();
@@ -1715,13 +1715,15 @@ throws InvalidSlotNumberException,
   		      btf.Delete(key_nextentry, rid_nextentry);
   		      lookup_rid = nelookup_dataPage.firstRecord();
   		      while ( lookup_rid != null ) {
-  		    	  System.out.println("inside the while loop");
+  		    	  //System.out.println("inside the while loop");
   		    	  atuple_entry = nelookup_dataPage.getRecord(lookup_rid);
   		    	  atuple_hdr_entry.tupleCopy(atuple_entry);
   		    	  if ( TupleUtils.Equal(atuple_hdr_entry, delete_tuple, attrtype, attrtype.length) ) 
   		    	  {
-		    		System.out.println("delete record found. deleting it");
+		    		//System.out.println("delete record found. deleting it");
 		    		nelookup_dataPage.deleteRecord(lookup_rid);
+		    		SystemDefs.JavabaseDB.deletion_key_queue.add( new Tuple(atuple_hdr_entry.getTupleByteArray(), 0, atuple_hdr_entry.size()) );
+		    		SystemDefs.JavabaseDB.deletion_rid_queue.add( new RID(lookup_rid.pageNo, lookup_rid.slotNo) );
 		    		dpinfo_entry.availspace = nelookup_dataPage.available_space();
 		    		dpinfo_entry.recct--;
 		    		status = true;

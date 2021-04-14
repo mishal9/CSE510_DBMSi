@@ -13,4 +13,5 @@ module DBMSI_Phase_3 {
 	exports btree;
 	exports heap;
 	exports bufmgr;
+	requires jdk.compiler;
 }

@@ -6,11 +6,6 @@ Number INT
 Relation INT
 PinCode STR
 Khushal	2	3	4	4	380051
-Krupal	4	3	2	3	380056
-Khushal	2	3	4	4	380051
-Krupal	4	3	2	3	380056
-Khushal	2	3	4	4	380051
-Krupal	4	3	2	3	380056
 Khushal	2	3	4	4	380051
 Krupal	4	3	2	3	380056
 Pooja	2	3	4	2	123345

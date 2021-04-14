@@ -6,4 +6,4 @@ Number INT
 Relation INT
 PinCode STR
 Khushal	2	3	4	4	380051
-Karan	4	3	2	1	985623
+Krupal	4	3	2	3	380056

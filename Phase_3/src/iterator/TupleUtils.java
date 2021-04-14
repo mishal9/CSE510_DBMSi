@@ -6,6 +6,10 @@ import java.io.*;
 import java.lang.*;
 import java.util.Arrays;
 
+import btree.IntegerKey;
+import btree.KeyClass;
+import btree.StringKey;
+
 /**
  * some useful method when processing Tuple
  */
@@ -390,5 +394,16 @@ public class TupleUtils {
 			throw new TupleUtilsException(e, "setHdr() failed");
 		}
 		return res_str_sizes;
+	}
+	
+	public static KeyClass get_key_from_tuple(Tuple tuple, AttrType[] attrtype, int key_index) throws FieldNumberOutOfBoundException, IOException {
+		KeyClass key = null;
+		if ( attrtype[key_index-1].attrType == AttrType.attrInteger ) {
+			key = new IntegerKey( tuple.getIntFld(key_index) );
+		}
+		else {
+			key = new StringKey( tuple.getStrFld(key_index) );
+		}
+		return key;
 	}
 }

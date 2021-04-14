@@ -645,7 +645,7 @@ public class HFPage extends Page
 	  return tuple;
 	}
       
-      else {   
+      else {
         throw new InvalidSlotNumberException (null, "HEAPFILE: INVALID_SLOTNO");
       }
       
