@@ -1,5 +1,6 @@
 package hashindex;
 
+import java.io.File;
 import java.io.IOException;
 
 import global.AttrType;
@@ -64,19 +65,24 @@ public class HashTest implements GlobalConst {
 	}
 	
 	private void testHIndex() throws Exception {
-		HIndex h = new HIndex("whatever", AttrType.attrInteger, 4,80);
-		for (int i = 10; i < 100; i++) {
+		HIndex h = new HIndex("whatever", AttrType.attrInteger, 4,15);
+		for (int i = 1; i < 50; i++) {
 			//HashKey key = new HashKey(i+"laskdhlaskdlaskhdlaskdhlaskdlaskhdalskdhlaskdhalskdhlaskdhlahdlaskdhalksaskdhaskdhaskdhlaskdhlahsd"+i);
 			HashKey key = new HashKey(i);
 			RID rid = new RID(new PageId(i),i);
 			h.insert(key, rid);
 		}
-		for(int i =0;i<h.headerPage.get_NumberOfBuckets();i++) {
-			System.out.println("BUCKET: "+i);
-			HashBucket bucket = new HashBucket(h.headerPage.get_NthBucketName(i));
-			bucket.printToConsole();
+		h.printBucketInfo();
+		System.out.println("\n DELETING ------------------------------------------------------------------\n");
+		for (int i = 1; i < 47; i++) {
+			//HashKey key = new HashKey(i+"laskdhlaskdlaskhdlaskdhlaskdlaskhdalskdhlaskdhalskdhlaskdhlahdlaskdhalksaskdhaskdhaskdhlaskdhlahsd"+i);
+			HashKey key = new HashKey(i);
+			
+			RID rid = new RID(new PageId(i),i);
+			boolean val = h.delete(key, rid);
+			//System.out.println("del"+key+"status: "+val);
 		}
-		
+		h.printBucketInfo();
 //		
 //		h.delete(new HashKey(13));
 //		bucket.printToConsole();
@@ -100,7 +106,9 @@ public class HashTest implements GlobalConst {
 	public HashTest() {
 		long time=System.currentTimeMillis();
 		time=10;
+		
 		String dbpath = "HASHTEST" + time + ".minibase-db";
+		new File(dbpath).delete();
 		//SystemDefs.MINIBASE_RESTART_FLAG=true;
 		SystemDefs sysdef = new SystemDefs(dbpath, 5000, 100, "Clock");
 
