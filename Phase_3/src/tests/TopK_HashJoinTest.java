@@ -60,9 +60,12 @@ implements GlobalConst {
 
         GenerateIndexFiles obj = new GenerateIndexFiles();
         IndexFile indexFile1 = null;
+        IndexFile indexFile2 = null;
 
 		try {
 			indexFile1 = obj.createCombinedBTreeIndex("/Users/kunjpatel/Desktop/CSE510_DBMSi/Phase_3/data/nra1.txt",pref_list1, pref_list_length1);
+			indexFile2 = obj.createCombinedBTreeIndex("/Users/kunjpatel/Desktop/CSE510_DBMSi/Phase_3/data/nra2.txt",pref_list1, pref_list_length1);
+
 		} catch (Exception e) {
 			e.printStackTrace();
 		} 

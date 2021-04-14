@@ -70,8 +70,57 @@ public class TopK_HashJoin extends Iterator implements GlobalConst {
 	    		"AAA1", in1, null, 2, 2,
 				   Sprojection, null, 2, false);
 
-	    System.out.println(am.get_next());
-	    System.out.println(am.get_next());
+	    Tuple t = new Tuple();
+	    
+	    //heap_AAA1
+	    
+	    FldSpec []  proj1 = {
+	    	       new FldSpec(new RelSpec(RelSpec.outer), 1),
+	    	       new FldSpec(new RelSpec(RelSpec.outer), 2),
+	    	       new FldSpec(new RelSpec(RelSpec.innerRel), 1),
+	    	       new FldSpec(new RelSpec(RelSpec.innerRel), 2)
+	    };
+	    
+	     CondExpr [] outFilter = new CondExpr[2];
+		    outFilter[0] = new CondExpr();
+		    outFilter[1] = new CondExpr();
+	     
+	    
+		    outFilter[0].next  = null;
+		    outFilter[0].op    = new AttrOperator(AttrOperator.aopEQ);
+		    outFilter[0].type1 = new AttrType(AttrType.attrReal);
+		    outFilter[0].operand1.symbol = new FldSpec (new RelSpec(RelSpec.outer), 1);
+		    outFilter[0].type2 = new AttrType(AttrType.attrReal);
+		    outFilter[0].operand2.symbol = new FldSpec (new RelSpec(RelSpec.innerRel),1);
+		    outFilter[1] = null;
+	    
+	    NestedLoopsJoins nlj = null;
+	    try {
+	      nlj = new NestedLoopsJoins (in1, 2, null,
+	    		  in2, 2, null,
+					  10,
+					  am, "heap_AAA2",
+					  outFilter, null, proj1, 4);
+	    }
+	    catch (Exception e) {
+	      System.err.println ("*** Error preparing for nested_loop_join");
+	    }
+	    
+	    AttrType[] temp = new AttrType[4];
+	    temp[0] = new AttrType (AttrType.attrReal);
+	    temp[1] = new AttrType (AttrType.attrReal);
+	    temp[2] = new AttrType (AttrType.attrReal);
+	    temp[3] = new AttrType (AttrType.attrReal);
+	    
+	    nlj.get_next().print(temp);
+	    
+	    
+//	    t = am.get_next();
+//	    while(t != null) {
+//	    	t.print(in1);
+//	    	t = am.get_next();
+//	    }
+	    
 	}
 
 	@Override
