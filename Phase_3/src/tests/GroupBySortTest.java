@@ -29,6 +29,8 @@ class GroupBySortDriver extends TestDriver
             {2, 3, 4},
             {3, 5, 10},
             {3, 100, 20},
+            {4, 5, 8},
+            {4, 8, 9},
             {-1,-1,-1}
     };
 
@@ -215,7 +217,7 @@ class GroupBySortDriver extends TestDriver
 
     protected boolean test1()
     {
-        System.out.println("------------------------ TEST 1 --------------------------");
+        System.out.println("------------------------ TEST 1 : MIN --------------------------");
 
         boolean status = OK;
 
@@ -316,7 +318,7 @@ class GroupBySortDriver extends TestDriver
                     fscan,
                     groupByAttr,
                     aggList,
-                    aggType[1],
+                    aggType[0],
                     projlist,
                     3,
                     20);
@@ -357,20 +359,19 @@ class GroupBySortDriver extends TestDriver
 
     protected boolean test2()
     {
-        System.out.println("------------------------ TEST 2 --------------------------");
+        System.out.println("------------------------ TEST 2 : MAX --------------------------");
 
         boolean status = OK;
 
         AttrType[] attrType = new AttrType[3];
-        attrType[0] = new AttrType(AttrType.attrReal);
-        attrType[1] = new AttrType(AttrType.attrReal);
-        attrType[2] = new AttrType(AttrType.attrReal);
+        attrType[0] = new AttrType(AttrType.attrInteger);
+        attrType[1] = new AttrType(AttrType.attrInteger);
+        attrType[2] = new AttrType(AttrType.attrInteger);
 
         short[] attrSize = new short[3];
         attrSize[0] = REC_LEN1;
         attrSize[1] = REC_LEN2;
         attrSize[2] = REC_LEN3;
-
 
         // create a tuple of appropriate size
         Tuple t = new Tuple();
@@ -388,7 +389,7 @@ class GroupBySortDriver extends TestDriver
         RID             rid;
         Heapfile        f = null;
         try {
-            f = new Heapfile("test2sortPref.in");
+            f = new Heapfile("test2GroupBySort.in");
         }
         catch (Exception e) {
             status = FAIL;
@@ -423,9 +424,16 @@ class GroupBySortDriver extends TestDriver
             }
         }
 
+        FldSpec groupByAttr = new FldSpec(new RelSpec(RelSpec.outer), 1);
+
+        FldSpec[] aggList = new FldSpec[2];
+        rel = new RelSpec(RelSpec.outer);
+        aggList[0] = new FldSpec(rel, 2);
+        aggList[1] = new FldSpec(rel, 3);
+
         // create an iterator by open a file scan
         FldSpec[] projlist = new FldSpec[3];
-        RelSpec rel = new RelSpec(RelSpec.outer);
+        rel = new RelSpec(RelSpec.outer);
         projlist[0] = new FldSpec(rel, 1);
         projlist[1] = new FldSpec(rel, 2);
         projlist[2] = new FldSpec(rel, 3);
@@ -434,102 +442,303 @@ class GroupBySortDriver extends TestDriver
         FileScan fscan = null;
 
         try {
-            fscan = new FileScan("test2sortPref.in", attrType, attrSize, (short) 3, 3, projlist, null);
+            fscan = new FileScan("test2GroupBySort.in", attrType, attrSize, (short) 3, 3, projlist, null);
         }
         catch (Exception e) {
             status = FAIL;
             e.printStackTrace();
         }
 
-        // Sort "test1sortPref.in"
-        SortPref sort = null;
+        // Sort operator working verified till here
+
+        GroupByWithSort grpSort = null;
+        PCounter.initialize();
         try {
-            sort = new SortPref(attrType, (short) 3, attrSize, fscan, order[1], new int[]{1,2}, 2, SORTPGNUM);
-        }
-        catch (Exception e) {
-            status = FAIL;
-            e.printStackTrace();
-        }
+            grpSort = new GroupByWithSort(attrType,
+                    3,
+                    attrSize,
+                    fscan,
+                    groupByAttr,
+                    aggList,
+                    aggType[1],
+                    projlist,
+                    3,
+                    20);
 
-
-        int count = 0;
-        t = null;
-        float[] outval = new float[3];
-
-        try {
-            t = sort.get_next();
-        }
-        catch (Exception e) {
-            status = FAIL;
-            e.printStackTrace();
-        }
-
-        boolean flag = true;
-
-        while (t != null) {
-            if (count >= NUM_RECORDS) {
-                System.err.println("Test2 -- OOPS! too many records");
-                status = FAIL;
-                flag = false;
-                break;
-            }
-
+        } finally {
             try {
-                outval[0] = t.getFloFld(1);
-                outval[1] = t.getFloFld(2);
-                outval[2] = t.getFloFld(3);
-
-                System.out.println("Got row: "+outval[0]+" "+outval[1]+" "+outval[2]+" ");
-            }
-            catch (Exception e) {
-                status = FAIL;
+                grpSort.close();
+            } catch (IOException e) {
                 e.printStackTrace();
-            }
-            /*
-            if (!Arrays.equals(outval, data3[count])) {
-                System.err.println("outval = " + outval[0] + "\tdata3[count] = " + data3[count][0]);
-
-                System.err.println("Test2 -- OOPS! test2.out not sorted");
-                status = FAIL;
-            }
-
-             */
-            count++;
-
-            try {
-                t = sort.get_next();
-            }
-            catch (Exception e) {
-                status = FAIL;
+            } catch (SortException e) {
                 e.printStackTrace();
             }
         }
-        if (count < NUM_RECORDS) {
-            System.err.println("Test2 -- OOPS! too few records");
-            status = FAIL;
-        }
-        else if (flag && status) {
-            System.err.println("Test2 -- Sorting OK");
-        }
 
-        // clean up
-        try {
-            sort.close();
-        }
-        catch (Exception e) {
-            status = FAIL;
-            e.printStackTrace();
-        }
+        System.out.println("Number of Disk reads: "+ PCounter.get_rcounter());
+        System.out.println("Number of Disk writes: "+ PCounter.get_wcounter());
+        PCounter.initialize();
 
         System.err.println("------------------- TEST 2 completed ---------------------\n");
-
 
         return status;
     }
 
-    protected  boolean test3()
+    protected  boolean test3(){
+        System.out.println("------------------------ TEST 3 : AVG --------------------------");
+
+        boolean status = OK;
+
+        AttrType[] attrType = new AttrType[3];
+        attrType[0] = new AttrType(AttrType.attrInteger);
+        attrType[1] = new AttrType(AttrType.attrInteger);
+        attrType[2] = new AttrType(AttrType.attrInteger);
+
+        short[] attrSize = new short[3];
+        attrSize[0] = REC_LEN1;
+        attrSize[1] = REC_LEN2;
+        attrSize[2] = REC_LEN3;
+
+        // create a tuple of appropriate size
+        Tuple t = new Tuple();
+        try {
+            t.setHdr((short) 3, attrType, attrSize);
+        }
+        catch (Exception e) {
+            status = FAIL;
+            e.printStackTrace();
+        }
+
+        int size = t.size();
+
+        // Create unsorted data file "test1.in"
+        RID             rid;
+        Heapfile        f = null;
+        try {
+            f = new Heapfile("test3GroupBySort.in");
+        }
+        catch (Exception e) {
+            status = FAIL;
+            e.printStackTrace();
+        }
+
+        t = new Tuple(size);
+        try {
+            t.setHdr((short) 3, attrType, attrSize);
+        }
+        catch (Exception e) {
+            status = FAIL;
+            e.printStackTrace();
+        }
+
+        for (int i=0; i<NUM_RECORDS; i++) {
+            try {
+                for(int j=0; j<3; j++)
+                    t.setFloFld(j+1, data1[i][j]);
+            }
+            catch (Exception e) {
+                status = FAIL;
+                e.printStackTrace();
+            }
+
+            try {
+                rid = f.insertRecord(t.returnTupleByteArray());
+            }
+            catch (Exception e) {
+                status = FAIL;
+                e.printStackTrace();
+            }
+        }
+
+        FldSpec groupByAttr = new FldSpec(new RelSpec(RelSpec.outer), 1);
+
+        FldSpec[] aggList = new FldSpec[2];
+        rel = new RelSpec(RelSpec.outer);
+        aggList[0] = new FldSpec(rel, 2);
+        aggList[1] = new FldSpec(rel, 3);
+
+        // create an iterator by open a file scan
+        FldSpec[] projlist = new FldSpec[3];
+        rel = new RelSpec(RelSpec.outer);
+        projlist[0] = new FldSpec(rel, 1);
+        projlist[1] = new FldSpec(rel, 2);
+        projlist[2] = new FldSpec(rel, 3);
+
+
+        FileScan fscan = null;
+
+        try {
+            fscan = new FileScan("test3GroupBySort.in", attrType, attrSize, (short) 3, 3, projlist, null);
+        }
+        catch (Exception e) {
+            status = FAIL;
+            e.printStackTrace();
+        }
+
+        // Sort operator working verified till here
+
+        GroupByWithSort grpSort = null;
+        PCounter.initialize();
+        try {
+            grpSort = new GroupByWithSort(attrType,
+                    3,
+                    attrSize,
+                    fscan,
+                    groupByAttr,
+                    aggList,
+                    aggType[2],
+                    projlist,
+                    3,
+                    20);
+
+        } finally {
+            try {
+                grpSort.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (SortException e) {
+                e.printStackTrace();
+            }
+        }
+
+        System.out.println("Number of Disk reads: "+ PCounter.get_rcounter());
+        System.out.println("Number of Disk writes: "+ PCounter.get_wcounter());
+        PCounter.initialize();
+
+        System.err.println("------------------- TEST 3 completed ---------------------\n");
+
+        return status;
+    }
+
+    protected boolean test4(){
+        System.out.println("------------------------ TEST 4 : SKYLINE --------------------------");
+
+        boolean status = OK;
+
+        AttrType[] attrType = new AttrType[3];
+        attrType[0] = new AttrType(AttrType.attrInteger);
+        attrType[1] = new AttrType(AttrType.attrInteger);
+        attrType[2] = new AttrType(AttrType.attrInteger);
+
+        short[] attrSize = new short[3];
+        attrSize[0] = REC_LEN1;
+        attrSize[1] = REC_LEN2;
+        attrSize[2] = REC_LEN3;
+
+        // create a tuple of appropriate size
+        Tuple t = new Tuple();
+        try {
+            t.setHdr((short) 3, attrType, attrSize);
+        }
+        catch (Exception e) {
+            status = FAIL;
+            e.printStackTrace();
+        }
+
+        int size = t.size();
+
+        // Create unsorted data file "test1.in"
+        RID             rid;
+        Heapfile        f = null;
+        try {
+            f = new Heapfile("test4GroupBySort.in");
+        }
+        catch (Exception e) {
+            status = FAIL;
+            e.printStackTrace();
+        }
+
+        t = new Tuple(size);
+        try {
+            t.setHdr((short) 3, attrType, attrSize);
+        }
+        catch (Exception e) {
+            status = FAIL;
+            e.printStackTrace();
+        }
+
+        for (int i=0; i<NUM_RECORDS; i++) {
+            try {
+                for(int j=0; j<3; j++)
+                    t.setFloFld(j+1, data1[i][j]);
+            }
+            catch (Exception e) {
+                status = FAIL;
+                e.printStackTrace();
+            }
+
+            try {
+                rid = f.insertRecord(t.returnTupleByteArray());
+            }
+            catch (Exception e) {
+                status = FAIL;
+                e.printStackTrace();
+            }
+        }
+
+        FldSpec groupByAttr = new FldSpec(new RelSpec(RelSpec.outer), 1);
+
+        FldSpec[] aggList = new FldSpec[2];
+        rel = new RelSpec(RelSpec.outer);
+        aggList[0] = new FldSpec(rel, 2);
+        aggList[1] = new FldSpec(rel, 3);
+
+        // create an iterator by open a file scan
+        FldSpec[] projlist = new FldSpec[3];
+        rel = new RelSpec(RelSpec.outer);
+        projlist[0] = new FldSpec(rel, 1);
+        projlist[1] = new FldSpec(rel, 2);
+        projlist[2] = new FldSpec(rel, 3);
+
+
+        FileScan fscan = null;
+
+        try {
+            fscan = new FileScan("test4GroupBySort.in", attrType, attrSize, (short) 3, 3, projlist, null);
+        }
+        catch (Exception e) {
+            status = FAIL;
+            e.printStackTrace();
+        }
+
+        // Sort operator working verified till here
+
+        GroupByWithSort grpSort = null;
+        PCounter.initialize();
+        try {
+            grpSort = new GroupByWithSort(attrType,
+                    3,
+                    attrSize,
+                    fscan,
+                    groupByAttr,
+                    aggList,
+                    aggType[3],
+                    projlist,
+                    3,
+                    20);
+
+        } finally {
+            try {
+                grpSort.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (SortException e) {
+                e.printStackTrace();
+            }
+        }
+
+        System.out.println("Number of Disk reads: "+ PCounter.get_rcounter());
+        System.out.println("Number of Disk writes: "+ PCounter.get_wcounter());
+        PCounter.initialize();
+
+        System.err.println("------------------- TEST 4 completed ---------------------\n");
+
+        return status;
+    }
+
+    protected  boolean test5()
     {
-        System.out.println("------------------------ TEST 3 --------------------------");
+        System.out.println("------------------------ TEST 5 --------------------------");
         try{
             readDataIntoHeap("../../data/data3.txt");
         }catch (Exception e){
