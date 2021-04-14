@@ -10,6 +10,7 @@ import heap.HFDiskMgrException;
 import heap.HFException;
 import heap.Heapfile;
 import heap.InvalidSlotNumberException;
+import heap.InvalidTupleSizeException;
 import heap.Scan;
 import heap.Tuple;
 
@@ -30,6 +31,41 @@ public class HashBucket implements GlobalConst {
 		RID hashLocation = heapfile.insertRecord(byteArr);
 	}
 
+	/**
+	 * check if this key is present in this bucket
+	 * @param keyToCheck
+	 * @return boolean
+	 */
+	public boolean checkKeyExists(HashKey keyToCheck) throws Exception {
+		RID foundLocation = null;
+		Scan scan = heapfile.openScan();
+		RID rid = new RID();
+		Tuple tup;
+		boolean done = false;
+		while (!done) {
+			tup = scan.getNext(rid);
+
+			if (tup == null) {
+				done = true;
+				break;
+			}
+			
+			HashEntry scannedHashEntry = new HashEntry(tup.returnTupleByteArray(), 0);
+			// System.out.println(i+" scannedRid: "+scannedRID);
+			if (scannedHashEntry.key.equals(keyToCheck)) {
+				done = true;
+				foundLocation = new RID(new PageId(rid.pageNo.pid), rid.slotNo);
+				break;
+			}
+		}
+		scan.closescan();
+		if (foundLocation != null) {
+			//key found at location foundLocation in this bucket
+			return true;
+		}
+		return false;
+	}
+	
 	public boolean deleteEntry(HashEntry entryToDelete)
 			throws InvalidSlotNumberException, HFException, HFBufMgrException, HFDiskMgrException, Exception {
 		RID foundLocation = null;
