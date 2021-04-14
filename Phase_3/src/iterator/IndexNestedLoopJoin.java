@@ -23,7 +23,7 @@ import java.io.*;
 
 public class IndexNestedLoopJoin extends Iterator {
     private AttrType _in1[], _in2[];
-    private int in1_len, in2_len;
+    private int in1_len, in2_len, fld1, fld2;
     private Iterator outer;
     private short t2_str_sizescopy[];
     private CondExpr OutputFilter[];
@@ -42,8 +42,15 @@ public class IndexNestedLoopJoin extends Iterator {
     private BTFileScan b_inner;
     private KeyClass hi_key = null, lo_key = null;
     private Operand temp_op;
-    private boolean index_found;  //TODO: Write code to modify this variable
-
+    private boolean index_found = false;  //TODO: Write code to modify this variable
+    private int inner_proj_count;
+    private FldSpec inner_proj[];
+    private FldSpec outer_proj[];
+    private String RelationName;
+    private String index_name;
+    private CondExpr[] outFilter;
+    IndexScan iscan;
+    int indexType;
     /**
      * constructor
      * Initialize the two relations which are joined, including relation type,
@@ -77,7 +84,7 @@ public class IndexNestedLoopJoin extends Iterator {
                                CondExpr rightFilter[],
                                FldSpec proj_list[],
                                int n_out_flds
-    ) throws IOException, NestedLoopException {
+    ) throws IOException, NestedLoopException, InvalidTupleSizeException {
 
         _in1 = new AttrType[in1.length];
         _in2 = new AttrType[in2.length];
@@ -85,7 +92,6 @@ public class IndexNestedLoopJoin extends Iterator {
         System.arraycopy(in2, 0, _in2, 0, in2.length);
         in1_len = len_in1;
         in2_len = len_in2;
-
 
         outer = am1;
         t2_str_sizescopy = t2_str_sizes;
@@ -101,9 +107,10 @@ public class IndexNestedLoopJoin extends Iterator {
 
         AttrType[] Jtypes = new AttrType[n_out_flds];
         short[] t_size;
-
+        RelationName = relationName;
         perm_mat = proj_list;
         nOutFlds = n_out_flds;
+
         try {
             t_size = TupleUtils.setup_op_tuple(Jtuple, Jtypes,
                     in1, len_in1, in2, len_in2,
@@ -112,16 +119,64 @@ public class IndexNestedLoopJoin extends Iterator {
         } catch (TupleUtilsException e) {
             throw new NestedLoopException(e, "TupleUtilsException is caught by NestedLoopsJoins.java");
         }
-        index_found = true; //TODO: Logic to modify this
+        try{
+            fld2 = OutputFilter[0].operand2.symbol.offset;
 
-        try {
-            hf = new Heapfile(relationName);
-            if (index_found) {
-                btreefile = new BTreeFile(relationName + ".unclustered");
+            inner_proj_count = 0;
+            for (FldSpec fldSpec : proj_list) {
+                if (fldSpec.relation.key == RelSpec.innerRel) {
+                    inner_proj_count += 1;
+                }
             }
 
-        } catch (Exception e) {
-            throw new NestedLoopException(e, "Create new heapfile failed.");
+            inner_proj = new FldSpec[inner_proj_count];
+            outer_proj = new FldSpec[proj_list.length - inner_proj_count];
+            int j = 0, k = 0;
+            for (FldSpec fldSpec : proj_list) {
+                if (fldSpec.relation.key == RelSpec.innerRel) {
+                    inner_proj[j] = new FldSpec(new RelSpec(RelSpec.outer), fldSpec.offset);
+                    j += 1;
+                } else {
+                    outer_proj[k] = fldSpec;
+                    k += 1;
+                }
+            }
+
+            Table table = SystemDefs.JavabaseDB.get_relation(relationName);
+            if (false && table == null) {       // TODO: removing extra booleans after integreating with task6
+                System.err.println("ERROR: Table does not exist**");
+                return;
+            }
+            if (true || table.getBtree_unclustered_attr()[fld2]) {  // TODO: removing extra booleans after integreating with task6
+                // unclustered btree exists on fld2
+                indexType = IndexType.B_Index;
+                index_name = relationName+".unclustered"; //table.get_unclustered_index_filename(fld2, "btree");
+                index_found = true;
+            }
+            else if(table.getHash_unclustered_attr()[fld2]) {
+                // unclustered hash exist on fld2
+                indexType = IndexType.Hash;
+                index_name = ""; // table.get_unclustered_index_filename(fld2, "hash");
+                index_found = true;
+            }
+            else if(table.getClustered_btree_attr() == fld2){
+                // we have btree clustered
+                indexType = IndexType.B_Index;
+                index_name = ""; // TODO: get name, if possible
+                index_found = true;
+            }
+            else if(table.getClustered_hash_attr() == fld2){
+                // we have btree clustered
+                indexType = IndexType.Hash;
+                index_name = ""; // TODO: get name, if possible
+                index_found = true;
+            }
+            else{
+                index_found = false;
+                hf = new Heapfile(relationName);
+            }
+        }catch (Exception e){
+            e.printStackTrace();
         }
     }
 
@@ -174,12 +229,6 @@ public class IndexNestedLoopJoin extends Iterator {
                     // close scan
                     inner = null;
                 }
-
-                try {
-                    inner = hf.openScan();
-                } catch (Exception e) {
-                    throw new NestedLoopException(e, "openScan failed");
-                }
                 if ((outer_tuple = outer.get_next()) == null) {
                     done = true;
                     if (inner != null) {
@@ -188,8 +237,14 @@ public class IndexNestedLoopJoin extends Iterator {
                     return null;
                 }
                 if (index_found == true) {
-                    set_keys(outer_tuple);  // set hi_key and lo_key
-                    b_inner = btreefile.new_scan(lo_key, hi_key);
+                    set_keys(outer_tuple);
+                    switch(indexType) {
+                        case IndexType.B_Index:
+                            iscan = new IndexScan(new IndexType(IndexType.B_Index), RelationName, index_name, _in2, t2_str_sizescopy, in2_len, inner_proj_count, inner_proj, outFilter, fld2, false);
+                            break;
+                        default:
+                            System.out.println("What index~");
+                    }
                 }
             }  // ENDS: if (get_from_outer == TRUE)
 
@@ -200,15 +255,7 @@ public class IndexNestedLoopJoin extends Iterator {
 
             RID rid = null;
             if (index_found) {
-                KeyDataEntry kde = b_inner.get_next();
-                if(kde == null){
-                    get_from_outer = true;
-                    continue;
-                }
-                LeafData ld = (LeafData) kde.data;
-
-                rid = (ld).getData();
-                inner_tuple = hf.getRecord(rid);
+                inner_tuple = iscan.get_next();
             } else {
                 rid = new RID();
                 inner_tuple = inner.getNext(rid);
@@ -226,21 +273,12 @@ public class IndexNestedLoopJoin extends Iterator {
                     }
                 }
                 if (index_found) {
-                    KeyDataEntry kde = b_inner.get_next();
-                    if(kde == null){
-                        get_from_outer = true;
-                        continue;
-                    }
-                    LeafData ld = (LeafData) kde.data;
-                    rid = (ld).getData();
-                    inner_tuple = hf.getRecord(rid);
+                    inner_tuple = iscan.get_next();
                 } else {
                     rid = new RID();
                     inner_tuple = inner.getNext(rid);
                 }
             }
-            lo_key = null;
-            hi_key = null;
             // There has been no match. (otherwise, we would have
             //returned from t//he while loop. Hence, inner is
             //exhausted, => set get_from_outer = TRUE, go to top of loop
@@ -254,101 +292,72 @@ public class IndexNestedLoopJoin extends Iterator {
      */
     private void set_keys(Tuple outer) {
         CondExpr temp_ptr = OutputFilter[0];
+        outFilter = new CondExpr[2];
+        outFilter[0] = new CondExpr();
+        outFilter[0].next = null;
+        outFilter[1] = null;
+
         try {
+
             switch (temp_ptr.op.attrOperator) {
-                case AttrOperator.aopEQ:
-                    break;
                 case AttrOperator.aopNE:
                     System.out.println("{NE} This operator is not supported.");
-                    break;
-                case AttrOperator.aopLT:
-                    break;
-                case AttrOperator.aopLE:
-                    break;
-                case AttrOperator.aopGT:
-                    AttrType temp_ = temp_ptr.type1;
-                    temp_ptr.type1 = temp_ptr.type2;
-                    temp_ptr.type2 = temp_;
-
-                    temp_op = temp_ptr.operand1;
-                    temp_ptr.operand1 = temp_ptr.operand2;
-                    temp_ptr.operand2 = temp_op;
-
-                    temp_ptr.op.attrOperator = AttrOperator.aopLT;
-                    break;
-                case AttrOperator.aopGE:
-                    AttrType temp__ = temp_ptr.type1;
-                    temp_ptr.type1 = temp_ptr.type2;
-                    temp_ptr.type2 = temp__;
-
-                    temp_op = temp_ptr.operand1;
-                    temp_ptr.operand1 = temp_ptr.operand2;
-                    temp_ptr.operand2 = temp_op;
-
-                    temp_ptr.op.attrOperator = AttrOperator.aopLE;
                     break;
                 case AttrOperator.aopNOT:
                     System.out.println("{NOT} This operator is not supported.");
                     break;
-                default:
+                case AttrOperator.aopGT:
+                    outFilter[0].op = new AttrOperator(AttrOperator.aopLT);
                     break;
+                case AttrOperator.aopGE:
+                    outFilter[0].op = new AttrOperator(AttrOperator.aopLE);
+                    break;
+                case AttrOperator.aopLT:
+                    outFilter[0].op = new AttrOperator(AttrOperator.aopGT);
+                    break;
+                case AttrOperator.aopLE:
+                    outFilter[0].op = new AttrOperator(AttrOperator.aopGE);
+                    break;
+                default:
+                    outFilter[0].op = new AttrOperator(temp_ptr.op.attrOperator);
+                    break;
+            }
+
+            outFilter[0].type1 = new AttrType(AttrType.attrSymbol);
+            switch (temp_ptr.type2.attrType) {
+                case AttrType.attrSymbol:
+                    fld2 = temp_ptr.operand2.symbol.offset;
+                    outFilter[0].operand1.symbol = new FldSpec(new RelSpec(RelSpec.outer), fld2);
+                    break;
+                default:
+                    System.out.println("This should be a symbol");
+
             }
 
             switch (temp_ptr.type1.attrType) {
-                case AttrType.attrInteger:
-                    lo_key = new IntegerKey(temp_ptr.operand1.integer);
-                    break;
-                case AttrType.attrReal:
-                    lo_key = new FloatKey(temp_ptr.operand1.real);
-                    break;
-                case AttrType.attrString:
-                    lo_key = new StringKey(temp_ptr.operand1.string);
-                    break;
                 case AttrType.attrSymbol:
-                    int fld1 = temp_ptr.operand1.symbol.offset;
-                    switch (_in1[fld1 - 1].attrType) {
+                    fld1 = temp_ptr.operand1.symbol.offset;
+                    switch (_in1[fld1-1].attrType){
                         case AttrType.attrInteger:
-                            lo_key = new IntegerKey(outer_tuple.getIntFld(fld1));
-                            break;
-                        case AttrType.attrReal:
-                            lo_key = new FloatKey(outer_tuple.getFloFld(fld1));
+                            outFilter[0].type2 = new AttrType(AttrType.attrInteger);
+                            outFilter[0].operand2.integer = outer.getIntFld(fld1);
                             break;
                         case AttrType.attrString:
-                            lo_key = new StringKey(outer_tuple.getStrFld(fld1));
+                            outFilter[0].type2 = new AttrType(AttrType.attrString);
+                            outFilter[0].operand2.string = outer.getStrFld(fld1);
+                            break;
+                        case AttrType.attrReal:
+                            outFilter[0].type2 = new AttrType(AttrType.attrReal);
+                            outFilter[0].operand2.real = outer.getFloFld(fld1);
                             break;
                         default:
-                            hi_key = null;
+                            System.out.println("Unknown type: " + temp_ptr.type1.attrType);
                     }
                     break;
+                default:
+                    System.out.println("type 2 cannot be symbol");
             }
 
-            switch (temp_ptr.type2.attrType) {
-                case AttrType.attrInteger:
-                    hi_key = new IntegerKey(temp_ptr.operand2.integer);
-                    break;
-                case AttrType.attrReal:
-                    hi_key = new FloatKey(temp_ptr.operand2.real);
-                    break;
-                case AttrType.attrString:
-                    hi_key = new StringKey(temp_ptr.operand2.string);
-                    break;
-                case AttrType.attrSymbol:
-                    int fld2 = temp_ptr.operand2.symbol.offset;
-                    switch (_in1[fld2 - 1].attrType) {
-                        case AttrType.attrInteger:
-                            hi_key = new IntegerKey(outer_tuple.getIntFld(fld2));
-                            break;
-                        case AttrType.attrReal:
-                            hi_key = new FloatKey(outer_tuple.getFloFld(fld2));
-                            break;
-                        case AttrType.attrString:
-                            hi_key = new StringKey(outer_tuple.getStrFld(fld2));
-                            break;
-                        default:
-                            hi_key = null;
-                    }
-                    break;
-            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -367,7 +376,7 @@ public class IndexNestedLoopJoin extends Iterator {
             try {
                 outer.close();
                 if(index_found){
-                    btreefile.close();
+                    iscan.close();
                 }
             } catch (Exception e) {
                 throw new JoinsException(e, "NestedLoopsJoin.java: error in closing iterator.");

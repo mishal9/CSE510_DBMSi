@@ -156,11 +156,11 @@ class JoinsDriver implements GlobalConst {
         SystemDefs sysdef = new SystemDefs(dbpath, 1000, NUMBUF, "Clock");
 
         // creating the sailors relation
-        AttrType[] Stypes = new AttrType[4];
+        AttrType[] Stypes = new AttrType[3];
         Stypes[0] = new AttrType(AttrType.attrInteger);
         Stypes[1] = new AttrType(AttrType.attrString);
         Stypes[2] = new AttrType(AttrType.attrInteger);
-        Stypes[3] = new AttrType(AttrType.attrReal);
+//        Stypes[3] = new AttrType(AttrType.attrReal);
 
         //SOS
         short[] Ssizes = new short[1];
@@ -168,7 +168,7 @@ class JoinsDriver implements GlobalConst {
 
         Tuple t = new Tuple();
         try {
-            t.setHdr((short) 4, Stypes, Ssizes);
+            t.setHdr((short) 3, Stypes, Ssizes);
         } catch (Exception e) {
             System.err.println("*** error in Tuple.setHdr() ***");
             status = FAIL;
@@ -190,7 +190,7 @@ class JoinsDriver implements GlobalConst {
 
         t = new Tuple(size);
         try {
-            t.setHdr((short) 4, Stypes, Ssizes);
+            t.setHdr((short) 3, Stypes, Ssizes);
         } catch (Exception e) {
             System.err.println("*** error in Tuple.setHdr() ***");
             status = FAIL;
@@ -202,7 +202,7 @@ class JoinsDriver implements GlobalConst {
                 t.setIntFld(1, ((Sailor) sailors.elementAt(i)).sid);
                 t.setStrFld(2, ((Sailor) sailors.elementAt(i)).sname);
                 t.setIntFld(3, ((Sailor) sailors.elementAt(i)).rating);
-                t.setFloFld(4, (float) ((Sailor) sailors.elementAt(i)).age);
+//                t.setFloFld(4, (float) ((Sailor) sailors.elementAt(i)).age);
             } catch (Exception e) {
                 System.err.println("*** Heapfile error in Tuple.setStrFld() ***");
                 status = FAIL;
@@ -377,9 +377,14 @@ class JoinsDriver implements GlobalConst {
 //        Query4();
 //        Query5();
 //        Query6();
+//        try{
+//            Table t = new Table("boats.txt");
+//            t.create_table("boats.txt", "boats.txt");
+//            t.print_table();
+//        }catch (Exception e){
+//            e.printStackTrace();
+//        }
         Query7();
-
-
         System.out.print("Finished joins testing" + "\n");
 
 
@@ -389,7 +394,7 @@ class JoinsDriver implements GlobalConst {
     private void Query7_CondExpr(CondExpr[] expr) {
 
         expr[0].next = null;
-        expr[0].op = new AttrOperator(AttrOperator.aopEQ);
+        expr[0].op = new AttrOperator(AttrOperator.aopGE);
 
         expr[0].type1 = new AttrType(AttrType.attrSymbol);
         expr[0].operand1.symbol = new FldSpec(new RelSpec(RelSpec.outer), 1);
@@ -401,133 +406,77 @@ class JoinsDriver implements GlobalConst {
     }
 
     public void Query7() {
-        System.out.print("**********************Query6 strating *********************\n");
-        boolean status = OK;
-        // Sailors, Boats, Reserves Queries.
-        System.out.print("Query: Join sailors with reserves on id\n"
-                + "  SELECT   S.sname, S.sid\n"
-                + "  JOIN Sailors'S' 1  Reserves'R' 1 = \n\n\n");
+        try{
+            System.out.print("**********************Query7 strating *********************\n");
+            System.out.print("Query: Join sailors with reserves on id\n"
+                    + "  SELECT   S.sname, S.sid\n"
+                    + "  JOIN Sailors'S' 1  Reserves'R' 1 >= \n\n\n");
 
-        CondExpr[] outFilter = new CondExpr[2];
-        outFilter[0] = new CondExpr();
-        outFilter[1] = new CondExpr();
+            CondExpr[] outFilter = new CondExpr[2];
+            outFilter[0] = new CondExpr();
+            outFilter[1] = new CondExpr();
 
-        Query7_CondExpr(outFilter);
-        Tuple t = new Tuple();
-        t = null;
+            Query7_CondExpr(outFilter);
+            Tuple t = new Tuple();
+            t = null;
 
-        AttrType[] Stypes = {
-                new AttrType(AttrType.attrInteger),
-                new AttrType(AttrType.attrString),
-                new AttrType(AttrType.attrInteger),
-                new AttrType(AttrType.attrReal)
-        };
+            AttrType[] Stypes = {
+                    new AttrType(AttrType.attrInteger),
+                    new AttrType(AttrType.attrString),
+                    new AttrType(AttrType.attrInteger),
+            };
 
-        short[] Ssizes = new short[1];
-        Ssizes[0] = 30;
-        AttrType[] Rtypes = {
-                new AttrType(AttrType.attrInteger),
-                new AttrType(AttrType.attrInteger),
-                new AttrType(AttrType.attrString),
-        };
+            short[] Ssizes = new short[1];
+            Ssizes[0] = 30;
+            AttrType[] Rtypes = {
+                    new AttrType(AttrType.attrInteger),
+                    new AttrType(AttrType.attrInteger),
+                    new AttrType(AttrType.attrString),
+            };
 
-        short[] Rsizes = new short[1];
-        Rsizes[0] = 15;
+            short[] Rsizes = new short[1];
+            Rsizes[0] = 15;
 
-        short[] JJsize = new short[1];
-        JJsize[0] = 30;
+            short[] JJsize = new short[1];
+            JJsize[0] = 30;
 
 
-        FldSpec[] proj1 = {
-                new FldSpec(new RelSpec(RelSpec.outer), 1),
-                new FldSpec(new RelSpec(RelSpec.outer), 2),
-                new FldSpec(new RelSpec(RelSpec.outer), 3),
-                new FldSpec(new RelSpec(RelSpec.outer), 4),
-                new FldSpec(new RelSpec(RelSpec.innerRel), 1),
-                new FldSpec(new RelSpec(RelSpec.innerRel), 2),
-                new FldSpec(new RelSpec(RelSpec.innerRel), 3)
-        };
+            FldSpec[] proj1 = {
+                    new FldSpec(new RelSpec(RelSpec.outer), 1),
+                    new FldSpec(new RelSpec(RelSpec.outer), 2),
+                    new FldSpec(new RelSpec(RelSpec.outer), 3),
+                    new FldSpec(new RelSpec(RelSpec.innerRel), 1),
+                    new FldSpec(new RelSpec(RelSpec.innerRel), 2),
+                    new FldSpec(new RelSpec(RelSpec.innerRel), 3)
+            };
 
-        FldSpec[] Sprojection = {
-                new FldSpec(new RelSpec(RelSpec.outer), 1),
-                new FldSpec(new RelSpec(RelSpec.outer), 2),
-                new FldSpec(new RelSpec(RelSpec.outer), 3),
-                new FldSpec(new RelSpec(RelSpec.outer), 4)
-        };
+            FldSpec[] Sprojection = {
+                    new FldSpec(new RelSpec(RelSpec.outer), 1),
+                    new FldSpec(new RelSpec(RelSpec.outer), 2),
+                    new FldSpec(new RelSpec(RelSpec.outer), 3),
+            };
 
 
-        FileScan am = null;
-        try {
+            FileScan am = null;
             am = new FileScan("sailors.in", Stypes, Ssizes,
-                    (short) 4, (short) 4,
+                    (short) 3, (short) 3,
                     Sprojection, null);
-        } catch (Exception e) {
-            status = FAIL;
-            System.err.println("" + e);
-            e.printStackTrace();
-        }
 
-        if (status != OK) {
-            //bail out
-
-            System.err.println("*** Error setting up scan for sailors");
-            Runtime.getRuntime().exit(1);
-        }
-        // Just checking if index is created properly
-//        try{
-//            Heapfile hf = new Heapfile("reserves.in");
-//            BTFileScan scan = (new BTreeFile("reserves.in"+".unclusteredindex")).new_scan(null, null);
-//            KeyDataEntry entry;
-//            RID rid = new RID();
-//            t = null;
-//
-//            System.out.println("HF Scan: ");
-//            Scan hf_scan = hf.openScan();
-//            while((t = hf_scan.getNext(rid))!=null){
-//                System.out.println(t.noOfFlds() + " RID: " + rid.pageNo + "." + rid.slotNo);
-//            }
-//
-//            hf_scan.closescan();
-//
-//            hf = new Heapfile("reserves.in");
-//            entry = scan.get_next();
-//            while(entry!=null){
-//                Tuple temp = getEmptyTuple();
-//                rid = ((LeafData) entry.data).getData();
-//                temp.tupleCopy(hf.getRecord(rid));
-//                System.out.println(temp.noOfFlds());
-//                temp.printTuple(Rtypes);
-//                entry = scan.get_next();
-//            }
-//        }catch (Exception e){
-//            e.printStackTrace();
-//        }
-
-
-
-        IndexNestedLoopJoin inl = null, inl2 = null;
-        try {
-            inl = new IndexNestedLoopJoin(Stypes, 4, Ssizes,
+            IndexNestedLoopJoin inl = null;
+            inl = new IndexNestedLoopJoin(Stypes, 3, Ssizes,
                     Rtypes, 3, Rsizes,
                     5,
                     am, "reserves.in",
-                    outFilter, null, proj1, 7);
-        } catch (Exception e) {
-            System.err.println("*** Error preparing for nested_loop_join");
-            System.err.println("" + e);
-            e.printStackTrace();
-            Runtime.getRuntime().exit(1);
-        }
-        AttrType [] JJtype = {
-                new AttrType(AttrType.attrInteger),
-                new AttrType(AttrType.attrString),
-                new AttrType(AttrType.attrInteger),
-                new AttrType(AttrType.attrReal),
-                new AttrType(AttrType.attrInteger),
-                new AttrType(AttrType.attrInteger),
-                new AttrType(AttrType.attrString)
-        };
-        try{
+                    outFilter, null, proj1, 6);
+
+            AttrType [] JJtype = {
+                    new AttrType(AttrType.attrInteger),
+                    new AttrType(AttrType.attrString),
+                    new AttrType(AttrType.attrInteger),
+                    new AttrType(AttrType.attrInteger),
+                    new AttrType(AttrType.attrInteger),
+                    new AttrType(AttrType.attrString)
+            };
             while ((t = inl.get_next()) != null) {
                 t.print(JJtype);
             }
@@ -539,31 +488,6 @@ class JoinsDriver implements GlobalConst {
             Runtime.getRuntime().exit(1);
         }
 
-        if (status != OK) {
-            //bail out
-
-            Runtime.getRuntime().exit(1);
-        }
-
-    }
-    private Tuple getEmptyTuple() throws InvalidTypeException, InvalidTupleSizeException, IOException {
-        AttrType[] Rtypes = new AttrType[3];
-        Rtypes[0] = new AttrType(AttrType.attrInteger);
-        Rtypes[1] = new AttrType(AttrType.attrInteger);
-        Rtypes[2] = new AttrType(AttrType.attrString);
-
-        short[] Rsizes = new short[1];
-        Rsizes[0] = 15;
-        Tuple t = new Tuple();
-        try {
-            t.setHdr((short) 3, Rtypes, Rsizes);
-        } catch (Exception e) {
-            System.err.println("*** error in Tuple.setHdr() ***");
-        }
-        int size = t.size();
-        t = new Tuple(size);
-        t.setHdr((short) Rtypes.length, Rtypes, Rsizes);
-        return t;
     }
 
     private void Disclaimer() {
