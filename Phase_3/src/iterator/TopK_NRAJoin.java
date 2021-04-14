@@ -99,8 +99,8 @@ public class TopK_NRAJoin extends Iterator implements GlobalConst {
         int [] pref_list = {0,1};
         
         GenerateIndexFiles obj = new GenerateIndexFiles();
-        IndexFile indexFile1 = obj.createCombinedBTreeIndex("/Users/kunjpatel/Desktop/CSE510_DBMSi/Phase_3/data/subset2.txt",pref_list, 2);
-        IndexFile indexFile2 = obj.createCombinedBTreeIndex("/Users/kunjpatel/Desktop/CSE510_DBMSi/Phase_3/data/temp.txt",pref_list, 2);
+        IndexFile indexFile1 = obj.createCombinedBTreeIndex("/Users/kunjpatel/Desktop/CSE510_DBMSi/Phase_3/data/nra1.txt",pref_list, 2);
+        IndexFile indexFile2 = obj.createCombinedBTreeIndex("/Users/kunjpatel/Desktop/CSE510_DBMSi/Phase_3/data/nra2.txt",pref_list, 2);
         
         short [] Ssizes = null;
         
