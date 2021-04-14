@@ -109,15 +109,6 @@ public class GroupByWithSort extends Iterator{
             System.exit(-1);
         }
 
-        // workflow for MIN | MAX | AVG
-        /*
-        1. Keep adding the elements to the queue while queue is still not full | sort has some elements left
-        2. Keep polling the elements from the queue
-        3. For minimum on the aggregation attribute, keep checking against the new global minimum (same applies for max)
-            3a. For avg, keep taking the avg until new group found
-            3b. if new group found - reset the vars and put the result of the previous group onto the buffer
-        */
-
         Tuple t = null;
         float lastPolled = 0.0f;
 
@@ -212,13 +203,6 @@ public class GroupByWithSort extends Iterator{
         }
 
         // TODO: Get_next() computation
-
-        // workflow for SKYLINE
-        /*
-        1. Keep polling the queue until empty
-        2. While the aggregation attribute value same as the previous one -> keep accumulating current group in the heap file
-        3. once grouping breaks - pass on the heap file to the skyline method
-        */
 
         for(int i=0; i<_result.length; i++){
             Tuple res = _result[i];
