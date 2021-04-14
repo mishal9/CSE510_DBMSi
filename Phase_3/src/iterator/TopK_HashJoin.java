@@ -2,6 +2,8 @@ package iterator;
 
 import heap.*;
 import index.IndexException;
+import index.IndexScan;
+import index.UnknownIndexTypeException;
 import iterator.Iterator;
 import global.*;
 import bufmgr.*;
@@ -39,7 +41,7 @@ public class TopK_HashJoin extends Iterator implements GlobalConst {
 			java.lang.String relationName2,
 			int k,
 			int n_pages
-			) {
+			) throws JoinsException, PageNotReadException, TupleUtilsException, PredEvalException, SortException, LowMemException, UnknowAttrType, UnknownKeyTypeException, Exception {
 		
 		this.in1 = in1; 
 		this.len_in1 = len_in1;
@@ -55,6 +57,21 @@ public class TopK_HashJoin extends Iterator implements GlobalConst {
 		this.relationName2 = relationName2;
 		this.k = k;
 		this.n_pages = n_pages;
+		
+	    IndexType b_index = new IndexType (IndexType.B_Index);
+	    
+	    FldSpec [] Sprojection = {
+	    	       new FldSpec(new RelSpec(RelSpec.outer), 1),
+	    	       new FldSpec(new RelSpec(RelSpec.outer), 2),
+	    };
+	    
+	    System.out.println("relationName1: "+ relationName1);
+	    iterator.Iterator am = new IndexScan ( b_index, relationName1,
+	    		"AAA1", in1, null, 2, 2,
+				   Sprojection, null, 2, false);
+
+	    System.out.println(am.get_next());
+	    System.out.println(am.get_next());
 	}
 
 	@Override

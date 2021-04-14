@@ -39,7 +39,7 @@ public class NRABounds {
 	public String toString() {
 		String res = "";
 		
-		res += "LOW: (" + lVal1 + ", " + lVal2 + ")" + "UPPER: (" + uVal1 + ", " + uVal2 + ")";
+		res += "LOW: (" + (lVal1 + lVal2) + ")" + "UPPER: (" + (uVal1  + uVal2) + ")";
 		return res;
 	}
 	

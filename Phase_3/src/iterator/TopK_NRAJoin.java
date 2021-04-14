@@ -203,8 +203,6 @@ public class TopK_NRAJoin extends Iterator implements GlobalConst {
     	
     	for (Map.Entry<String,NRABounds> entry : map.entrySet()) {
     		pq.add(entry.getValue());
-//            System.out.println("Key = " + entry.getKey() +
-//                             ", Value = " + entry.getValue().toString());
         }
     	
     	System.out.println(pq.poll().toString());
