@@ -1374,14 +1374,15 @@ public class Table implements GlobalConst{
 								 this.table_attr_type, this.table_attr_size, this.clustered_btree_attr);
 		    		}
 		    		else if ( clustered_index_exist("hash") ) {
-		    			HashKey key;
+		    			HashKey hkey;
 		    			if ( table_attr_type[this.clustered_hash_attr-1].attrType == AttrType.attrInteger ) {
-		    				key = new HashKey(t.getIntFld(this.clustered_hash_attr));
+		    				hkey = new HashKey(t.getIntFld(this.clustered_hash_attr));
 		    			}
 		    			else {
-		    				key = new HashKey(t.getStrFld(this.clustered_hash_attr));
+		    				hkey = new HashKey(t.getStrFld(this.clustered_hash_attr));
 		    			}
 		    			//TBD delete the hash key and tuple
+		    			hasher.delete(hkey, t);
 		    		}
 		    		else {
 		    			//TBD delete the record from the heap file
