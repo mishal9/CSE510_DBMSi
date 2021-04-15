@@ -430,6 +430,7 @@ public class Table implements GlobalConst{
         		}
         	}
         	System.out.println();
+        	System.out.println("Out table rid page "+rid.pageNo.pid+" slot"+rid.slotNo);
         	temp_t = data_scan.getNext(rid);
         }
         data_scan.closescan();
@@ -869,6 +870,12 @@ public class Table implements GlobalConst{
 		    								  this.table_attr_size, 
 		    								  this.clustered_btree_attr, 
 		    								  this.get_clustered_index_filename(this.clustered_btree_attr, "btree") );
+		    			update_records_from_global_queue();
+		    			hf.merge(this.get_clustered_index_filename(this.clustered_btree_attr, "btree"),
+		    					 this.table_attr_type,
+		    					 this.table_attr_size,
+		    					 this.clustered_btree_attr,
+		    					 this.table_tuple_size);
 		    			update_records_from_global_queue();
 		    		}
 		    		else if ( clustered_index_exist("hash") ) {
@@ -1380,6 +1387,13 @@ public class Table implements GlobalConst{
 		    		if ( clustered_index_exist("btree") ) {
 		    			rids_deleted = hf.deleteRecord(t, this.get_clustered_index_filename(this.clustered_btree_attr, "btree"),
 								 this.table_attr_type, this.table_attr_size, this.clustered_btree_attr);
+		    			update_records_from_global_queue();
+		    			hf.merge(this.get_clustered_index_filename(this.clustered_btree_attr, "btree"),
+		    					 this.table_attr_type,
+		    					 this.table_attr_size,
+		    					 this.clustered_btree_attr,
+		    					 this.table_tuple_size);
+		    			update_records_from_global_queue();
 		    		}
 		    		else if ( clustered_index_exist("hash") ) {
 		    			HashKey hkey;
@@ -1408,6 +1422,15 @@ public class Table implements GlobalConst{
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
+		    }
+		    if ( clustered_index_exist("btree") ) {
+		    	System.out.println("Merging operation -->");
+		    	hf.merge(this.get_clustered_index_filename(this.clustered_btree_attr, "btree"),
+   					 this.table_attr_type,
+   					 this.table_attr_size,
+   					 this.clustered_btree_attr,
+   					 this.table_tuple_size);
+		    	update_records_from_global_queue();
 		    }
 		    
 	  }catch (Exception e1) {

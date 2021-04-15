@@ -5,4 +5,4 @@ Address INT
 Number INT
 Relation INT
 PinCode STR
-Modi	2	3	4	5	380059
+Krupal	4	3	2	3	380056
