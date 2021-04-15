@@ -963,6 +963,7 @@ public class ClusteredHeapfile extends Heapfile implements GlobalConst {
 	 /* enter data in the end of the file atleast */
 	 KeyClass key = null;
 	 KeyDataEntry nextentry = null;
+	 KeyDataEntry preventry = null;
 	 
 	 if ( attrType[key_index-1].attrType == AttrType.attrInteger )
 		 key = new IntegerKey(insert_tuple.getIntFld(key_index));
@@ -981,7 +982,15 @@ public class ClusteredHeapfile extends Heapfile implements GlobalConst {
 	 if ( nextentry == null ) 
 	 { //this key is going to be the highest key in the btree
 		 //Lookup the last datapage and see if there is available space
-		  lastBTPageId = new PageId(btf.headerPage.get_maxPageno());
+		  indScan = ((ClusteredBTreeFile)btf).new_scan(null, null);
+		  nextentry = indScan.get_next();
+		  while ( nextentry != null ) {
+			  preventry = new KeyDataEntry( nextentry.key, nextentry.data );
+			  nextentry = indScan.get_next();
+		  }
+		  RID rid_nextentry = ((LeafData)preventry.data).getData();
+		  
+		  lastBTPageId = new PageId(rid_nextentry.pageNo.pid);
 		  
 		  ClusteredBTSortedPage lookup_dirPage = new ClusteredBTSortedPage();
 	      PageId lookup_currentDirPageId = new PageId();
