@@ -1,8 +1,6 @@
 package hashindex;
 
-import btree.AddFileEntryException;
-import btree.GetFileEntryException;
-import btree.KeyNotMatchException;
+import btree.*;
 import global.AttrType;
 import global.GlobalConst;
 import global.PageId;
@@ -11,6 +9,8 @@ import global.SystemDefs;
 import heap.Heapfile;
 import heap.Scan;
 import heap.Tuple;
+
+import java.io.IOException;
 
 /**
  * Unclustered Linear Hash Index Implementation
@@ -76,7 +76,8 @@ public class HIndex implements GlobalConst {
 	 * @param key key to insert
 	 * @param rid pointer to the tuple in the data file
 	 */
-	public void insert(HashKey key, RID rid) throws Exception {
+	public void insert(KeyClass key_, RID rid) throws Exception {
+		HashKey key = (HashKey) key_;
 		if (key.type != headerPage.get_keyType()) {
 			throw new KeyNotMatchException("Key types dont match!");
 		}
@@ -127,7 +128,8 @@ public class HIndex implements GlobalConst {
 	 * @param rid rid
 	 * @return true if deleted, else false
 	 */
-	public boolean delete(HashKey key,RID rid)  throws Exception{
+	public boolean delete(KeyClass key_,RID rid)  throws Exception{
+		HashKey key = (HashKey) key_;
 		int hash = key.getHash(headerPage.get_H0Deapth());
 		int splitPointer = headerPage.get_SplitPointerLocation();
 		if (hash < splitPointer) {
@@ -254,7 +256,14 @@ public class HIndex implements GlobalConst {
 			throw new AddFileEntryException(e, "");
 		}
 	}
-	
+	/*
+	Returns the number of buckets in the Hindex.
+	Essentially exposing this variable.
+	*/
+	public int get_number_of_buckets() throws IOException {
+		return this.headerPage.get_NumberOfBuckets();
+	}
+
 	/**
 	 * Print the bucket contents, ie key,RID pairs in each bucket
 	 */
