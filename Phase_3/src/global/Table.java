@@ -477,7 +477,7 @@ public class Table implements GlobalConst{
 			temp = scan.getNext(rid);
 		}
 		scan.closescan();
-		//BT.printBTree(btf.getHeaderPage());
+		BT.printBTree(btf.getHeaderPage());
 		BT.printAllLeafPages(btf.getHeaderPage());
 		btf.close();
 		
@@ -1438,7 +1438,7 @@ public class Table implements GlobalConst{
 		  System.out.println("*******************Printing clustered hash index*******************");
 		  String hsfilename = get_clustered_index_filename(att_number, "hash");
 		  ClusHIndex hasher = new ClusHIndex(this.table_heapfile, hsfilename);
-		  //hasher.print_bucket_names();
+		  hasher.printBucketInfo();
 		  hasher.close();
 	  }
 	  //TBD clustered hash index print remaining 
@@ -1535,8 +1535,6 @@ public class Table implements GlobalConst{
 							key = new StringKey( deleted_tuple.getStrFld(i+1) );
 						}
 						btf.Delete(key, rid_delete);
-						//BT.printBTree(btf.getHeaderPage());
-						//BT.printAllLeafPages(btf.getHeaderPage());
 						btf.close();
 				  }
 				  if ( hash_unclustered_attr[i] ) {
@@ -1549,8 +1547,7 @@ public class Table implements GlobalConst{
 						else {
 							keyh = new HashKey( deleted_tuple.getStrFld(i+1) );
 						}
-						//hasher.delete(keyh, rid);
-						//hasher.print_bucket_names();
+						hasher.delete(keyh, rid_delete);
 						hasher.close();
 				  }
 			  }
