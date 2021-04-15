@@ -2,11 +2,12 @@ package hashindex;
 
 import java.io.IOException;
 
+import btree.KeyClass;
 import btree.KeyNotMatchException;
 import global.AttrType;
 import global.Convert;
 
-public class HashKey {
+public class HashKey extends KeyClass {
 
 	byte type;
 	int size;
