@@ -1253,9 +1253,21 @@ public class ClusteredHeapfile extends Heapfile implements GlobalConst {
 	    			 itr_tuple = lookup_dataPage.getRecord(copy_itr_rid);
 	    			 itr_hdr_tuple.tupleCopy(itr_tuple);
 	    			 tmprid = newDataPage.insertRecord(itr_hdr_tuple.getTupleByteArray());
+	    			 
+	    			 /* update the insertion list */
+	    			 Tuple inserted_tuple = new Tuple(itr_hdr_tuple.getTupleByteArray(), 0, itr_hdr_tuple.size());
+	    			 SystemDefs.JavabaseDB.db_inserted_tuples.add(inserted_tuple);
+	    			 SystemDefs.JavabaseDB.db_inserted_rids.add(new RID(tmprid.pageNo, tmprid.slotNo));
+	    			 
 	    			 newdpinfo.recct++;
 	    			 newdpinfo.availspace = newDataPage.available_space();
 	    			 lookup_dataPage.deleteRecord(copy_itr_rid);
+	    			 
+	    			 /* update the deletion list */
+	    			 Tuple deleted_tuple = new Tuple(itr_hdr_tuple.getTupleByteArray(), 0, itr_hdr_tuple.size());
+	    			 SystemDefs.JavabaseDB.db_deleted_tuples.add(deleted_tuple);
+	    			 SystemDefs.JavabaseDB.db_deleted_rids.add(new RID(copy_itr_rid.pageNo, copy_itr_rid.slotNo));
+	    			 
 	    			 dpinfo.recct--;
 	    			 dpinfo.availspace = lookup_dataPage.available_space();
 	    			 copy_itr_rid = lookup_dataPage.nextRecord(copy_itr_rid);

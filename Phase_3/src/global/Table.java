@@ -16,8 +16,11 @@ import btree.BT;
 import btree.BTreeFile;
 import btree.ConstructPageException;
 import btree.ConvertException;
+import btree.DeleteFashionException;
 import btree.DeleteRecException;
+import btree.FreePageException;
 import btree.GetFileEntryException;
+import btree.IndexFullDeleteException;
 import btree.IndexInsertRecException;
 import btree.IndexSearchException;
 import btree.InsertException;
@@ -30,8 +33,11 @@ import btree.KeyNotMatchException;
 import btree.KeyTooLongException;
 import btree.LeafDeleteException;
 import btree.LeafInsertRecException;
+import btree.LeafRedistributeException;
 import btree.NodeNotMatchException;
 import btree.PinPageException;
+import btree.RecordNotFoundException;
+import btree.RedistributeException;
 import btree.StringKey;
 import btree.UnpinPageException;
 import bufmgr.HashEntryNotFoundException;
@@ -863,6 +869,7 @@ public class Table implements GlobalConst{
 		    								  this.table_attr_size, 
 		    								  this.clustered_btree_attr, 
 		    								  this.get_clustered_index_filename(this.clustered_btree_attr, "btree") );
+		    			update_records_from_global_queue();
 		    		}
 		    		else if ( clustered_index_exist("hash") ) {
 		    			HashKey key;
@@ -877,7 +884,8 @@ public class Table implements GlobalConst{
 		    		else {
 		    			rid = hf.insertRecord(t.returnTupleByteArray());
 		    		}
-		    		update_insert_unclustered_index(t, rid);
+		    		
+		    		insert_into_unclustered_index(t, new RID(rid.pageNo, rid.slotNo));
 				} catch (InvalidSlotNumberException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -902,7 +910,7 @@ public class Table implements GlobalConst{
 	}
   }
   
-  private void update_insert_unclustered_index( Tuple t, RID rid ) {
+  private void insert_into_unclustered_index( Tuple t, RID rid ) {
 	  // TBD/* update all the btree clustered indexes */
 	  
 	  /* update the unclustered btree indexes */
@@ -1388,7 +1396,7 @@ public class Table implements GlobalConst{
 		    			//TBD delete the record from the heap file
 		    			rids_deleted.addAll( delete_record_from_heapfile(this.table_heapfile, t) );
 		    		}
-		    		update_delete_index_from_queue(rids_deleted, t);
+		    		delete_records_from_unclustered_indexes(rids_deleted, t);
 		    		//TBD update the unclustered index
 				} catch (InvalidSlotNumberException e) {
 					// TODO Auto-generated catch block
@@ -1555,7 +1563,7 @@ public class Table implements GlobalConst{
 	  return deleted;
   }
   
-  private void update_delete_index_from_queue(List<RID> deleted, Tuple deleted_tuple) {
+  private void delete_records_from_unclustered_indexes(List<RID> deleted, Tuple deleted_tuple) {
 	  // TBD/* update all the btree clustered indexes */
 	  
 	  /* update the unclustered btree indexes */
@@ -1663,6 +1671,88 @@ public class Table implements GlobalConst{
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+  }
+  
+  private void update_records_from_global_queue() throws Exception {
+	  assert ( SystemDefs.JavabaseDB.db_deleted_rids.size() == SystemDefs.JavabaseDB.db_deleted_tuples.size() );
+	  assert ( SystemDefs.JavabaseDB.db_inserted_rids.size() == SystemDefs.JavabaseDB.db_inserted_tuples.size() );
+	  
+	  if ( SystemDefs.JavabaseDB.db_deleted_rids.size() > 0 ) {
+		  Iterator<Tuple> itr_tuple = SystemDefs.JavabaseDB.db_deleted_tuples.iterator();
+		  Iterator<RID> itr_rid = SystemDefs.JavabaseDB.db_deleted_rids.iterator();
+		  while ( itr_tuple.hasNext() ) {
+			  RID rid_delete = itr_rid.next();
+			  Tuple temp_tup = itr_tuple.next();
+			  Tuple deleted_tuple = TupleUtils.getEmptyTuple(this.table_attr_type, this.table_attr_size);
+			  deleted_tuple.tupleCopy(temp_tup);
+			  
+			  for ( int i=0; i<btree_unclustered_attr.length; i++ ) {
+				  if ( btree_unclustered_attr[i] ) {
+					  	KeyClass key;
+						BTreeFile btf  = new BTreeFile(this.get_unclustered_index_filename(i+1, "btree"));
+						if ( table_attr_type[i].attrType == AttrType.attrInteger ) {
+							key = new IntegerKey( deleted_tuple.getIntFld(i+1) );
+						}
+						else {
+							key = new StringKey( deleted_tuple.getStrFld(i+1) );
+						}
+						btf.Delete(key, rid_delete);
+						btf.close();
+				  }
+				  if ( hash_unclustered_attr[i] ) {
+					  
+					  	HIndex hasher = new HIndex(this.get_unclustered_index_filename(i+1, "hash") );
+						HashKey keyh;
+						if ( table_attr_type[i].attrType == AttrType.attrInteger ) {
+							keyh = new HashKey( deleted_tuple.getIntFld(i+1) );
+						}
+						else {
+							keyh = new HashKey( deleted_tuple.getStrFld(i+1) );
+						}
+						hasher.delete(keyh, rid_delete);
+						hasher.close();
+				  }
+			  }
+		  }
+	  }
+	  if ( SystemDefs.JavabaseDB.db_inserted_rids.size() > 0 ) {
+		  Iterator<Tuple> itr_tuple = SystemDefs.JavabaseDB.db_inserted_tuples.iterator();
+		  Iterator<RID> itr_rid = SystemDefs.JavabaseDB.db_inserted_rids.iterator();
+		  while ( itr_tuple.hasNext() ) {
+			  RID rid_insert = itr_rid.next();
+			  Tuple temp_tup = itr_tuple.next();
+			  Tuple inserted_tuple = TupleUtils.getEmptyTuple(this.table_attr_type, this.table_attr_size);
+			  inserted_tuple.tupleCopy(temp_tup);
+			  
+			  for ( int i=0; i<btree_unclustered_attr.length; i++ ) {
+				  if ( btree_unclustered_attr[i] ) {
+					  	KeyClass key;
+						BTreeFile btf  = new BTreeFile(this.get_unclustered_index_filename(i+1, "btree"));
+						if ( table_attr_type[i].attrType == AttrType.attrInteger ) {
+							key = new IntegerKey( inserted_tuple.getIntFld(i+1) );
+						}
+						else {
+							key = new StringKey( inserted_tuple.getStrFld(i+1) );
+						}
+						btf.insert(key, rid_insert);
+						btf.close();
+				  }
+				  if ( hash_unclustered_attr[i] ) {
+					  
+					  	HIndex hasher = new HIndex(this.get_unclustered_index_filename(i+1, "hash") );
+						HashKey keyh;
+						if ( table_attr_type[i].attrType == AttrType.attrInteger ) {
+							keyh = new HashKey( inserted_tuple.getIntFld(i+1) );
+						}
+						else {
+							keyh = new HashKey( inserted_tuple.getStrFld(i+1) );
+						}
+						hasher.insert(keyh, rid_insert);
+						hasher.close();
+				  }
+			  }
+		  }
+	  }
   }
 
 }
