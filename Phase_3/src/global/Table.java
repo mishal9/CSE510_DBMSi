@@ -1447,7 +1447,7 @@ public class Table implements GlobalConst{
   
   public void test() throws Exception {
 	  /* make a fake tuple and insert onto the data heap file */
-	  Tuple t = TupleUtils.getEmptyTuple(table_attr_type, table_attr_size);
+	  /*Tuple t = TupleUtils.getEmptyTuple(table_attr_type, table_attr_size);
 	  t.setStrFld(1, "Yash");
 	  t.setIntFld(2, 5);
 	  t.setIntFld(3, 3);
@@ -1491,7 +1491,47 @@ public class Table implements GlobalConst{
 	  rid = hp.insertRecord(t2, this.table_attr_type, this.table_attr_size, this.clustered_btree_attr, get_clustered_index_filename(clustered_btree_attr, "btree"));
 	  System.out.println("RID page no. "+rid.pageNo.pid);
 	  rid = hp.insertRecord(t3, this.table_attr_type, this.table_attr_size, this.clustered_btree_attr, get_clustered_index_filename(clustered_btree_attr, "btree"));
-	  System.out.println("RID page no. "+rid.pageNo.pid);
+	  System.out.println("RID page no. "+rid.pageNo.pid);*/
+	  
+	  BTreeFile btf  = new BTreeFile(this.get_unclustered_index_filename(2, "btree"),
+				table_attr_type[1].attrType, 
+				table_attr_size[1],
+				1/* delete */);
+	  for ( int i=0; i<100; i++) {
+		  KeyClass key;
+		  key = new IntegerKey(2);
+		  RID rid = new RID();
+		  rid.pageNo.pid = i%10;
+		  rid.slotNo = i;
+		  btf.insert(key, rid);
+	  }
+	  for ( int i=0; i<100; i++) {
+		  KeyClass key;
+		  key = new IntegerKey(3);
+		  RID rid = new RID();
+		  rid.pageNo.pid = i%10;
+		  rid.slotNo = i;
+		  btf.insert(key, rid);
+	  }
+	  for ( int i=0; i<100; i++) {
+		  KeyClass key;
+		  key = new IntegerKey(2);
+		  RID rid = new RID();
+		  rid.pageNo.pid = i%10;
+		  rid.slotNo = i;
+		  btf.Delete(key, rid);
+	  }
+	  for ( int i=0; i<100; i++) {
+		  KeyClass key;
+		  key = new IntegerKey(3);
+		  RID rid = new RID();
+		  rid.pageNo.pid = i%10;
+		  rid.slotNo = i;
+		  btf.Delete(key, rid);
+	  }
+	  BT.printAllLeafPages(btf.getHeaderPage());
+	  BT.printBTree(btf.getHeaderPage());
+	  btf.close();
   }
   
   private List<RID> delete_record_from_heapfile(String heapfilename, Tuple t) throws InvalidSlotNumberException, Exception {
