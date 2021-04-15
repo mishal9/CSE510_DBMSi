@@ -361,7 +361,7 @@ public class ClusHIndexDataFile extends Heapfile {
 				done = true;
 				break;
 			}
-			HashUtils.log("Tuple length " + mapper.apply(tup.getTupleByteArray()) + " @ " + rid);
+			System.out.println("Tuple " + mapper.apply(tup.getTupleByteArray()) + " @ " + rid);
 
 		}
 		scan.closescan();

@@ -124,28 +124,32 @@ public class ClusHIndex implements GlobalConst{
 		int hash = key.getHash(headerPage.get_H0Deapth());
 		int splitPointer = headerPage.get_SplitPointerLocation();
 		if (hash < splitPointer) {
-			System.out.println("old hash: " + hash);
 			hash = key.getHash(headerPage.get_H0Deapth() + 1);
-			System.out.println("new hash: " + hash);
+			//System.out.println("new hash: " + hash);
 		}
 
 		int bucketNumber = hash;
 		String bucketName = headerPage.get_NthBucketName(bucketNumber);
 		HashBucket bucket = new HashBucket(bucketName);
-		System.out.println("Will try to delete key: "+key+" from bucket: "+bucketName);
+		//System.out.println("Will try to delete key: "+key+" from bucket: "+hash + " sp: "+splitPointer);
 
 		List<RID> list=deleteFromDataFileAndBucket(key,tup,bucket);
 		
 		//now shrink index if reqd
-		float maxPossibleEntries = (headerPage.get_NumberOfBuckets() * MINIBASE_PAGESIZE) / (8+key.size());
-		float currentUtilization = headerPage.get_EntriesCount() / maxPossibleEntries;
+		float currentUtilization = headerPage.get_EntriesCount() / ((headerPage.get_NumberOfBuckets() * MINIBASE_PAGESIZE) / (8+key.size()));
 		HashUtils.log("currentUtilization: " + currentUtilization);
 		float deletionTargetUtilization = (float) (targetUtilization - 0.1 < 0 ? 0 : targetUtilization - 0.1) ;
 		HashUtils.log("deletionTargetUtilization: " + deletionTargetUtilization);
-		if (headerPage.get_NumberOfBuckets() > 2 && currentUtilization <= deletionTargetUtilization) {
-			HashUtils.log("Shrinking the index");
-			System.out.println("shrink: "+headerPage.get_NumberOfBuckets()+" sp: "+splitPointer+" h0:"+headerPage.get_H0Deapth());
-			rehashClusBucket(headerPage.get_NthBucketName(headerPage.get_NumberOfBuckets()-1), headerPage.get_H0Deapth() - 1);
+		//System.out.println("utiliztion status "+currentUtilization+"<"+deletionTargetUtilization);
+		//KEEP SHRINKING THE INDEX TILL UTILIZATION IS WHAT WE WANT
+		while (headerPage.get_NumberOfBuckets() > 2 && currentUtilization <= deletionTargetUtilization) {
+			//System.out.println("Shrinking the index as "+currentUtilization+"<"+deletionTargetUtilization);
+			//System.out.println("shrink: "+headerPage.get_NumberOfBuckets()+" sp: "+splitPointer+" h0:"+headerPage.get_H0Deapth());
+			if(splitPointer == 0) {
+				rehashClusBucket(headerPage.get_NthBucketName(headerPage.get_NumberOfBuckets()-1), headerPage.get_H0Deapth()-1);
+			} else {
+				rehashClusBucket(headerPage.get_NthBucketName(headerPage.get_NumberOfBuckets()-1), headerPage.get_H0Deapth());
+			}
 			splitPointer --;
 			if (splitPointer == -1) {
 				headerPage.set_H0Deapth(headerPage.get_H0Deapth() - 1);
@@ -154,7 +158,8 @@ public class ClusHIndex implements GlobalConst{
 			}
 			headerPage.set_NumberOfBuckets(headerPage.get_NumberOfBuckets()-1);
 			headerPage.set_SplitPointerLocation(splitPointer);
-			System.out.println("after shrink: "+headerPage.get_NumberOfBuckets()+" sp: "+splitPointer+" h0:"+headerPage.get_H0Deapth());
+			//System.out.println("after shrink: "+headerPage.get_NumberOfBuckets()+" sp: "+splitPointer+" h0:"+headerPage.get_H0Deapth());
+			currentUtilization = headerPage.get_EntriesCount() / ((headerPage.get_NumberOfBuckets() * MINIBASE_PAGESIZE) / (8+key.size()));
 		}
 		return list;
 	}

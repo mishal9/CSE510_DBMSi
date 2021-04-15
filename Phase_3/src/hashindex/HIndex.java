@@ -158,7 +158,11 @@ public class HIndex implements GlobalConst {
 		if (headerPage.get_NumberOfBuckets() > 2 && currentUtilization <= deletionTargetUtilization) {
 			HashUtils.log("Shrinking the index");
 			//System.out.println("shrink: "+headerPage.get_NumberOfBuckets()+" sp: "+splitPointer+" h0:"+headerPage.get_H0Deapth());
-			rehashBucket(headerPage.get_NthBucketName(headerPage.get_NumberOfBuckets()-1), headerPage.get_H0Deapth() - 1);
+			if(splitPointer == 0) {
+				rehashBucket(headerPage.get_NthBucketName(headerPage.get_NumberOfBuckets()-1), headerPage.get_H0Deapth()-1);
+			} else {
+				rehashBucket(headerPage.get_NthBucketName(headerPage.get_NumberOfBuckets()-1), headerPage.get_H0Deapth());
+			}
 			splitPointer --;
 			if (splitPointer == -1) {
 				headerPage.set_H0Deapth(headerPage.get_H0Deapth() - 1);
@@ -197,7 +201,7 @@ public class HIndex implements GlobalConst {
 		scan.closescan();
 		bucketToBeRehashed.heapfile.deleteFile();
 		Scan tempHeapScan = tempheapfile.openScan();
-		bucketToBeRehashed = new HashBucket(bucketToBeRehashedName);
+		//bucketToBeRehashed = new HashBucket(bucketToBeRehashedName);
 		 rid = new RID();
 		done = false;
 		i = 0;

@@ -40,7 +40,8 @@ public class TestHashClusDataFileTest implements GlobalConst {
 		String INDEX_NAME = "huehuehue";
 		ClusHIndex index = new ClusHIndex("clhdf"+INDEX_NAME, INDEX_NAME,AttrType.attrInteger, 4,15);
 		System.out.println("\n\nNOW INSERTING SOME DATA IN INDEX \n");
-		for (int k = 100; k < 115; k++) {
+		int N = 150;
+		for (int k = 100; k < N; k++) {
 			HashUtils.log("------------------------------------------------------");
 
 			HashKey key= new HashKey(k);
@@ -51,7 +52,7 @@ public class TestHashClusDataFileTest implements GlobalConst {
 			data.writeToByteArray(arr, 0);
 
 			Tuple tup = new Tuple(arr, 0, arr.length);
-			for (int i = 0; i < 300; i++) {
+			for (int i = 0; i < 100; i++) {
 				HashUtils.log("\nooooooooooooooo");
 				
 				RID loc = index.insert(key, tup);
@@ -62,14 +63,7 @@ public class TestHashClusDataFileTest implements GlobalConst {
 			HashUtils.log("------------------------------------------------------\n");
 		}
 		//System.out.println(index.getHeaderPage().get_EntriesCount());
-		Function<byte[],String> mapper= (a)->{
-			try {
-				return new HashKey(a, 0).toString();
-			}catch (Exception e) {
-				e.printStackTrace();
-				return e.getMessage();
-			}
-		};
+		
 		System.out.println("\n\nPRINTING ALL BUCKETS OF THE INDEX \n");
 		index.printBucketInfo();
 		System.out.println("\n\nPRINTING THE DATA FILE \n");
@@ -90,9 +84,9 @@ public class TestHashClusDataFileTest implements GlobalConst {
 		
 		
 		System.out.println("\n\n DELETING SOME KEYS \n");
-		for (int k = 100; k < 114; k++) {
-			HashUtils.log("------------------------------------------------------");
-			System.out.println("K:"+k);
+		for (int k = 100; k < N-1; k++) {
+			//System.out.println("------------------------------------------------------");
+			//System.out.println("K:"+k);
 			HashKey key= new HashKey(k);
 
 			//HashKey key = new HashKey(k);
@@ -101,14 +95,15 @@ public class TestHashClusDataFileTest implements GlobalConst {
 
 			Tuple tup1 = new Tuple(arr, 0, arr.length);
 			List<RID> val = index.delete(key, tup1);
-			System.out.println("for key: "+key+"deleted RID list: "+val);
-			HashUtils.log("------------------------------------------------------\n");
+			if(val.size()<=0)System.out.println("for key: "+key+"deleted RID list: "+val);
+			//System.out.println("------------------------------------------------------\n");
 		}
 		System.out.println("\n\nPRINTING BUCKETS \n");
 		index.printBucketInfo();
 		System.out.println("\n\nPRINTING THE DATA FILE \n");
 		index.getDataFile().printToConsole(mapper);
-//		index.delete(key, tup)
+//		index.getDataFile().printToConsole(mapper);
+		//		index.delete(key, tup)
 		index.close();
 	}
 	public static String generateRandomChars( int length) {

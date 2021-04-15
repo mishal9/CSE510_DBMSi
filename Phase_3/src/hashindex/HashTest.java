@@ -66,7 +66,7 @@ public class HashTest implements GlobalConst {
 	
 	private void testHIndex() throws Exception {
 		HIndex h = new HIndex("whatever", AttrType.attrInteger, 4,15);
-		for (int i = 1; i < 50; i++) {
+		for (int i = 1; i < 500; i++) {
 			//HashKey key = new HashKey(i+"laskdhlaskdlaskhdlaskdhlaskdlaskhdalskdhlaskdhalskdhlaskdhlahdlaskdhalksaskdhaskdhaskdhlaskdhlahsd"+i);
 			HashKey key = new HashKey(i);
 			RID rid = new RID(new PageId(i),i);
@@ -74,14 +74,15 @@ public class HashTest implements GlobalConst {
 		}
 		h.printBucketInfo();
 		System.out.println("\n DELETING ------------------------------------------------------------------\n");
-		for (int i = 1; i < 47; i++) {
+		for (int i = 1; i <499; i++) {
 			//HashKey key = new HashKey(i+"laskdhlaskdlaskhdlaskdhlaskdlaskhdalskdhlaskdhalskdhlaskdhlahdlaskdhalksaskdhaskdhaskdhlaskdhlahsd"+i);
 			HashKey key = new HashKey(i);
 			
 			RID rid = new RID(new PageId(i),i);
 			boolean val = h.delete(key, rid);
-			//System.out.println("del"+key+"status: "+val);
+			if(!val)System.out.println("del"+key+"status: "+val);
 		}
+		
 		h.printBucketInfo();
 //		
 //		h.delete(new HashKey(13));
