@@ -132,7 +132,7 @@ public class DB implements GlobalConst {
 					
 					/* get the hash unclustered attr boolean array */
 					boolean[] hunc = new boolean[num_attr];
-					String hunc_str = t.getStrFld(6);
+					String hunc_str = t.getStrFld(7);
 					String[] hunc_token_str = hunc_str.split(",");
 					for( int i=0; i<num_attr; i++ ) {
 						if ( hunc_token_str[i].equals("1") ) {

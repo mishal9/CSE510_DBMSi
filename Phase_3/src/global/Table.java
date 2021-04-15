@@ -1382,7 +1382,7 @@ public class Table implements GlobalConst{
 		    				hkey = new HashKey(t.getStrFld(this.clustered_hash_attr));
 		    			}
 		    			//TBD delete the hash key and tuple
-		    			hasher.delete(hkey, t);
+		    			rids_deleted = hasher.delete(hkey, t);
 		    		}
 		    		else {
 		    			//TBD delete the record from the heap file
