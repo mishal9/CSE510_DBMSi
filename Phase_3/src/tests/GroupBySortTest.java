@@ -323,20 +323,21 @@ class GroupBySortDriver extends TestDriver
                     3,
                     20);
 
-            /*
-            System.out.println("Printing the Group By Sort Results");
             Tuple temp;
             try {
                 temp = grpSort.get_next();
                 while (temp!=null) {
-                    temp.print(attrType);
+                    float[] outval = new float[3];
+                    outval[0] = temp.getFloFld(1);
+                    outval[1] = temp.getFloFld(2);
+                    outval[2] = temp.getFloFld(3);
+
+                    System.out.println("Group By Sort Result: " + outval[0] + " " + outval[1] + " " + outval[2]);
                     temp = grpSort.get_next();
                 }
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            */
-
         } finally {
             try {
                 grpSort.close();

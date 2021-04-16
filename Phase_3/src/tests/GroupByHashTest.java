@@ -5,6 +5,9 @@ import java.io.*;
 import bufmgr.*;
 import diskmgr.PCounter;
 import global.*;
+import hashindex.HIndex;
+import hashindex.HashIndexWindowedScan;
+import hashindex.HashKey;
 import heap.*;
 import index.IndexException;
 import iterator.*;
@@ -19,17 +22,26 @@ class GroupByHashDriver extends TestDriver
     // agg_list: 2
     // agg_types: MIN | MAX | AVG | SKYLINE
 
-    private static float[][] data1 = {
+    private static int[][] data1 = {
             {1, 6, 8},
             {1, 4, 5},
-            {1, 4, 3},
-            {1, 2, 3},
             {2, 7, 8},
-            {2, 3, 4},
+            {1, 4, 3},
             {3, 5, 10},
+            {1, 2, 3},
+            {2, 3, 4},
+            {4, 8, 9},
             {3, 100, 20},
-            {4, 5, 8},
-            {4, 8, 9}
+            {4, 5, 8}
+
+            /*
+
+            it -> 1 1 1
+
+            it -> 2 2
+
+            it -> 3 3
+             */
     };
 
     private static float[][] data2 = {              // AVG
@@ -216,65 +228,53 @@ class GroupByHashDriver extends TestDriver
 
         boolean status = OK;
 
-        AttrType[] attrType = new AttrType[3];
-        attrType[0] = new AttrType(AttrType.attrInteger);
-        attrType[1] = new AttrType(AttrType.attrInteger);
-        attrType[2] = new AttrType(AttrType.attrInteger);
+        String heap_file_name = "test1GroupByHash.in";
+        String index_file_name = "test1HashIndex.in";
 
-        short[] attrSize = new short[3];
-        attrSize[0] = REC_LEN1;
-        attrSize[1] = REC_LEN2;
-        attrSize[2] = REC_LEN3;
-
-        // create a tuple of appropriate size
-        Tuple t = new Tuple();
+        Heapfile hf = null;
         try {
-            t.setHdr((short) 3, attrType, attrSize);
-        }
-        catch (Exception e) {
-            status = FAIL;
+            hf = new Heapfile(heap_file_name);
+
+            attrType = new AttrType[3];
+            attrType[0] = new AttrType (AttrType.attrInteger);
+            attrType[1] = new AttrType (AttrType.attrInteger);
+            attrType[2] = new AttrType (AttrType.attrInteger);
+            attrSize = null;
+            Tuple t = new Tuple();
+            t.setHdr((short) 3, attrType, null);
+
+            int size = t.size();
+
+            RID rid;
+
+            for (int i=0; i<data1.length; i++) {
+                t.setIntFld(1, data1[i][0]);
+                t.setIntFld(2, data1[i][1]);
+                t.setIntFld(3, data1[i][2]);
+
+                hf.insertRecord(t.getTupleByteArray());
+            }
+
+            hf = null;
+
+        } catch (IOException e) {
             e.printStackTrace();
-        }
-
-        int size = t.size();
-
-        // Create unsorted data file "test1.in"
-        RID             rid;
-        Heapfile        f = null;
-        try {
-            f = new Heapfile("test1GroupByHash.in");
-        }
-        catch (Exception e) {
-            status = FAIL;
+        } catch (FieldNumberOutOfBoundException e) {
             e.printStackTrace();
-        }
-
-        t = new Tuple(size);
-        try {
-            t.setHdr((short) 3, attrType, attrSize);
-        }
-        catch (Exception e) {
-            status = FAIL;
+        } catch (HFBufMgrException e) {
             e.printStackTrace();
-        }
-
-        for (int i=0; i<NUM_RECORDS; i++) {
-            try {
-                for(int j=0; j<3; j++)
-                    t.setFloFld(j+1, data1[i][j]);
-            }
-            catch (Exception e) {
-                status = FAIL;
-                e.printStackTrace();
-            }
-
-            try {
-                rid = f.insertRecord(t.returnTupleByteArray());
-            }
-            catch (Exception e) {
-                status = FAIL;
-                e.printStackTrace();
-            }
+        } catch (HFException e) {
+            e.printStackTrace();
+        } catch (InvalidSlotNumberException e) {
+            e.printStackTrace();
+        } catch (InvalidTupleSizeException e) {
+            e.printStackTrace();
+        } catch (SpaceNotAvailableException e) {
+            e.printStackTrace();
+        } catch (HFDiskMgrException e) {
+            e.printStackTrace();
+        } catch (InvalidTypeException e) {
+            e.printStackTrace();
         }
 
         FldSpec groupByAttr = new FldSpec(new RelSpec(RelSpec.outer), 1);
@@ -290,13 +290,33 @@ class GroupByHashDriver extends TestDriver
         projlist[1] = new FldSpec(rel, 2);
         projlist[2] = new FldSpec(rel, 3);
 
-        FileScan fscan = null;
-
+        // HashIndex Window Scan creation here
         try {
-            fscan = new FileScan("test1GroupByHash.in", attrType, attrSize, (short) 3, 3, projlist, null);
+            HIndex h = new HIndex(index_file_name, AttrType.attrInteger, 10,5);
+            Scan s = (new Heapfile(heap_file_name)).openScan();
+            Tuple tup = new Tuple();
+            rid = new RID();
+            while((tup=s.getNext(rid))!=null){
+                tup.setHdr((short)3, attrType, null);
+                HashKey key = new HashKey(tup.getIntFld(1));
+                h.insert(key, rid);
+            }
+
+            h.close();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-        catch (Exception e) {
-            status = FAIL;
+
+        FldSpec[] out = {
+                new FldSpec(new RelSpec(RelSpec.outer), 1),
+                new FldSpec(new RelSpec(RelSpec.outer), 2),
+                new FldSpec(new RelSpec(RelSpec.outer), 3)
+        };
+
+        HashIndexWindowedScan hiwfs = null;
+        try {
+            hiwfs = new HashIndexWindowedScan(new IndexType(IndexType.Hash), heap_file_name, index_file_name, attrType, attrSize, attrType.length, out.length, out, null, 1, false);
+        } catch (Exception e) {
             e.printStackTrace();
         }
 
@@ -307,8 +327,8 @@ class GroupByHashDriver extends TestDriver
         try {
             grpHash = new GroupByWithHash(attrType,
                     3,
-                    attrSize,
-                    fscan,
+                    null,
+                    hiwfs,
                     groupByAttr,
                     aggList,
                     aggType[0],
@@ -316,25 +336,20 @@ class GroupByHashDriver extends TestDriver
                     3,
                     20);
 
-            /*
             System.out.println("Printing the Group By Sort Results");
-            Tuple temp;
             try {
-                temp = grpSort.get_next();
-                while (temp!=null) {
-                    temp.print(attrType);
-                    temp = grpSort.get_next();
-                }
+                grpHash.get_next(); // group 1
+                System.out.println("======");
+                grpHash.get_next(); // group 2
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            */
-
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
             try {
                 grpHash.close();
+                hiwfs.close();
             } catch (IOException e) {
                 e.printStackTrace();
             } catch (SortException e) {
@@ -355,7 +370,7 @@ class GroupByHashDriver extends TestDriver
     protected boolean test2()
     {
         System.out.println("------------------------ TEST 2 : MAX --------------------------");
-
+        /*
         boolean status = OK;
 
         AttrType[] attrType = new AttrType[3];
@@ -477,13 +492,13 @@ class GroupByHashDriver extends TestDriver
         PCounter.initialize();
 
         System.err.println("------------------- TEST 2 completed ---------------------\n");
-
+        */
         return status;
     }
 
     protected  boolean test3(){
         System.out.println("------------------------ TEST 3 : AVG --------------------------");
-
+        /*
         boolean status = OK;
 
         AttrType[] attrType = new AttrType[3];
@@ -605,13 +620,13 @@ class GroupByHashDriver extends TestDriver
         PCounter.initialize();
 
         System.err.println("------------------- TEST 3 completed ---------------------\n");
-
+        */
         return status;
     }
 
     protected boolean test4(){
         System.out.println("------------------------ TEST 4 : SKYLINE --------------------------");
-
+        /*
         boolean status = OK;
 
         AttrType[] attrType = new AttrType[3];
@@ -735,7 +750,7 @@ class GroupByHashDriver extends TestDriver
         PCounter.initialize();
 
         System.err.println("------------------- TEST 4 completed ---------------------\n");
-
+        */
         return status;
     }
 

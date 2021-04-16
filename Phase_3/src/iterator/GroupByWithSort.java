@@ -17,10 +17,12 @@ public class GroupByWithSort extends Iterator{
     public static Tuple[] _result;
     private static Sort _sort;
     private static AttrType[] _attrType;
+    private static FldSpec _group_by_attr;
     private static int _len_in;
     private static boolean status = true;
     private static short[] _attr_sizes;
     private static AggType _agg_type;
+    private static FldSpec[] _agg_list;
     private static int idx;
 
     // number of tuples the queue can hold
@@ -38,6 +40,13 @@ public class GroupByWithSort extends Iterator{
     // buffer pages allocation
     private int _n_pages;
 
+    // get the next immediate tuple
+    private Tuple _next;
+
+    private static float _aggr_val;
+    private static int _group_size;
+    private static float _grp_result;
+
     public GroupByWithSort(
             AttrType[] in1, int len_in1, short[] t1_str_sizes,
             Iterator am1,
@@ -54,6 +63,13 @@ public class GroupByWithSort extends Iterator{
         _attr_sizes = t1_str_sizes;
         _agg_type = agg_type;
         _n_pages = n_pages;
+        _agg_list = agg_list;
+        _group_by_attr = group_by_attr;
+
+        _aggr_val = _agg_type.aggType == AggType.AVG ? 0.0f : _agg_type.aggType == AggType.MIN ? Float.MAX_VALUE : -Float.MIN_VALUE;
+        _group_size = 1;
+        _grp_result = 0.0f;
+
         int buffer_pages = _n_pages/2;
 
         /* initialise tuple size */
@@ -101,118 +117,6 @@ public class GroupByWithSort extends Iterator{
             System.out.println("Projection list: "+ Arrays.toString(proj_list));
         }else{
             System.exit(-1);
-        }
-
-        Tuple t = null;
-
-        try {
-            t = _sort.get_next();
-        }
-        catch (Exception e) {
-            status = false;
-            e.printStackTrace();
-        }
-
-        float aggr_val = _agg_type.aggType == AggType.AVG ? 0.0f : _agg_type.aggType == AggType.MIN ? Float.MAX_VALUE : -Float.MIN_VALUE;
-        int group_size = 1;
-        float grp_result = 0.0f;
-
-        while(t != null){
-            Tuple outer = new Tuple(this._tuple_size);
-            try {
-                outer.setHdr((short) _len_in, _attrType, _attr_sizes);
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (InvalidTypeException e) {
-                e.printStackTrace();
-            } catch (InvalidTupleSizeException e) {
-                e.printStackTrace();
-            }
-            outer.tupleCopy(t);
-            RID rid;
-
-            try {
-                if(_lastPolled != 0.0f && outer.getFloFld(group_by_attr.offset) == _lastPolled) {
-                    group_size += 1;
-                }else if(_lastPolled != 0.0f && outer.getFloFld(group_by_attr.offset) != _lastPolled){
-                    // reset here
-                    System.out.println("Aggregation in grp " + _lastPolled + " : "+grp_result);
-                    aggr_val = _agg_type.aggType == AggType.AVG ? 0.0f : _agg_type.aggType == AggType.MIN ? Float.MAX_VALUE : -Float.MIN_VALUE;
-                    group_size = 1;
-                    grp_result = outer.getFloFld(agg_list[0].offset);
-
-                    // Compute Skyline here
-                    skyline_Aggregation("skyline_group_by.in", agg_list, _attrType, _attr_sizes, 20);
-
-                    // delete heap file
-                    _skyline_grp_heap.deleteFile();
-
-                    // create heap file again
-                    try {
-                        _skyline_grp_heap = new Heapfile("skyline_group_by.in");
-                    }
-                    catch (Exception e) {
-                        System.err.println("Could not open the skyline heapfile");
-                        e.printStackTrace();
-                    }
-
-                    System.out.println();
-                }
-
-                if (_agg_type.aggType == AggType.MIN) {
-                    aggr_val = Math.min(aggr_val, outer.getFloFld(agg_list[0].offset));
-                    grp_result = aggr_val;
-                } else if (_agg_type.aggType == AggType.MAX) {
-                    aggr_val = Math.max(aggr_val, outer.getFloFld(agg_list[0].offset));
-                    grp_result = aggr_val;
-                } else if (_agg_type.aggType == AggType.AVG) {
-                    aggr_val += outer.getFloFld(agg_list[0].offset);
-                    grp_result = aggr_val / group_size;
-                } else if (_agg_type.aggType == AggType.SKYLINE) {
-                    // add to skyline group heap
-                    try {
-                        rid = _skyline_grp_heap.insertRecord(outer.returnTupleByteArray());
-                    }
-                    catch (Exception e) {
-                        status = false;
-                        e.printStackTrace();
-                    }
-                }
-
-                _lastPolled = outer.getFloFld(group_by_attr.offset);
-            }
-            catch (Exception e) {
-                status = false;
-                e.printStackTrace();
-            }
-
-            try {
-                t = _sort.get_next();
-            }
-            catch (Exception e) {
-                status = false;
-                e.printStackTrace();
-            }
-        }
-
-        // TODO: Get_next() computation
-
-        for(int i=0; i<_result.length; i++){
-            Tuple res = _result[i];
-            if(res != null) {
-                try {
-                    float[] outval = new float[3];
-                    outval[0] = res.getFloFld(1);
-                    outval[1] = res.getFloFld(2);
-                    outval[2] = res.getFloFld(3);
-
-                    System.out.println("Result: " + outval[0] + " " + outval[1] + " " + outval[2]);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } catch (FieldNumberOutOfBoundException e) {
-                    e.printStackTrace();
-                }
-            }
         }
 
     }
@@ -264,7 +168,94 @@ public class GroupByWithSort extends Iterator{
     }
 
     @Override
-    public Tuple get_next() throws IOException, JoinsException, IndexException, InvalidTupleSizeException, InvalidTypeException, PageNotReadException, TupleUtilsException, PredEvalException, SortException, LowMemException, UnknowAttrType, UnknownKeyTypeException {
+    public Tuple get_next() throws IOException, JoinsException, IndexException, InvalidTupleSizeException, InvalidTypeException, PageNotReadException, TupleUtilsException, PredEvalException, SortException, LowMemException, UnknowAttrType, UnknownKeyTypeException, FieldNumberOutOfBoundException, FileAlreadyDeletedException, HFBufMgrException, InvalidSlotNumberException, HFDiskMgrException {
+
+        Tuple t = null;
+
+        try {
+            t = _next == null ? _sort.get_next() : _next;
+            _lastPolled = t.getFloFld(_group_by_attr.offset);
+        }
+        catch (Exception e) {
+            status = false;
+            e.printStackTrace();
+        }
+
+        RID rid;
+
+        while(t != null && t.getFloFld(_group_by_attr.offset) == _lastPolled){
+            Tuple outer = new Tuple(this._tuple_size);
+            try {
+                outer.setHdr((short) _len_in, _attrType, _attr_sizes);
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (InvalidTypeException e) {
+                e.printStackTrace();
+            } catch (InvalidTupleSizeException e) {
+                e.printStackTrace();
+            }
+            outer.tupleCopy(t);
+
+            _group_size += 1;
+
+            if (_agg_type.aggType == AggType.MIN) {
+                _aggr_val = Math.min(_aggr_val, outer.getFloFld(_agg_list[0].offset));
+                _grp_result = _aggr_val;
+            } else if (_agg_type.aggType == AggType.MAX) {
+                _aggr_val = Math.max(_aggr_val, outer.getFloFld(_agg_list[0].offset));
+                _grp_result = _aggr_val;
+            } else if (_agg_type.aggType == AggType.AVG) {
+                _aggr_val += outer.getFloFld(_agg_list[0].offset);
+                _grp_result = _aggr_val / _group_size;
+            } else if (_agg_type.aggType == AggType.SKYLINE) {
+                // add to skyline group heap
+                try {
+                    rid = _skyline_grp_heap.insertRecord(outer.returnTupleByteArray());
+                }
+                catch (Exception e) {
+                    status = false;
+                    e.printStackTrace();
+                }
+            }
+
+            _lastPolled = outer.getFloFld(_group_by_attr.offset);
+
+            try {
+                t = _sort.get_next();
+                _next = t;
+            }
+            catch (Exception e) {
+                status = false;
+                e.printStackTrace();
+            }
+        }
+
+        // reset here
+        System.out.println("Aggregation in grp " + _lastPolled + " : "+_grp_result);
+
+        _aggr_val = _agg_type.aggType == AggType.AVG ? 0.0f : _agg_type.aggType == AggType.MIN ? Float.MAX_VALUE : -Float.MIN_VALUE;
+        _group_size = 1;
+        _grp_result = 0.0f;
+
+        // Compute Skyline here
+        skyline_Aggregation("skyline_group_by.in", _agg_list, _attrType, _attr_sizes, 20);
+
+        // delete heap file
+        _skyline_grp_heap.deleteFile();
+
+        // create heap file again
+        try {
+            _skyline_grp_heap = new Heapfile("skyline_group_by.in");
+        }
+        catch (Exception e) {
+            System.err.println("Could not open the skyline heapfile");
+            e.printStackTrace();
+        }
+
+        // Construct result tuple here
+
+        System.out.println();
+
         return null;
     }
 
