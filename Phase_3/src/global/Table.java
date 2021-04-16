@@ -1263,7 +1263,7 @@ public class Table implements GlobalConst{
 			else {
 				key = new StringKey(t_s.getStrFld(this.clustered_btree_attr));
 			}
-        	curr_rid = hf1.insertRecord(t_s.getTupleByteArray(), this.table_attr_type, this.table_attr_size);
+        	curr_rid = hf1.insertRecord(t_s.getTupleByteArray()/*, this.table_attr_type, this.table_attr_size*/);
         	System.out.println("BTREE clustered insert rid page "+ curr_rid.pageNo.pid+" slot "+curr_rid.slotNo);
         	if ( ( prev_rid.pageNo.pid != curr_rid.pageNo.pid ) && ( prev_rid.pageNo.pid != INVALID_PAGE ) ) {
         		btf.insert(prev_key, prev_rid);
@@ -1531,7 +1531,7 @@ public class Table implements GlobalConst{
 	  }
 	  IndexScan iscan = new IndexScan(new IndexType(IndexType.Cl_B_Index_DESC), 
 			   						  this.table_heapfile, 
-			   						  this.get_clustered_index_filename(1, "btree"), 
+			   						  this.get_clustered_index_filename(2, "btree"), 
 			   						  this.table_attr_type, 
 			   						  this.table_attr_size, 
 			   						  this.table_num_attr, 
