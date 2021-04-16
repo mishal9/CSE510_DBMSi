@@ -137,6 +137,7 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
 			Tuple skyEle = btreesky.get_next(); // first sky element
 			System.out.print("First Sky element is: ");
 			skyEle.print(skytable.getTable_attr_type());
+			add_to_mater_table(skyEle);
 			numSkyEle++;
 			while (skyEle != null) {
 				skyEle = btreesky.get_next(); // subsequent sky elements
@@ -144,6 +145,7 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
 					System.out.println("No more sky elements");
 					break;
 				}
+				add_to_mater_table(skyEle);
 				numSkyEle++;
 				System.out.print("Sky element is: ");
 				skyEle.print(skytable.getTable_attr_type());
@@ -313,6 +315,7 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
             try {
                 temp = blockNestedLoopsSky.get_next();
                 while (temp!=null) {
+                	add_to_mater_table(temp);
                     temp.print(table.getTable_attr_type());
                     numSkyEle++;
                     temp = blockNestedLoopsSky.get_next();
