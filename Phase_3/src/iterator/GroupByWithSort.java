@@ -8,11 +8,8 @@ import global.RID;
 import global.TupleOrder;
 import heap.*;
 import index.IndexException;
-
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.Queue;
 
 import static global.GlobalConst.MINIBASE_PAGESIZE;
 
@@ -26,21 +23,22 @@ public class GroupByWithSort extends Iterator{
     private static AggType _agg_type;
     private static int idx;
 
-    /* Windows which is used to store some elements for iteration */
-    private Queue<Tuple> _queue;
-
-    /* number of tuples the queue can hold */
+    // number of tuples the queue can hold
     private int          _window_size;
 
-    /* tuples used for aggregation -- for debug purposes */
+    // tuples used for aggregation -- for debug purposes
     private Tuple        tuple_candidate;
 
-    /* heap file containing our data on which skyline is computed */
+    // heap file containing our data on which skyline is computed
     private Heapfile _skyline_grp_heap;
 
-    /* size of the tuples in the skyline/window/temporary_heap_file */
+    // size of the tuples in the skyline/window/temporary_heap_file
     private int          _tuple_size;
 
+    // Value of the aggregation attribute in the last tuple
+    private static float _lastPolled = 0.0f;
+
+    // buffer pages allocation
     private int _n_pages;
 
     public GroupByWithSort(
@@ -58,7 +56,6 @@ public class GroupByWithSort extends Iterator{
         _len_in = len_in1;
         _attr_sizes = t1_str_sizes;
         _agg_type = agg_type;
-        _queue = new LinkedList<>();
         _n_pages = n_pages;
         int buffer_pages = _n_pages/2;
 
@@ -110,7 +107,6 @@ public class GroupByWithSort extends Iterator{
         }
 
         Tuple t = null;
-        float lastPolled = 0.0f;
 
         try {
             t = _sort.get_next();
@@ -139,11 +135,11 @@ public class GroupByWithSort extends Iterator{
             RID rid;
 
             try {
-                if(lastPolled != 0.0f && outer.getFloFld(group_by_attr.offset) == lastPolled) {
+                if(_lastPolled != 0.0f && outer.getFloFld(group_by_attr.offset) == _lastPolled) {
                     group_size += 1;
-                }else if(lastPolled != 0.0f && outer.getFloFld(group_by_attr.offset) != lastPolled){
+                }else if(_lastPolled != 0.0f && outer.getFloFld(group_by_attr.offset) != _lastPolled){
                     // reset here
-                    System.out.println("Aggregation in grp " + lastPolled + " : "+grp_result);
+                    System.out.println("Aggregation in grp " + _lastPolled + " : "+grp_result);
                     aggr_val = _agg_type.aggType == AggType.AVG ? 0.0f : _agg_type.aggType == AggType.MIN ? Float.MAX_VALUE : -Float.MIN_VALUE;
                     group_size = 1;
                     grp_result = outer.getFloFld(agg_list[0].offset);
@@ -186,7 +182,7 @@ public class GroupByWithSort extends Iterator{
                     }
                 }
 
-                lastPolled = outer.getFloFld(group_by_attr.offset);
+                _lastPolled = outer.getFloFld(group_by_attr.offset);
             }
             catch (Exception e) {
                 status = false;

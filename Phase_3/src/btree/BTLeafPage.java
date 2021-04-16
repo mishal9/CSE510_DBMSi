@@ -168,6 +168,39 @@ public class BTLeafPage extends BTSortedPage {
        throw new IteratorException(e,"Get next entry failed");
      }
   }
+   
+   /**Iterators.  
+    * One of the two functions: getFirst and getNext which  provide an
+    * iterator interface to the records on a BTLeafPage.
+    *@param rid It will be modified and the next rid will be passed out 
+    *by itself. Input and Output parameter.
+    *@return return the next KeyDataEntry in the leaf page. 
+    *null if no more record.
+    *@exception IteratorException iterator error
+    */
+
+   public KeyDataEntry getRecordEntry(RID rid)
+     throws  IteratorException
+   {
+     KeyDataEntry  entry; 
+     int i;
+     try{
+       i=rid.slotNo;
+       
+       if ( rid.slotNo >= getSlotCnt())
+       {
+	 return null;
+       }
+       
+       entry=BT.getEntryFromBytes(getpage(),getSlotOffset(i), getSlotLength(i),
+                  keyType, NodeType.LEAF);
+       
+       return entry;
+     } 
+     catch (Exception e) {
+       throw new IteratorException(e,"Get next entry failed");
+     }
+  }
   
   
   

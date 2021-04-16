@@ -2,11 +2,12 @@ package hashindex;
 
 import java.io.IOException;
 
+import btree.KeyClass;
 import btree.KeyNotMatchException;
 import global.AttrType;
 import global.Convert;
 
-public class HashKey {
+public class HashKey extends KeyClass {
 
 	byte type;
 	int size;
@@ -134,8 +135,18 @@ public class HashKey {
 	public boolean equals(Object hashKey) {
 		if (hashKey instanceof HashKey) {
 			HashKey key = (HashKey) hashKey;
-			//just compare the value, no need for size and length comparison
-			return (value.equals(key.value));
+			if (this.type != key.type)
+				return false;
+			if (this.size != key.size)
+				return false;
+			switch (type) {
+			case AttrType.attrInteger:
+				return (((Integer) value).equals(((Integer) key.value)));
+			case AttrType.attrReal:
+				return (((Float) value).equals(((Float) key.value)));
+			case AttrType.attrString:
+				return (((String) value).equals(((String) key.value)));
+			}
 		}
 		return false;
 	}

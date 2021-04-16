@@ -152,6 +152,13 @@ public class BTFileScan  extends IndexFileScan
   }
 
 
+@Override
+public Tuple get_next_tuple() {
+	// TODO Auto-generated method stub
+	return null;
+}
+
+
 
 
 }

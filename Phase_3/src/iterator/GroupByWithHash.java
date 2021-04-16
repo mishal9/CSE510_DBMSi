@@ -10,9 +10,6 @@ import hashindex.HashIndexWindowedScan;
 import hashindex.HashKey;
 import heap.*;
 
-import java.io.IOException;
-import java.util.LinkedList;
-
 public class GroupByWithHash {
     public static Tuple[] _result;
     private static AttrType[] _attrType;

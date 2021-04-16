@@ -88,9 +88,11 @@ public class ClusteredBTSortedPage  extends HFPage{
 	    	 key_i = new StringKey(t_i_hdr.getStrFld(key_index));
 	    	 key_iplus1 = new StringKey(t_iplus1_hdr.getStrFld(key_index));
 	     }
+	     System.out.println("Comparig keys "+key_i.toString()+" and "+key_iplus1.toString());
 	     if (BT.keyCompare(key_i, key_iplus1) < 0)
 	       {
 		       // switch slots:
+	    	 System.out.println("swapping");
 			 int ln, off;
 			 ln= getSlotLength(i);
 			 off=getSlotOffset(i);
@@ -110,6 +112,7 @@ public class ClusteredBTSortedPage  extends HFPage{
 	 // - slot directory compacted
 	 
 	 rid.slotNo = i;
+	 System.out.println("Sorteg page rid page "+rid.pageNo.pid+" slot "+rid.slotNo);
 	 return rid;
      }
      catch (Exception e ) { 

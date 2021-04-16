@@ -2,15 +2,19 @@
 
 package diskmgr;
 
+import btree.*;
 import java.io.*;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Queue;
-
+import java.lang.Comparable;
 
 import bufmgr.*;
 import global.*;
 import heap.FieldNumberOutOfBoundException;
+import heap.FileAlreadyDeletedException;
 import heap.HFBufMgrException;
 import heap.HFDiskMgrException;
 import heap.HFException;
@@ -23,7 +27,16 @@ import heap.SpaceNotAvailableException;
 import heap.Tuple;
 
 public class DB implements GlobalConst {
-
+	
+	/* central list of deleted tuples into clustered btrees */
+	public List<Tuple> db_deleted_tuples = new ArrayList<>();
+	public List<RID> db_deleted_rids = new ArrayList<>();
+	
+	/* central list of inserted tuples into clustered btrees */
+	public List<Tuple> db_inserted_tuples = new ArrayList<>();
+	public List<RID> db_inserted_rids = new ArrayList<>();
+	
+	/* list of all the new key, rid pairs to be added everywhere */
 	/* list of all the tables in the database */
 	private Queue<Table> tables = new LinkedList<>();
 	
@@ -130,7 +143,7 @@ public class DB implements GlobalConst {
 					
 					/* get the hash unclustered attr boolean array */
 					boolean[] hunc = new boolean[num_attr];
-					String hunc_str = t.getStrFld(6);
+					String hunc_str = t.getStrFld(7);
 					String[] hunc_token_str = hunc_str.split(",");
 					for( int i=0; i<num_attr; i++ ) {
 						if ( hunc_token_str[i].equals("1") ) {
@@ -153,6 +166,7 @@ public class DB implements GlobalConst {
 					temp_t = relation_scan.getNext(rid);
 				}
 			}
+			hf.deleteFile();
 		} catch (HFException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -175,6 +189,9 @@ public class DB implements GlobalConst {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (InvalidSlotNumberException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (FileAlreadyDeletedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}

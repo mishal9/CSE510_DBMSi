@@ -1,21 +1,21 @@
 package hashindex;
 
-import java.io.IOException;
-
-import btree.AddFileEntryException;
-import btree.GetFileEntryException;
-import btree.KeyNotMatchException;
+import btree.*;
+import global.AttrType;
 import global.GlobalConst;
 import global.PageId;
 import global.RID;
 import global.SystemDefs;
-import heap.HFBufMgrException;
-import heap.HFDiskMgrException;
-import heap.HFException;
 import heap.Heapfile;
 import heap.Scan;
 import heap.Tuple;
 
+import java.io.IOException;
+
+/**
+ * Unclustered Linear Hash Index Implementation
+ * 
+ */
 public class HIndex implements GlobalConst {
 
 	HIndexHeaderPage headerPage;
@@ -24,6 +24,14 @@ public class HIndex implements GlobalConst {
 	
 	final float targetUtilization;
 
+	/**
+	 * Create a new unclustered linear hash index or reopen existing
+	 * @param fileName
+	 * @param keyType {@link AttrType}
+	 * @param keySize
+	 * @param targetUtilization a value between 0 and 100
+	 * @throws Exception
+	 */
 	public HIndex(String fileName, int keyType, int keySize,int targetUtilization) throws Exception {
 		headerPageId = get_file_entry(fileName);
 		if (headerPageId == null) // file not exist
@@ -49,6 +57,9 @@ public class HIndex implements GlobalConst {
 				
 	}
 	
+	/**
+	 * Reopen an existing index
+	 */
 	public HIndex(String fileName) throws Exception {
 		headerPageId = get_file_entry(fileName);
 		if(headerPageId == null) {
@@ -59,7 +70,14 @@ public class HIndex implements GlobalConst {
 	}
 
 
-	public void insert(HashKey key, RID rid) throws Exception {
+	/**
+	 * Insert a key and a pointer to a data file location <br>
+	 * Insert a new bucket if page utilization > targetUtilization
+	 * @param key key to insert
+	 * @param rid pointer to the tuple in the data file
+	 */
+	public void insert(KeyClass key_, RID rid) throws Exception {
+		HashKey key = (HashKey) key_;
 		if (key.type != headerPage.get_keyType()) {
 			throw new KeyNotMatchException("Key types dont match!");
 		}
@@ -103,13 +121,65 @@ public class HIndex implements GlobalConst {
 		}
 	}
 
-	public boolean delete(HashKey key)  throws Exception{
-		HashBucket bucket = new HashBucket(headerPage.get_NthBucketName(0));
-		boolean status = bucket.deleteEntry(key);
+	/**
+	 * Delete the first occurrence of the key,rid pair in this hash index <br>
+	 * Shrink the linear hash index if utilization goes < (targetUtilization - 10%)
+	 * @param key key of the entry to delete
+	 * @param rid rid
+	 * @return true if deleted, else false
+	 */
+	public boolean delete(KeyClass key_,RID rid)  throws Exception{
+		HashKey key = (HashKey) key_;
+		int hash = key.getHash(headerPage.get_H0Deapth());
+		int splitPointer = headerPage.get_SplitPointerLocation();
+		if (hash < splitPointer) {
+			hash = key.getHash(headerPage.get_H0Deapth() + 1);
+			//HashUtils.log("new hash: " + hash);
+		}
+
+		int bucketNumber = hash;
+		String bucketName = headerPage.get_NthBucketName(bucketNumber);
+		HashBucket bucket = new HashBucket(bucketName);
+		HashEntry entry = new HashEntry(key, rid);
+
+		HashUtils.log("Deleting entry: "+entry+" from bucket: "+bucketNumber);
+		boolean status = bucket.deleteEntry(entry);
+		if(status == false) { //nothing to delete, return false
+			return false;
+		}
+		headerPage.set_EntriesCount(headerPage.get_EntriesCount() - 1);
+		
+		//now shrink index if reqd
+		float maxPossibleEntries = (headerPage.get_NumberOfBuckets() * MINIBASE_PAGESIZE) / entry.size();
+		float currentUtilization = headerPage.get_EntriesCount() / maxPossibleEntries;
+		HashUtils.log("currentUtilization: " + currentUtilization);
+		float deletionTargetUtilization = (float) (targetUtilization - 0.1 < 0 ? 0 : targetUtilization - 0.1) ;
+		HashUtils.log("deletionTargetUtilization: " + deletionTargetUtilization);
+		if (headerPage.get_NumberOfBuckets() > 2 && currentUtilization <= deletionTargetUtilization) {
+			HashUtils.log("Shrinking the index");
+			//System.out.println("shrink: "+headerPage.get_NumberOfBuckets()+" sp: "+splitPointer+" h0:"+headerPage.get_H0Deapth());
+			if(splitPointer == 0) {
+				rehashBucket(headerPage.get_NthBucketName(headerPage.get_NumberOfBuckets()-1), headerPage.get_H0Deapth()-1);
+			} else {
+				rehashBucket(headerPage.get_NthBucketName(headerPage.get_NumberOfBuckets()-1), headerPage.get_H0Deapth());
+			}
+			splitPointer --;
+			if (splitPointer == -1) {
+				headerPage.set_H0Deapth(headerPage.get_H0Deapth() - 1);
+				splitPointer = (1 << headerPage.get_H0Deapth()) - 1;
+				HashUtils.log("resetting split pointer to  "+splitPointer);
+			}
+			headerPage.set_NumberOfBuckets(headerPage.get_NumberOfBuckets()-1);
+			headerPage.set_SplitPointerLocation(splitPointer);
+			//System.out.println("after shrink: "+headerPage.get_NumberOfBuckets()+" sp: "+splitPointer+" h0:"+headerPage.get_H0Deapth());
+		}
+		
+		
 		return status;
 	}
 
 	private void rehashBucket(String bucketToBeRehashedName,int newDeapth) throws Exception {
+		//System.out.println("buc:"+bucketToBeRehashedName+" d:"+newDeapth);
 		Heapfile tempheapfile = new Heapfile("temp");
 		HashBucket bucketToBeRehashed = new HashBucket(bucketToBeRehashedName);
 		Scan scan = bucketToBeRehashed.heapfile.openScan();
@@ -127,11 +197,11 @@ public class HIndex implements GlobalConst {
 			tempheapfile.insertRecord(tup.returnTupleByteArray());
 			i++;
 		}
-		HashUtils.log("entries added to temp heapfile: "+i);
+		//System.out.println("entries added to temp heapfile: "+i);
 		scan.closescan();
 		bucketToBeRehashed.heapfile.deleteFile();
 		Scan tempHeapScan = tempheapfile.openScan();
-		bucketToBeRehashed = new HashBucket(bucketToBeRehashedName);
+		//bucketToBeRehashed = new HashBucket(bucketToBeRehashedName);
 		 rid = new RID();
 		done = false;
 		i = 0;
@@ -147,16 +217,19 @@ public class HIndex implements GlobalConst {
 			String newBucketName = headerPage.get_NthBucketName(hash1);
 			HashBucket newBucket = new HashBucket(newBucketName );
 			newBucket.insertEntry(scannedHashEntry);
-			HashUtils.log("Rehashing "+scannedHashEntry.key+" to bucket "+newBucketName);
+			//System.out.println("Rehashing "+scannedHashEntry.key+" to bucket "+newBucketName);
 			
 			i++;
 		}
-		HashUtils.log("entries rehashed: "+i);
+		//System.out.println("entries rehashed: "+i);
 		tempHeapScan.closescan();
 		tempheapfile.deleteFile();
 	}
 	
-	
+	/**
+	 * Get a scan of all entries whose key matches key
+	 * @param key
+	 */
 	public HIndexScan new_scan(HashKey key) throws Exception {
 		HIndexScan scan = new HIndexScan(this, key);
 		return scan;
@@ -187,13 +260,44 @@ public class HIndex implements GlobalConst {
 			throw new AddFileEntryException(e, "");
 		}
 	}
-	
-	public void print_bucket_names() {
+	/*
+	Returns the number of buckets in the Hindex.
+	Essentially exposing this variable.
+	*/
+	public int get_number_of_buckets() throws IOException {
+		return this.headerPage.get_NumberOfBuckets();
+	}
+
+	/**
+	 * Print the bucket contents, ie key,RID pairs in each bucket
+	 */
+	public void printBucketInfo() {
 		try {
 			for( int i=0; i<this.headerPage.get_NumberOfBuckets(); i++ ) {
 				System.out.println("BUCKET: "+i);
 				HashBucket bucket = new HashBucket(this.headerPage.get_NthBucketName(i));
-				bucket.printToConsole();
+				
+				Scan scan = bucket.heapfile.openScan();
+				RID rid = new RID();
+				Tuple tup;
+				int count = 0;
+				boolean done = false;
+				System.out.println("HashBucket [ ");
+				while (!done) {
+					tup = scan.getNext(rid);
+					if (tup == null) {
+						done = true;
+						break;
+					}
+					HashEntry scannedHashEntry = new HashEntry(tup.returnTupleByteArray(), 0);
+					//System.out.println("  " + scannedHashEntry + " @ IN-BUCKET LOCATION:  " + rid);
+					System.out.println("  <"+scannedHashEntry.key.value+","+scannedHashEntry.rid+">");
+					count++;
+				}
+				System.out.println("] count: " + count);
+				scan.closescan();
+			
+				
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
