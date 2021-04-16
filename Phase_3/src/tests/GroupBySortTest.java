@@ -20,46 +20,17 @@ class GroupBySortDriver extends TestDriver
     // agg_list: 2
     // agg_types: MIN | MAX | AVG | SKYLINE
 
-    private static float[][] data1 = {
+    private static int[][] data = {
             {1, 6, 8},
             {1, 4, 5},
-            {1, 4, 3},
-            {1, 2, 3},
             {2, 7, 8},
             {2, 3, 4},
             {3, 5, 10},
-            {3, 100, 20},
+            {1, 4, 3},
             {4, 5, 8},
             {4, 8, 9},
-            {-1,-1,-1}
-    };
-
-    private static float[][] data2 = {              // AVG
-            {1, 10/3, 13/3},
-            {2, 10/2, 12/2},
-            {5, 5, 8},
-            {9, 6, 8}
-    };
-
-    private static float[][] data3 = {              // SKYLINE
-            {1, 4, 5},
-            {2, 7, 8},
-            {5, 5, 8},
-            {9, 6, 8}
-    };
-
-    private static float[][] data4 = {              // MIN
             {1, 2, 3},
-            {2, 3, 4},
-            {5, 5, 8},
-            {9, 6, 8}
-    };
-
-    private static float[][] data5 = {              // MAX
-            {1, 4, 5},
-            {2, 7, 8},
-            {5, 5, 8},
-            {9, 6, 8}
+            {3, 100, 20}
     };
 
     private static int COLS;
@@ -69,7 +40,7 @@ class GroupBySortDriver extends TestDriver
     private static Heapfile  f = null;
     private static RID   rid;
 
-    private static int   NUM_RECORDS = data1.length;
+    private static int   NUM_RECORDS = data.length;
     private static short REC_LEN1 = 32;
     private static short REC_LEN2 = 32;
     private static short REC_LEN3 = 32;
@@ -156,6 +127,7 @@ class GroupBySortDriver extends TestDriver
     public boolean runTests () throws HFDiskMgrException, HFException, HFBufMgrException, IOException {
 
         System.out.println ("\n" + "Running " + testName() + " tests...." + "\n");
+        dbpath = "task3.minibase-db";
 
         SystemDefs sysdef = new SystemDefs( dbpath, 3000, 100, "Clock" );
 
@@ -222,14 +194,11 @@ class GroupBySortDriver extends TestDriver
         boolean status = OK;
 
         AttrType[] attrType = new AttrType[3];
-        attrType[0] = new AttrType(AttrType.attrInteger);
-        attrType[1] = new AttrType(AttrType.attrInteger);
-        attrType[2] = new AttrType(AttrType.attrInteger);
+        attrType[0] = new AttrType(AttrType.attrReal);
+        attrType[1] = new AttrType(AttrType.attrReal);
+        attrType[2] = new AttrType(AttrType.attrReal);
 
-        short[] attrSize = new short[3];
-        attrSize[0] = REC_LEN1;
-        attrSize[1] = REC_LEN2;
-        attrSize[2] = REC_LEN3;
+        short[] attrSize = null;
 
         // create a tuple of appropriate size
         Tuple t = new Tuple();
@@ -243,43 +212,21 @@ class GroupBySortDriver extends TestDriver
 
         int size = t.size();
 
-        // Create unsorted data file "test1.in"
-        RID             rid;
-        Heapfile        f = null;
         try {
-            f = new Heapfile("test1GroupBySort.in");
-        }
-        catch (Exception e) {
-            status = FAIL;
-            e.printStackTrace();
-        }
-
-        t = new Tuple(size);
-        try {
+            RID             rid;
+            t = new Tuple(size);
             t.setHdr((short) 3, attrType, attrSize);
-        }
-        catch (Exception e) {
-            status = FAIL;
-            e.printStackTrace();
-        }
 
-        for (int i=0; i<NUM_RECORDS; i++) {
-            try {
-                for(int j=0; j<3; j++)
-                    t.setFloFld(j+1, data1[i][j]);
-            }
-            catch (Exception e) {
-                status = FAIL;
-                e.printStackTrace();
-            }
+            Heapfile  f = new Heapfile("test1GroupBySort.in");
+            for (int i = 0; i < NUM_RECORDS; i++) {
+                for (int j = 0; j < 3; j++)
+                    t.setFloFld(j + 1, data[i][j]);
 
-            try {
                 rid = f.insertRecord(t.returnTupleByteArray());
             }
-            catch (Exception e) {
-                status = FAIL;
-                e.printStackTrace();
-            }
+        } catch (Exception e) {
+            status = FAIL;
+            e.printStackTrace();
         }
 
         FldSpec groupByAttr = new FldSpec(new RelSpec(RelSpec.outer), 1);
@@ -295,7 +242,6 @@ class GroupBySortDriver extends TestDriver
         projlist[0] = new FldSpec(rel, 1);
         projlist[1] = new FldSpec(rel, 2);
         projlist[2] = new FldSpec(rel, 3);
-
 
         FileScan fscan = null;
 
@@ -323,21 +269,29 @@ class GroupBySortDriver extends TestDriver
                     3,
                     20);
 
-            Tuple temp;
             try {
-                temp = grpSort.get_next();
-                while (temp!=null) {
-                    float[] outval = new float[3];
-                    outval[0] = temp.getFloFld(1);
-                    outval[1] = temp.getFloFld(2);
-                    outval[2] = temp.getFloFld(3);
-
-                    System.out.println("Group By Sort Result: " + outval[0] + " " + outval[1] + " " + outval[2]);
-                    temp = grpSort.get_next();
-                }
-            } catch (Exception e) {
+                t = grpSort.get_next();
+            }
+            catch (Exception e) {
+                status = false;
                 e.printStackTrace();
             }
+
+            while(t != null) {
+                Tuple grpRes = t;
+
+                grpRes.print(attrType);
+
+                try {
+                    t = grpSort.get_next();
+                }
+                catch (Exception e) {
+                    status = false;
+                    e.printStackTrace();
+                }
+            }
+        }  catch (IOException e) {
+            e.printStackTrace();
         } finally {
             try {
                 grpSort.close();
@@ -365,14 +319,11 @@ class GroupBySortDriver extends TestDriver
         boolean status = OK;
 
         AttrType[] attrType = new AttrType[3];
-        attrType[0] = new AttrType(AttrType.attrInteger);
-        attrType[1] = new AttrType(AttrType.attrInteger);
-        attrType[2] = new AttrType(AttrType.attrInteger);
+        attrType[0] = new AttrType(AttrType.attrReal);
+        attrType[1] = new AttrType(AttrType.attrReal);
+        attrType[2] = new AttrType(AttrType.attrReal);
 
-        short[] attrSize = new short[3];
-        attrSize[0] = REC_LEN1;
-        attrSize[1] = REC_LEN2;
-        attrSize[2] = REC_LEN3;
+        short[] attrSize = null;
 
         // create a tuple of appropriate size
         Tuple t = new Tuple();
@@ -386,43 +337,21 @@ class GroupBySortDriver extends TestDriver
 
         int size = t.size();
 
-        // Create unsorted data file "test1.in"
-        RID             rid;
-        Heapfile        f = null;
         try {
-            f = new Heapfile("test2GroupBySort.in");
-        }
-        catch (Exception e) {
-            status = FAIL;
-            e.printStackTrace();
-        }
-
-        t = new Tuple(size);
-        try {
+            RID             rid;
+            t = new Tuple(size);
             t.setHdr((short) 3, attrType, attrSize);
-        }
-        catch (Exception e) {
-            status = FAIL;
-            e.printStackTrace();
-        }
 
-        for (int i=0; i<NUM_RECORDS; i++) {
-            try {
-                for(int j=0; j<3; j++)
-                    t.setFloFld(j+1, data1[i][j]);
-            }
-            catch (Exception e) {
-                status = FAIL;
-                e.printStackTrace();
-            }
+            Heapfile  f = new Heapfile("test2GroupBySort.in");
+            for (int i = 0; i < NUM_RECORDS; i++) {
+                for (int j = 0; j < 3; j++)
+                    t.setFloFld(j + 1, data[i][j]);
 
-            try {
                 rid = f.insertRecord(t.returnTupleByteArray());
             }
-            catch (Exception e) {
-                status = FAIL;
-                e.printStackTrace();
-            }
+        } catch (Exception e) {
+            status = FAIL;
+            e.printStackTrace();
         }
 
         FldSpec groupByAttr = new FldSpec(new RelSpec(RelSpec.outer), 1);
@@ -438,7 +367,6 @@ class GroupBySortDriver extends TestDriver
         projlist[0] = new FldSpec(rel, 1);
         projlist[1] = new FldSpec(rel, 2);
         projlist[2] = new FldSpec(rel, 3);
-
 
         FileScan fscan = null;
 
@@ -466,6 +394,29 @@ class GroupBySortDriver extends TestDriver
                     3,
                     20);
 
+            try {
+                t = grpSort.get_next();
+            }
+            catch (Exception e) {
+                status = false;
+                e.printStackTrace();
+            }
+
+            while(t != null) {
+                Tuple grpRes = t;
+
+                grpRes.print(attrType);
+
+                try {
+                    t = grpSort.get_next();
+                }
+                catch (Exception e) {
+                    status = false;
+                    e.printStackTrace();
+                }
+            }
+        }  catch (IOException e) {
+            e.printStackTrace();
         } finally {
             try {
                 grpSort.close();
@@ -491,14 +442,11 @@ class GroupBySortDriver extends TestDriver
         boolean status = OK;
 
         AttrType[] attrType = new AttrType[3];
-        attrType[0] = new AttrType(AttrType.attrInteger);
-        attrType[1] = new AttrType(AttrType.attrInteger);
-        attrType[2] = new AttrType(AttrType.attrInteger);
+        attrType[0] = new AttrType(AttrType.attrReal);
+        attrType[1] = new AttrType(AttrType.attrReal);
+        attrType[2] = new AttrType(AttrType.attrReal);
 
-        short[] attrSize = new short[3];
-        attrSize[0] = REC_LEN1;
-        attrSize[1] = REC_LEN2;
-        attrSize[2] = REC_LEN3;
+        short[] attrSize = null;
 
         // create a tuple of appropriate size
         Tuple t = new Tuple();
@@ -512,43 +460,21 @@ class GroupBySortDriver extends TestDriver
 
         int size = t.size();
 
-        // Create unsorted data file "test1.in"
-        RID             rid;
-        Heapfile        f = null;
         try {
-            f = new Heapfile("test3GroupBySort.in");
-        }
-        catch (Exception e) {
-            status = FAIL;
-            e.printStackTrace();
-        }
-
-        t = new Tuple(size);
-        try {
+            RID             rid;
+            t = new Tuple(size);
             t.setHdr((short) 3, attrType, attrSize);
-        }
-        catch (Exception e) {
-            status = FAIL;
-            e.printStackTrace();
-        }
 
-        for (int i=0; i<NUM_RECORDS; i++) {
-            try {
-                for(int j=0; j<3; j++)
-                    t.setFloFld(j+1, data1[i][j]);
-            }
-            catch (Exception e) {
-                status = FAIL;
-                e.printStackTrace();
-            }
+            Heapfile  f = new Heapfile("test3GroupBySort.in");
+            for (int i = 0; i < NUM_RECORDS; i++) {
+                for (int j = 0; j < 3; j++)
+                    t.setFloFld(j + 1, data[i][j]);
 
-            try {
                 rid = f.insertRecord(t.returnTupleByteArray());
             }
-            catch (Exception e) {
-                status = FAIL;
-                e.printStackTrace();
-            }
+        } catch (Exception e) {
+            status = FAIL;
+            e.printStackTrace();
         }
 
         FldSpec groupByAttr = new FldSpec(new RelSpec(RelSpec.outer), 1);
@@ -564,7 +490,6 @@ class GroupBySortDriver extends TestDriver
         projlist[0] = new FldSpec(rel, 1);
         projlist[1] = new FldSpec(rel, 2);
         projlist[2] = new FldSpec(rel, 3);
-
 
         FileScan fscan = null;
 
@@ -592,6 +517,29 @@ class GroupBySortDriver extends TestDriver
                     3,
                     20);
 
+            try {
+                t = grpSort.get_next();
+            }
+            catch (Exception e) {
+                status = false;
+                e.printStackTrace();
+            }
+
+            while(t != null) {
+                Tuple grpRes = t;
+
+                grpRes.print(attrType);
+
+                try {
+                    t = grpSort.get_next();
+                }
+                catch (Exception e) {
+                    status = false;
+                    e.printStackTrace();
+                }
+            }
+        }  catch (IOException e) {
+            e.printStackTrace();
         } finally {
             try {
                 grpSort.close();
@@ -617,14 +565,11 @@ class GroupBySortDriver extends TestDriver
         boolean status = OK;
 
         AttrType[] attrType = new AttrType[3];
-        attrType[0] = new AttrType(AttrType.attrInteger);
-        attrType[1] = new AttrType(AttrType.attrInteger);
-        attrType[2] = new AttrType(AttrType.attrInteger);
+        attrType[0] = new AttrType(AttrType.attrReal);
+        attrType[1] = new AttrType(AttrType.attrReal);
+        attrType[2] = new AttrType(AttrType.attrReal);
 
-        short[] attrSize = new short[3];
-        attrSize[0] = REC_LEN1;
-        attrSize[1] = REC_LEN2;
-        attrSize[2] = REC_LEN3;
+        short[] attrSize = null;
 
         // create a tuple of appropriate size
         Tuple t = new Tuple();
@@ -638,43 +583,21 @@ class GroupBySortDriver extends TestDriver
 
         int size = t.size();
 
-        // Create unsorted data file "test1.in"
-        RID             rid;
-        Heapfile        f = null;
         try {
-            f = new Heapfile("test4GroupBySort.in");
-        }
-        catch (Exception e) {
-            status = FAIL;
-            e.printStackTrace();
-        }
-
-        t = new Tuple(size);
-        try {
+            RID             rid;
+            t = new Tuple(size);
             t.setHdr((short) 3, attrType, attrSize);
-        }
-        catch (Exception e) {
-            status = FAIL;
-            e.printStackTrace();
-        }
 
-        for (int i=0; i<NUM_RECORDS; i++) {
-            try {
-                for(int j=0; j<3; j++)
-                    t.setFloFld(j+1, data1[i][j]);
-            }
-            catch (Exception e) {
-                status = FAIL;
-                e.printStackTrace();
-            }
+            Heapfile  f = new Heapfile("test4GroupBySort.in");
+            for (int i = 0; i < NUM_RECORDS; i++) {
+                for (int j = 0; j < 3; j++)
+                    t.setFloFld(j + 1, data[i][j]);
 
-            try {
                 rid = f.insertRecord(t.returnTupleByteArray());
             }
-            catch (Exception e) {
-                status = FAIL;
-                e.printStackTrace();
-            }
+        } catch (Exception e) {
+            status = FAIL;
+            e.printStackTrace();
         }
 
         FldSpec groupByAttr = new FldSpec(new RelSpec(RelSpec.outer), 1);
@@ -690,7 +613,6 @@ class GroupBySortDriver extends TestDriver
         projlist[0] = new FldSpec(rel, 1);
         projlist[1] = new FldSpec(rel, 2);
         projlist[2] = new FldSpec(rel, 3);
-
 
         FileScan fscan = null;
 
@@ -718,6 +640,29 @@ class GroupBySortDriver extends TestDriver
                     3,
                     20);
 
+            try {
+                t = grpSort.get_next();
+            }
+            catch (Exception e) {
+                status = false;
+                e.printStackTrace();
+            }
+
+            while(t != null) {
+                Tuple grpRes = t;
+
+                grpRes.print(attrType);
+
+                try {
+                    t = grpSort.get_next();
+                }
+                catch (Exception e) {
+                    status = false;
+                    e.printStackTrace();
+                }
+            }
+        }  catch (IOException e) {
+            e.printStackTrace();
         } finally {
             try {
                 grpSort.close();
