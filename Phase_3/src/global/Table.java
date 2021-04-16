@@ -125,6 +125,9 @@ public class Table implements GlobalConst{
 	/* list of all the unclustered index attributes in the table --> 0,1,2,3... */
 	private boolean[] btree_unclustered_attr;
 	
+	/* return a boolean on whether an unclustered btree
+	 * index exist on that attribute or not
+	 */
 	public boolean[] getBtree_unclustered_attr() {
 		return btree_unclustered_attr;
 	}
@@ -136,6 +139,9 @@ public class Table implements GlobalConst{
 	/* list of all the hash unclustered index attributes in the table --> 0,1,2,3... */
 	private boolean[] hash_unclustered_attr;
 
+	/* return a boolean on whether an unclustered hash
+	 * index exist on that attribute or not
+	 */
 	public boolean[] getHash_unclustered_attr() {
 		return hash_unclustered_attr;
 	}
@@ -147,6 +153,8 @@ public class Table implements GlobalConst{
 	/* attribute number for the btree clustered index --> 0,1,2,3....*/
 	private int clustered_btree_attr = -1;
 	
+	/* Index of unclustered btree attr
+	 */
 	public int getClustered_btree_attr() {
 		return clustered_btree_attr;
 	}
@@ -155,6 +163,8 @@ public class Table implements GlobalConst{
 		this.clustered_btree_attr = clustered_btree_attr;
 	}
 
+	/* Index of unclustered btree attr
+	 */
 	public int getClustered_hash_attr() {
 		return clustered_hash_attr;
 	}
@@ -166,7 +176,9 @@ public class Table implements GlobalConst{
 	/* attribute number for the hash clustered index --> 0,1,2,3.... */
 	private int clustered_hash_attr = -1;
 	
-	
+	/* returns heapfile containing the
+	 * table data
+	 */
 	public String getTable_heapfile() {
 		return table_heapfile;
 	}
@@ -757,6 +769,9 @@ public class Table implements GlobalConst{
 	  }
   }
   
+  /* Returns true if a clustered index exist on the table
+   * Returns false if no clustered index exist on the table
+   */
   /* attr_number --> 1,2,3,4... */
   public boolean clustered_index_exist( String clustered_index_type ) {
 	  if ( clustered_index_type.equals("btree") ) {
@@ -780,7 +795,9 @@ public class Table implements GlobalConst{
 	  }
   }
   
-  
+  /* Returns true if a clustered index exist on the table on the attribute
+   * Returns false if no clustered index exist on the table on the attribute
+   */
   /* attr_number --> 1,2,3,4... */
   public boolean clustered_index_exist( int attr_number, String clustered_index_type ) {
 	  if ( clustered_index_type.equals("btree") ) {
@@ -918,6 +935,9 @@ public class Table implements GlobalConst{
 	}
   }
   
+  /* inserts a key,rid pair into an already existing
+   * unclustered index
+   */
   private void insert_into_unclustered_index( Tuple t, RID rid ) {
 	  // TBD/* update all the btree clustered indexes */
 	  
@@ -1029,6 +1049,9 @@ public class Table implements GlobalConst{
 		}
   }
 
+  /* initialises basic table properties from 
+   * given data file scanner
+   */
   public void create_table_struct( Scanner sc ) {
   	/* initialising the number of attributes in the table */
   	table_num_attr = sc.nextInt();
@@ -1092,6 +1115,7 @@ public class Table implements GlobalConst{
 	  System.out.print("\n");
   }
   
+  /* creates a clustered hash file on data */
   private void create_clustered_hash_file() throws Exception {
 	  /* opening the data file for reading */
 	  File file = new File(data_folder + table_data_file);
@@ -1145,8 +1169,10 @@ public class Table implements GlobalConst{
 	  	sc.close();
   }
   
+  /* prints table properties */
   private void print_table_attr() {
 	  System.out.println("Tablename: "+this.tablename);
+	  System.out.println("Table col names: "+Arrays.toString(table_attr_name));
 	  System.out.println("Table num attr: "+ Integer.toString(table_num_attr));
 	  System.out.println("Table attrypes: "+ Arrays.toString(this.table_attr_type));
 	  System.out.println("Table strsizes: "+Arrays.toString(this.table_attr_size));
@@ -1441,11 +1467,11 @@ public class Table implements GlobalConst{
   
   /* prints all the indexes on the attribute */
   public void print_index(int att_number) throws Exception {
-	  System.out.println("*******************Printing all indices on attribute "+this.table_attr_name[att_number-1]+" *******************\n\n");
+	  System.out.println("****************************Printing all indices on attribute "+this.table_attr_name[att_number-1]+" ************************\n\n");
 	  
 	  /* print the btree index first */
 	  if ( unclustered_index_exist(att_number, "btree") ) {
-		  System.out.println("*******************Printing unclustered btree index*******************");
+		  System.out.println("**********************Printing unclustered btree index***********************");
 		  String btsfilename = get_unclustered_index_filename(att_number, "btree");
 		  BTreeFile btf  = new BTreeFile(btsfilename);
 		  BT.printBTree(btf.getHeaderPage());
@@ -1453,7 +1479,7 @@ public class Table implements GlobalConst{
 		  btf.close();
 	  }
 	  if ( clustered_index_exist(att_number, "btree") ) {
-		  System.out.println("********************Printing clustered btree index********************");
+		  System.out.println("***********************Printing clustered btree index***********************");
 		  String btsfilename = get_clustered_index_filename(att_number, "btree");
 		  ClusteredBTreeFile btf  = new ClusteredBTreeFile(btsfilename);
 		  BT.printBTree(btf.getHeaderPage());
@@ -1461,14 +1487,14 @@ public class Table implements GlobalConst{
 		  btf.close();
 	  }
 	  if ( unclustered_index_exist(att_number, "hash") ) {
-		  System.out.println("*******************Printing unclustered hash index*******************");
+		  System.out.println("**********************Printing unclustered hash index**********************");
 		  String hsfilename = get_unclustered_index_filename(att_number, "hash");
 		  HIndex hasher = new HIndex(hsfilename);
 		  hasher.printBucketInfo();
 		  hasher.close();
 	  }
 	  if ( clustered_index_exist(att_number, "hash") ) {
-		  System.out.println("*******************Printing clustered hash index*******************");
+		  System.out.println("**********************Printing clustered hash index**********************");
 		  String hsfilename = get_clustered_index_filename(att_number, "hash");
 		  ClusHIndex hasher = new ClusHIndex(this.table_heapfile, hsfilename);
 		  hasher.printBucketInfo();
@@ -1548,6 +1574,7 @@ public class Table implements GlobalConst{
 	  iscan.close();
   }
   
+  /* removes a tuple from the table heapfile */
   private List<RID> delete_record_from_heapfile(String heapfilename, Tuple t) throws InvalidSlotNumberException, Exception {
 	  //TBD keep a list of all the deleted rids
 	  List<RID> deleted = new ArrayList<>();
@@ -1569,6 +1596,7 @@ public class Table implements GlobalConst{
 	  return deleted;
   }
   
+  /* removes list of rids from a table's unclustered indexes */
   private void delete_records_from_unclustered_indexes(List<RID> deleted, Tuple deleted_tuple) {
 	  // TBD/* update all the btree clustered indexes */
 	  
@@ -1679,6 +1707,9 @@ public class Table implements GlobalConst{
 		}
   }
   
+  /* adds and delete data to unclustered indexes
+   * from the global queue in DB
+   */
   private void update_records_from_global_queue() throws Exception {
 	  assert ( SystemDefs.JavabaseDB.db_deleted_rids.size() == SystemDefs.JavabaseDB.db_deleted_tuples.size() );
 	  assert ( SystemDefs.JavabaseDB.db_inserted_rids.size() == SystemDefs.JavabaseDB.db_inserted_tuples.size() );

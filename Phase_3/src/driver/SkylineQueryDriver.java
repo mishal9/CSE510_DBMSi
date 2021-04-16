@@ -83,7 +83,7 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
 
     private void runBtreeSky() {
     	try {
-	    	Heapfile f = new Heapfile(skytable.getTable_heapfile());
+	    	//Heapfile f = new Heapfile(skytable.getTable_heapfile());
 			//BtreeGeneratorUtil.generateAllBtreesForHeapfile( skytable.getTable_heapfile(), f, skytable.getTable_attr_type(), skytable.getTable_attr_size());
 			//System.out.println("Btree DATABASE CREATED");
 			
@@ -129,9 +129,8 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
 	}
 
     private void runSortFirstSky() {
-    	Table table = SystemDefs.JavabaseDB.get_relation(tablename);
         int numSkyEle = 0;
-    	int COLS = table.getTable_num_attr();
+    	int COLS = skytable.getTable_num_attr();
         FldSpec[] projlist = new FldSpec[COLS + 1];
         RelSpec rel = new RelSpec(RelSpec.outer);
         for( int i=0; i<COLS; i++ ) {
@@ -143,12 +142,12 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
         AttrType[] attrType_for_proj = new AttrType[COLS];
 
         for(int i=0;i<COLS;i++)
-            attrType_for_proj[i] = table.getTable_attr_type()[i];
+            attrType_for_proj[i] = skytable.getTable_attr_type()[i];
 
         OurFileScan fscan = null;
 
         try {
-            fscan = new OurFileScan(table.getTable_heapfile(), attrType_for_proj, table.getTable_attr_size(), (short) COLS, COLS, projlist, null, this.pref_list);
+            fscan = new OurFileScan(skytable.getTable_heapfile(), attrType_for_proj, skytable.getTable_attr_size(), (short) COLS, COLS, projlist, null, this.pref_list);
         }
         catch (Exception e) {
             e.printStackTrace();
@@ -159,7 +158,7 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
         AttrType[] attrType_for_sort = new AttrType[COLS+1];
 
         for(int i=0;i<COLS;i++) {
-            attrType_for_sort[i] = table.getTable_attr_type()[i];
+            attrType_for_sort[i] = skytable.getTable_attr_type()[i];
         }
         attrType_for_sort[COLS] = new AttrType(AttrType.attrReal);
 
@@ -167,7 +166,7 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
 
         Sort sort = null;
         try {
-            sort = new Sort(attrType_for_sort, (short) (COLS+1), table.getTable_attr_size(), fscan, (COLS+1), new TupleOrder(TupleOrder.Descending), 32, this.n_pages);
+            sort = new Sort(attrType_for_sort, (short) (COLS+1), skytable.getTable_attr_size(), fscan, (COLS+1), new TupleOrder(TupleOrder.Descending), 32, this.n_pages);
         }
         catch (Exception e) {
             e.printStackTrace();
@@ -181,8 +180,8 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
 						                    (short) COLS,
 						                    null,
 						                    sort,
-						                    (short)table.getTable_tuple_size(),
-						                    table.getTable_heapfile(),
+						                    (short)skytable.getTable_tuple_size(),
+						                    skytable.getTable_heapfile(),
 						                    this.pref_list,
 						                    this.pref_list.length,
 						                    this.n_pages);
