@@ -267,6 +267,11 @@ public class Table implements GlobalConst{
 	  this.table_heapfile = filename.substring(0, filename.length()-data_file_ext.length()) + heapfile_ext;
   }
   
+  public Table( String tablename, String mater ) {
+	  this.tablename = tablename;
+	  this.table_heapfile = tablename + heapfile_ext;
+  }
+  
   public Table( String tablename,
 		  		int table_num_attr,
 		  		AttrType[] table_attr_type,
@@ -1792,6 +1797,10 @@ public class Table implements GlobalConst{
 	  }
   }
 
+  /* adds table to global queue */
+  public void add_table_to_global_queue() {
+	  SystemDefs.JavabaseDB.add_to_relation_queue(this);
+  }
 }
 
 

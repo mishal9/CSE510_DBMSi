@@ -41,6 +41,9 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
 	
 	/* table for index */
 	private Table skytable;
+	
+	/* table for output */
+	private Table skyouttable;
     
     public SkylineQueryDriver(int[] pref_list, String tablename, int n_pages, String outtablename, String skyline_algo){
         this.pref_list = pref_list;
@@ -49,6 +52,19 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
         this.outtablename = outtablename;
         this.skyline_algo = skyline_algo;
         this.skytable = SystemDefs.JavabaseDB.get_relation(tablename);
+        
+        if ( outtablename.length() > 0 ) {
+        	skyouttable = new Table(outtablename, "MATER");
+        	skyouttable.setTable_data_file(skytable.getTable_data_file());
+        	skyouttable.setTable_attr_name(skytable.getTable_attr_name());
+        	skyouttable.setTable_attr_size(skytable.getTable_attr_size());
+        	skyouttable.setTable_num_attr(skytable.getTable_num_attr());
+        	skyouttable.setTable_tuple_size(skytable.getTable_tuple_size());
+        	skyouttable.setTable_attr_type(skytable.getTable_attr_type());
+        }
+        else {
+        	skyouttable = null;
+        }
         
         print_attr();
         run_skyline();
@@ -79,8 +95,23 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
 			default:
 				break;
     	}
+    	close();
     }
 
+    private void close() {
+    	if ( skyouttable != null ) {
+    		boolean[] bunc = new boolean[skyouttable.getTable_num_attr()];
+    		boolean[] hunc = new boolean[skyouttable.getTable_num_attr()];
+    		for ( int i=0; i<bunc.length; i++ ) {
+    			hunc[i] = false;
+    			bunc[i] = false;
+    		}
+    		skyouttable.setBtree_unclustered_attr(bunc);
+    		skyouttable.setHash_unclustered_attr(hunc);
+    		skyouttable.add_table_to_global_queue();
+    	}
+    }
+    
     private void runBtreeSky() {
     	try {
 	    	//Heapfile f = new Heapfile(skytable.getTable_heapfile());
@@ -240,6 +271,7 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
             while (temp!=null) {
             	numSkyEle++;
                 temp.print(table.getTable_attr_type());
+                add_to_mater_table(temp);
                 temp = nestedLoopsSky.get_next();
             }
         
@@ -329,5 +361,42 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
     	}
     	
     	return btreeFileArray;
+    }
+    
+    private void add_to_mater_table(Tuple temp) {
+    	try {
+    		if ( skyouttable == null ) {
+    			return;
+    		}
+			Tuple t = TupleUtils.getEmptyTuple(skyouttable.getTable_attr_type(), skyouttable.getTable_attr_size());
+			t.tupleCopy(temp);
+			Heapfile outheapfile = new Heapfile(skyouttable.getTable_heapfile());
+			RID newrid = outheapfile.insertRecord(t.getTupleByteArray());
+		} catch (InvalidTypeException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InvalidTupleSizeException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (HFException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (HFBufMgrException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (HFDiskMgrException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InvalidSlotNumberException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (SpaceNotAvailableException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    	
     }
 }
