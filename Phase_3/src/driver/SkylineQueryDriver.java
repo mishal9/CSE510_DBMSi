@@ -38,6 +38,9 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
 	
 	/* skyline algorithm to be used */
 	private String skyline_algo;
+	
+	/* table for index */
+	private Table skytable;
     
     public SkylineQueryDriver(int[] pref_list, String tablename, int n_pages, String outtablename, String skyline_algo){
         this.pref_list = pref_list;
@@ -45,6 +48,8 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
         this.n_pages = n_pages;
         this.outtablename = outtablename;
         this.skyline_algo = skyline_algo;
+        this.skytable = SystemDefs.JavabaseDB.get_relation(tablename);
+        
         print_attr();
         run_skyline();
     }
@@ -78,28 +83,29 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
 
     private void runBtreeSky() {
     	try {
-	    	Table table = SystemDefs.JavabaseDB.get_relation(tablename);
-	    	Heapfile f = new Heapfile(table.getTable_heapfile());
-			BtreeGeneratorUtil.generateAllBtreesForHeapfile( table.getTable_heapfile(), f, table.getTable_attr_type(), table.getTable_attr_size());
-			System.out.println("Btree DATABASE CREATED");
+	    	Heapfile f = new Heapfile(skytable.getTable_heapfile());
+			//BtreeGeneratorUtil.generateAllBtreesForHeapfile( skytable.getTable_heapfile(), f, skytable.getTable_attr_type(), skytable.getTable_attr_size());
+			//System.out.println("Btree DATABASE CREATED");
 			
 			//limiting buffer pages in BufMgr
 			//SystemDefs.JavabaseBM.limit_memory_usage(true, this._n_pages);
 			
 			int amt_of_mem = 100; // TODO what should this be?
 			Iterator am1 = null;
-			String relationName = table.getTable_heapfile();
+			String relationName = skytable.getTable_heapfile();
 			
 			//get only the btree indexes specified by the the pref_list array
-			IndexFile[] index_file_list = BtreeGeneratorUtil.getBtreeSubset(this.pref_list);
+			//IndexFile[] index_file_list = BtreeGeneratorUtil.getBtreeSubset(this.pref_list);
+			IndexFile[] index_file_list = get_btree_index_files();
+			System.out.println("Btree DATABASE CREATED");
 			PCounter.initialize();
-			BTreeSky btreesky = new BTreeSky(table.getTable_attr_type(), table.getTable_num_attr(), table.getTable_attr_size(), amt_of_mem, am1, relationName, this.pref_list,
+			BTreeSky btreesky = new BTreeSky(skytable.getTable_attr_type(), skytable.getTable_num_attr(), skytable.getTable_attr_size(), amt_of_mem, am1, relationName, this.pref_list,
 											 this.pref_list.length, index_file_list, this.n_pages);
 			btreesky.debug = false;
 			int numSkyEle = 0;
 			Tuple skyEle = btreesky.get_next(); // first sky element
 			System.out.print("First Sky element is: ");
-			skyEle.print(table.getTable_attr_type());
+			skyEle.print(skytable.getTable_attr_type());
 			numSkyEle++;
 			while (skyEle != null) {
 				skyEle = btreesky.get_next(); // subsequent sky elements
@@ -109,7 +115,7 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
 				}
 				numSkyEle++;
 				System.out.print("Sky element is: ");
-				skyEle.print(table.getTable_attr_type());
+				skyEle.print(skytable.getTable_attr_type());
 			}
 			System.out.println("Skyline Length: "+numSkyEle);
 			btreesky.close();
@@ -306,5 +312,23 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
         System.out.println("Tablename: "+tablename);
         System.out.println("Outtablename: "+ outtablename);
         System.out.println("\n");
+    }
+    
+    private BTreeFile[] get_btree_index_files() throws GetFileEntryException, PinPageException, ConstructPageException {
+    	BTreeFile[] btreeFileArray = new BTreeFile[this.pref_list.length];
+    	
+    	for ( int i=0; i<this.pref_list.length; i++ ) {
+    		if ( skytable.unclustered_index_exist(this.pref_list[i], "btree") ) {
+    			BTreeFile btf  = new BTreeFile(skytable.get_unclustered_index_filename(this.pref_list[i], "btree") );
+    			btreeFileArray[i] = btf;
+    		}
+    		else {
+    			skytable.create_unclustered_index(this.pref_list[i], "btree");
+    			BTreeFile btf  = new BTreeFile(skytable.get_unclustered_index_filename(this.pref_list[i], "btree") );
+    			btreeFileArray[i] = btf;
+    		}
+    	}
+    	
+    	return btreeFileArray;
     }
 }
