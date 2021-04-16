@@ -9,8 +9,11 @@ import hashindex.HIndex;
 import hashindex.HashIndexWindowedScan;
 import hashindex.HashKey;
 import heap.*;
+import index.IndexException;
 
-public class GroupByWithHash {
+import java.io.IOException;
+
+public class GroupByWithHash extends Iterator{
     public static Tuple[] _result;
     private static AttrType[] _attrType;
     private static int _len_in;
@@ -23,6 +26,8 @@ public class GroupByWithHash {
     int _n_out_flds;
     int fld, key_size = 4;  // TODO: not sure of the key size.
     private int target_utilization = 80;
+    // size of the tuples in the skyline/window/temporary_heap_file
+    private int          _tuple_size;
     HashIndexWindowedScan hiwfs;
     Iterator it;
     GroupByWithSort grpSort;
@@ -52,6 +57,22 @@ public class GroupByWithHash {
         fld = group_by_attr.offset;
 
         int buffer_pages = _n_pages/2;
+
+        /* initialise tuple size */
+        try {
+            Tuple tuple_candidate = new Tuple();
+            tuple_candidate.setHdr((short) this._len_in, this._attrType, this._attr_sizes);
+            this._tuple_size = tuple_candidate.size();
+        } catch (InvalidTypeException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (InvalidTupleSizeException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
 
         create_temp_heap();
 
@@ -83,26 +104,66 @@ public class GroupByWithHash {
     {
         HIndex hif = new HIndex(hash_index_name, AttrType.attrInteger, key_size,target_utilization);
         Heapfile hf = new Heapfile(temp_heap_name);
-        Tuple tup = new Tuple();
-        RID rid = new RID();
+        RID rid;
         KeyClass key = null;
-        while((tup= _am.get_next())!=null){
-            tup.setHdr((short)_len_in, _attrType, _attr_sizes);
-            rid = hf.insertRecord(tup.returnTupleByteArray());
+        Tuple t = null;
+
+        try {
+            t = _am.get_next();
+        }
+        catch (Exception e) {
+            status = false;
+            e.printStackTrace();
+        }
+
+        while(t != null){
+            Tuple tuple = new Tuple(this._tuple_size);
+            try {
+                tuple.setHdr((short) _len_in, _attrType, _attr_sizes);
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (InvalidTypeException e) {
+                e.printStackTrace();
+            } catch (InvalidTupleSizeException e) {
+                e.printStackTrace();
+            }
+            tuple.tupleCopy(t);
+
+            float[] outval = new float[3];
+            outval[0] = tuple.getFloFld(1);
+            outval[1] = tuple.getFloFld(2);
+            outval[2] = tuple.getFloFld(3);
+
+            System.out.println("Iteration tuple: " + outval[0] + " " + outval[1] + " " + outval[2]);
+
+            rid = hf.insertRecord(tuple.returnTupleByteArray());
             switch(_attrType[fld-1].attrType){
                 case AttrType.attrInteger:
-                    key = new HashKey(tup.getIntFld(fld));
+                    key = new HashKey(tuple.getIntFld(fld));
                     break;
                 case AttrType.attrReal:
-                    key = new HashKey(tup.getFloFld(fld));
+                    key = new HashKey(tuple.getFloFld(fld));
                     break;
                 case AttrType.attrString:
-                    key = new HashKey(tup.getStrFld(fld));
+                    key = new HashKey(tuple.getStrFld(fld));
                     break;
                 default:
                     System.out.println("Unrecognized attr type");
             }
             hif.insert(key, rid);
+
+            try {
+                t = _am.get_next();
+            }
+            catch (Exception e) {
+                status = false;
+                e.printStackTrace();
+            }
         }
+    }
+
+    @Override
+    public void close() throws IOException, SortException {
+
     }
 }

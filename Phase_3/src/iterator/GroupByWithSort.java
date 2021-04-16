@@ -26,9 +26,6 @@ public class GroupByWithSort extends Iterator{
     // number of tuples the queue can hold
     private int          _window_size;
 
-    // tuples used for aggregation -- for debug purposes
-    private Tuple        tuple_candidate;
-
     // heap file containing our data on which skyline is computed
     private Heapfile _skyline_grp_heap;
 
@@ -61,9 +58,9 @@ public class GroupByWithSort extends Iterator{
 
         /* initialise tuple size */
         try {
-            this.tuple_candidate = new Tuple();
-            this.tuple_candidate.setHdr((short) this._len_in, this._attrType, this._attr_sizes);
-            this._tuple_size = this.tuple_candidate.size();
+            Tuple tuple_candidate = new Tuple();
+            tuple_candidate.setHdr((short) this._len_in, this._attrType, this._attr_sizes);
+            this._tuple_size = tuple_candidate.size();
         } catch (InvalidTypeException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
