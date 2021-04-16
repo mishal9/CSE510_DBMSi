@@ -5,4 +5,4 @@ Address INT
 Number INT
 Relation INT
 PinCode STR
-Krupal	4	3	2	3	380056
+Yash	2	3	4	5	380059

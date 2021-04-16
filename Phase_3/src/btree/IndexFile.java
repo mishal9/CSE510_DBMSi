@@ -1,6 +1,11 @@
 package btree;
 
 import java.io.*;
+
+import bufmgr.HashEntryNotFoundException;
+import bufmgr.InvalidFrameNumberException;
+import bufmgr.PageUnpinnedException;
+import bufmgr.ReplacerException;
 import global.*;
 
 
@@ -97,4 +102,12 @@ public abstract class IndexFile
 	    DeleteRecException,
 	    IndexSearchException, 
 	    IOException;
+  
+  /** Close the B+ tree file.  Unpin header page.
+	 */
+	abstract public void close()
+			throws PageUnpinnedException, 
+			InvalidFrameNumberException, 
+			HashEntryNotFoundException,
+			ReplacerException;
 }

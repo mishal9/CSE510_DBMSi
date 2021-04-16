@@ -61,6 +61,7 @@ import heap.InvalidTypeException;
 import heap.Scan;
 import heap.SpaceNotAvailableException;
 import heap.Tuple;
+import index.IndexScan;
 import iterator.FileScan;
 import iterator.FileScanException;
 import iterator.FldSpec;
@@ -430,7 +431,7 @@ public class Table implements GlobalConst{
         		}
         	}
         	System.out.println();
-        	System.out.println("Out table rid page "+rid.pageNo.pid+" slot"+rid.slotNo);
+        	//System.out.println("Out table rid page "+rid.pageNo.pid+" slot"+rid.slotNo);
         	temp_t = data_scan.getNext(rid);
         }
         data_scan.closescan();
@@ -1523,46 +1524,28 @@ public class Table implements GlobalConst{
 	  System.out.println("RID page no. "+rid.pageNo.pid);
 	  rid = hp.insertRecord(t3, this.table_attr_type, this.table_attr_size, this.clustered_btree_attr, get_clustered_index_filename(clustered_btree_attr, "btree"));
 	  System.out.println("RID page no. "+rid.pageNo.pid);*/
-	  
-	  BTreeFile btf  = new BTreeFile(this.get_unclustered_index_filename(2, "btree"),
-				table_attr_type[1].attrType, 
-				table_attr_size[1],
-				1/* delete */);
-	  for ( int i=0; i<100; i++) {
-		  KeyClass key;
-		  key = new IntegerKey(2);
-		  RID rid = new RID();
-		  rid.pageNo.pid = i%10;
-		  rid.slotNo = i;
-		  btf.insert(key, rid);
+	  FldSpec[] projlist = new FldSpec[this.table_num_attr];
+	  RelSpec rel = new RelSpec(RelSpec.outer);
+	  for ( int i=0; i<this.table_num_attr; i++ ) {
+		  projlist[i] = new FldSpec(rel, i+1);
 	  }
-	  for ( int i=0; i<100; i++) {
-		  KeyClass key;
-		  key = new IntegerKey(3);
-		  RID rid = new RID();
-		  rid.pageNo.pid = i%10;
-		  rid.slotNo = i;
-		  btf.insert(key, rid);
+	  IndexScan iscan = new IndexScan(new IndexType(IndexType.Cl_B_Index_DESC), 
+			   						  this.table_heapfile, 
+			   						  this.get_clustered_index_filename(1, "btree"), 
+			   						  this.table_attr_type, 
+			   						  this.table_attr_size, 
+			   						  this.table_num_attr, 
+			   						  this.table_num_attr, 
+			   						  projlist, 
+			   						  null,
+			   						  this.table_num_attr, 
+			   						  false);
+	  Tuple temper = iscan.get_next();
+	  while ( temper != null ) {
+		  temper.print(table_attr_type);
+		  temper = iscan.get_next();
 	  }
-	  for ( int i=0; i<100; i++) {
-		  KeyClass key;
-		  key = new IntegerKey(2);
-		  RID rid = new RID();
-		  rid.pageNo.pid = i%10;
-		  rid.slotNo = i;
-		  btf.Delete(key, rid);
-	  }
-	  for ( int i=0; i<100; i++) {
-		  KeyClass key;
-		  key = new IntegerKey(3);
-		  RID rid = new RID();
-		  rid.pageNo.pid = i%10;
-		  rid.slotNo = i;
-		  btf.Delete(key, rid);
-	  }
-	  BT.printAllLeafPages(btf.getHeaderPage());
-	  BT.printBTree(btf.getHeaderPage());
-	  btf.close();
+	  iscan.close();
   }
   
   private List<RID> delete_record_from_heapfile(String heapfilename, Tuple t) throws InvalidSlotNumberException, Exception {
