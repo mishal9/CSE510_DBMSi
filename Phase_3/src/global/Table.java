@@ -485,8 +485,8 @@ public class Table implements GlobalConst{
 			temp = scan.getNext(rid);
 		}
 		scan.closescan();
-		BT.printBTree(btf.getHeaderPage());
-		BT.printAllLeafPages(btf.getHeaderPage());
+		//BT.printBTree(btf.getHeaderPage());
+		//BT.printAllLeafPages(btf.getHeaderPage());
 		btf.close();
 		
 		/* mark the unclustered index exist key */
@@ -605,7 +605,7 @@ public class Table implements GlobalConst{
 			temp = scan.getNext(rid);
 		}
 		scan.closescan();
-		hasher.printBucketInfo();
+		//hasher.printBucketInfo();
 		hasher.close();
 		
 		/* mark the unclustered index exist key */
