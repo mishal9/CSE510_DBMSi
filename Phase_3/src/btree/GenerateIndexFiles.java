@@ -50,7 +50,7 @@ public class GenerateIndexFiles{
     
     float create_key_float(double[] values, int[] pref_list, int pref_list_length) {
 		float sum = 0.0f;
-		for(int i = 0; i < values.length; i++) {
+		for(int i = 0; i < pref_list.length; i++) {
 			if(pref_list[i] == 1) {
 				sum += (float) values[i];
 			}
@@ -85,6 +85,9 @@ public class GenerateIndexFiles{
 
         double[][] records = readFile(filePath);
         String filename = "AAA";
+        prefix++;
+        filename += prefix;
+        
         int COLS = records.length;
 
         int keyType = AttrType.attrReal;
@@ -117,7 +120,7 @@ public class GenerateIndexFiles{
             fkey = create_key_float(value, pref_list, pref_list_length);
             ffkey = new FloatKey(-fkey);
 
-            for(int i=0; i<value.length; i++) {
+            for(int i=0; i<pref_list.length; i++) {
                 t.setFloFld(i+1, (float) value[i]);
             }
             
