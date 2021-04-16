@@ -665,6 +665,46 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    			break;
 	    		case "NRA":
 	    			//TBD run top-K-join NRA with proper params
+	    			FldSpec joinAttr1 = new FldSpec(new RelSpec(RelSpec.outer), outer_join_attribute);
+	    	        FldSpec mergeAttr1 = new FldSpec(new RelSpec(RelSpec.outer), outer_merge_attribute);
+	    	        
+	    	        FldSpec joinAttr2 = new FldSpec(new RelSpec(RelSpec.outer), innerr_join_attribute);
+	    	        FldSpec mergeAttr2 = new FldSpec(new RelSpec(RelSpec.outer), inner_merge_attribute);
+	    	        
+	    	        AttrType[] attrType = new AttrType[6];
+	    	        attrType[0] = new AttrType(AttrType.attrString);
+	    	        attrType[1] = new AttrType(AttrType.attrInteger);
+	    	        attrType[2] = new AttrType(AttrType.attrInteger);
+	    	        attrType[3] = new AttrType(AttrType.attrInteger);
+	    	        attrType[4] = new AttrType(AttrType.attrInteger);
+	    	        attrType[5] = new AttrType(AttrType.attrInteger);
+	    	        
+	    	        short[] attrSizetemp = new short[6];
+
+	                for(int i=0; i<6; i++){
+	                	if(i == 0 ) {
+	                		attrSizetemp[i] = 32;
+	                	}
+	                }
+	    	        		
+	    			TopK_NRAJoin tknj = new TopK_NRAJoin(
+					        attrType, attrType.length, attrSizetemp,
+					        joinAttr1,
+					        mergeAttr1,
+					        attrType, attrType.length, attrSizetemp,
+					        joinAttr2,
+					        mergeAttr2,
+					        outer_table_name,
+					        inner_table_name,
+					        join_k, 
+					        join_n_pages
+	    			);
+	    			
+				try {
+					tknj.calculateTopKJoins();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
 	    			break;
 	    		default:
 	    			validate_token_length(0, "topkjoin");
