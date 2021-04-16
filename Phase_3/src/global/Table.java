@@ -410,6 +410,68 @@ public class Table implements GlobalConst{
 	}
   }
   
+  public void print_table_cl() throws InvalidTupleSizeException {
+	  print_table_attr();
+	  CommandLineTable st = new CommandLineTable(table_num_attr);
+	  st.setShowVerticalLines(true);
+	  st.setHeaders(table_attr_name);
+	  /* open the data heap file */
+  	  Heapfile heap_file;
+  	  Scan data_scan;
+  	  Tuple t, temp_t;
+  	  RID rid = new RID();
+	try {
+		heap_file = new Heapfile(table_heapfile);
+		//System.out.println("Number of records in the file: "+heap_file.getRecCnt());
+		/* open a scan on the heap file */
+	    data_scan = heap_file.openScan();
+	    t = new Tuple(table_tuple_size);
+	    temp_t = new Tuple(table_tuple_size);
+        t.setHdr( (short)table_num_attr, table_attr_type, table_attr_size);
+        temp_t.setHdr( (short)table_num_attr, table_attr_type, table_attr_size);
+        temp_t = data_scan.getNext(rid);
+        while ( temp_t != null ) {
+        	t.tupleCopy(temp_t);
+        	for ( int i=0; i<table_num_attr; i++) {
+        		switch (table_attr_type[i].attrType) {
+        			case AttrType.attrInteger:
+        				st.addRow(Integer.toString(t.getIntFld(i+1)));
+        				//System.out.print(t.getIntFld(i+1) + table_sep);
+        				break;
+        			case AttrType.attrString:
+        				st.addRow(t.getStrFld(i+1));
+        				//System.out.print(t.getStrFld(i+1) + table_sep);
+        				break;
+        			default:
+        				System.out.println("Error in the system");
+        				System.exit(0);
+        				break;
+        		}
+        	}
+        	//System.out.println();
+        	//System.out.println("Out table rid page "+rid.pageNo.pid+" slot"+rid.slotNo);
+        	temp_t = data_scan.getNext(rid);
+        }
+        data_scan.closescan();
+        st.print();
+	} catch (HFException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (HFBufMgrException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (HFDiskMgrException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (IOException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (Exception e) {
+        e.printStackTrace();
+    }
+  	  
+  }
+  
   public void print_table() throws InvalidTupleSizeException {
 	  print_table_attr();
 	  for( int i=0; i<table_num_attr; i++ ) {
@@ -1555,7 +1617,7 @@ public class Table implements GlobalConst{
 	  System.out.println("RID page no. "+rid.pageNo.pid);
 	  rid = hp.insertRecord(t3, this.table_attr_type, this.table_attr_size, this.clustered_btree_attr, get_clustered_index_filename(clustered_btree_attr, "btree"));
 	  System.out.println("RID page no. "+rid.pageNo.pid);*/
-	  FldSpec[] projlist = new FldSpec[this.table_num_attr];
+	  /*FldSpec[] projlist = new FldSpec[this.table_num_attr];
 	  RelSpec rel = new RelSpec(RelSpec.outer);
 	  for ( int i=0; i<this.table_num_attr; i++ ) {
 		  projlist[i] = new FldSpec(rel, i+1);
@@ -1576,7 +1638,8 @@ public class Table implements GlobalConst{
 		  temper.print(table_attr_type);
 		  temper = iscan.get_next();
 	  }
-	  iscan.close();
+	  iscan.close();*/
+	  print_table_attr();
   }
   
   /* removes a tuple from the table heapfile */
