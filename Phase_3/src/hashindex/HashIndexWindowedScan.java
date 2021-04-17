@@ -91,7 +91,9 @@ public class HashIndexWindowedScan {
 
     public Iterator get_next()
             throws Exception {
-        //System.out.println("Windows created "+n_windows);
+
+        System.out.println("Windows created "+n_windows);
+
         if (current_window > n_windows) {
             return null;
         }

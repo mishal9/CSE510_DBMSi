@@ -12,6 +12,7 @@ import iterator.FldSpec;
 import iterator.Iterator;
 import iterator.RelSpec;
 
+
 class Row{
     int id;
     char name;
@@ -75,14 +76,17 @@ public class HashTest2 implements GlobalConst {
         Ssizes = null;
         Tuple t = new Tuple();
         t.setHdr((short) 3, Dtypes, Ssizes);
+
         int size = t.size();
 
         RID rid;
+
 
         for (int i=0; i<data1.length; i++) {
             t.setIntFld(1, data1[i][0]);
             t.setIntFld(2, data1[i][1]);
             t.setIntFld(3, data1[i][2]);
+
             hf.insertRecord(t.getTupleByteArray());
         }
         hf = null;
@@ -95,6 +99,7 @@ public class HashTest2 implements GlobalConst {
         RID rid = new RID();
         while((tup=s.getNext(rid))!=null){
             tup.setHdr((short)3, Dtypes, Ssizes);
+
             HashKey key = new HashKey(tup.getIntFld(1));
             h.insert(key, rid);
         }
@@ -102,6 +107,7 @@ public class HashTest2 implements GlobalConst {
                 new FldSpec(new RelSpec(RelSpec.outer), 1),
                 new FldSpec(new RelSpec(RelSpec.outer), 2),
                 new FldSpec(new RelSpec(RelSpec.outer), 3)
+
         };
         HashIndexWindowedScan hiwfs = new HashIndexWindowedScan(new IndexType(IndexType.Hash), heap_file_name, index_file_name, Dtypes, Ssizes, Dtypes.length, out.length, out, null, 1, false);
         Iterator it;
@@ -134,3 +140,4 @@ public class HashTest2 implements GlobalConst {
     }
 
 }
+

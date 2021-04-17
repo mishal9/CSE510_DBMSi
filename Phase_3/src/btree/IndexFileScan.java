@@ -22,6 +22,8 @@ public abstract class IndexFileScan
    */
   abstract public Tuple get_next_tuple();
 
+  abstract public KeyDataEntry get_next_entry();
+
   /** 
    * Delete the current record.
    * @exception ScanDeleteException delete current record failed
