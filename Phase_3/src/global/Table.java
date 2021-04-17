@@ -316,7 +316,7 @@ public class Table implements GlobalConst{
 		
 		/* opening the data file for reading */
 		File file = new File(data_folder + table_data_file);
-	    Scanner sc = new Scanner(file);
+	    Scanner sc = new Scanner(file, "utf-8");
 	    sc.useDelimiter(this.data_file_delimiter);
 	    
 	    /* initialising the number of attributes in the table */
