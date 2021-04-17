@@ -3,6 +3,7 @@ package iterator;
 import heap.*;
 import index.*;
 import iterator.Iterator;
+//import tests.Reserves;
 import global.*;
 import bufmgr.*;
 import btree.*;
@@ -10,6 +11,16 @@ import btree.*;
 import java.lang.*;
 import java.io.*;
 import java.util.*;
+
+class Test {
+    public int first;
+    public int second;
+    
+    public Test(int val1, int val2) {
+    	this.first = val1;
+    	this.second = val2;
+    }
+}
 
 public class TopK_HashJoin extends Iterator implements GlobalConst {
 	
@@ -57,7 +68,7 @@ public class TopK_HashJoin extends Iterator implements GlobalConst {
 		this.n_pages = n_pages;
 			    
 	    Table table1 = SystemDefs.JavabaseDB.get_relation(this.relationName1);
-		Table table2 = SystemDefs.JavabaseDB.get_relation(this.relationName2);
+//		Table table2 = SystemDefs.JavabaseDB.get_relation(this.relationName2);
 
 	    FldSpec [] Sprojection = {
 	    	       new FldSpec(new RelSpec(RelSpec.outer), 1),
@@ -110,19 +121,43 @@ public class TopK_HashJoin extends Iterator implements GlobalConst {
 	    outFilter[0].operand2.symbol = new FldSpec (new RelSpec(RelSpec.innerRel),1);
 	    outFilter[1] = null;
 	    
-//	    Tuple t = am.get_next();
-//	    
-//	    while(t!=null) {
-//	    	t.print(in1);
-//	    	t = am.get_next();
-//	    }
-	    
 	    System.out.println("" + this.relationName2);
+	    
+	    AttrType[] Rtypes = new AttrType[2];
+        Rtypes[0] = new AttrType(AttrType.attrInteger);
+        Rtypes[1] = new AttrType(AttrType.attrInteger);
+
+        short[] Rsizes = new short[2];
+        Rsizes[0] = 15;
+        Rsizes[1] = 15;
+	    
+	    Heapfile f = new Heapfile(this.relationName2+".txt");
+	    
+	    Tuple t = new Tuple();
+	    t.setHdr((short) 2, Rtypes, Rsizes);
+	    int size = t.size();
+	    
+	    Test[] test = {
+	    		new Test(4,4),
+	    		new Test(1,6),
+	    		new Test(6,9),
+	    		new Test(3,1),
+	    };
+	    
+	    t = new Tuple(size);
+	    t.setHdr((short) 2, Rtypes, Rsizes);
+	    
+	    for(int i = 0; i< test.length; i++) {
+	    	t.setIntFld(1, test[i].first);
+	    	t.setIntFld(2, test[i].second);
+            RID rid = f.insertRecord(t.returnTupleByteArray());
+	    }
+	    
 	    HashJoin nlj = null;
 	    
 	    nlj = new HashJoin(
     		  table1.getTable_attr_type(), table1.getTable_attr_type().length, table1.getTable_attr_size(),
-    		  table2.getTable_attr_type(), table2.getTable_attr_type().length, table2.getTable_attr_size(),
+    		  table1.getTable_attr_type(), table1.getTable_attr_type().length, table1.getTable_attr_size(),
     		  100,
     		  am, this.relationName2+".txt",
     		  outFilter, null, proj1, 4);
@@ -135,6 +170,7 @@ public class TopK_HashJoin extends Iterator implements GlobalConst {
 	    temp[3] = new AttrType (AttrType.attrInteger);
 	    
 	    System.out.println("============================");
+	    nlj.get_next().print(temp);
 	    nlj.get_next().print(temp);
 	    nlj.get_next().print(temp);
 //	    nlj.get_next().print(temp);

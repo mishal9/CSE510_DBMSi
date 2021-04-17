@@ -615,7 +615,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
      * structure: topkjoin HASH/NRA K OTABLENAME O_J_ATT_NO O_M_ATT_NO ITABLENAME I_J_ATT_NO I_M_ATT_NO NPAGES [MATER OUTTABLENAME]
      * */
     public void parse_topkjoin() throws JoinsException, PageNotReadException, TupleUtilsException, PredEvalException, SortException, LowMemException, UnknowAttrType, UnknownKeyTypeException, Exception {
-    	try {
+//    	try {
 	    	/* ----------------------which join needs to be calculated ------------------------------------*/
 	    	String join_algo = tokens[1]; //HASH/NRA
 	    	
@@ -677,7 +677,6 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	                for(int i=0; i<2; i++){
 	                	attrSizeHash[i] = 32;
 	                }
-	                
 				
 	                TopK_HashJoin tjhj = new TopK_HashJoin(
 							attrTypeHash, attrTypeHash.length, attrSizeHash,
@@ -741,9 +740,10 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    			validate_token_length(0, "topkjoin");
 	    			break;
 	    	}
-    	}catch (ArrayIndexOutOfBoundsException e){
-	        validate_token_length(0, "topkjoin");
-	    }
+//    	}catch (ArrayIndexOutOfBoundsException e){
+//    		System.out.println("OUT OF BOUNDS");
+//	        validate_token_length(0, "topkjoin");
+//	    }
     }
     
     public void run_test_query() {
