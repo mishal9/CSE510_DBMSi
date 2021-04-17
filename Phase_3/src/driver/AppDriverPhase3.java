@@ -545,16 +545,24 @@ class DriverPhase3 extends TestDriver implements GlobalConst
      * part of task
      * structure: join NLJ/SMJ/INLJ/HJ OTABLENAME O_ATT_NO ITABLENAME I_ATT_NO OP NPAGES [MATER OUTTABLENAME]
      * */
-    public void parse_join() {
+    public void parse_join() throws Exception {
     	try {
 	    	/* ----------------------which join needs to be calculated ------------------------------------*/
 	    	String join_algo = tokens[1]; //NLJ/SMJ/INLJ/HJ
 	    	
 	    	/* ---------------------which is the outer table----------------------------------*/
 	    	String outer_table_name = tokens[2];
+	    	Table outer_table = SystemDefs.JavabaseDB.get_relation(outer_table_name);
 	    	
 	    	/* ---------------------which is the inner table----------------------------------*/
 	    	String inner_table_name = tokens[4];
+	    	Table inner_table = SystemDefs.JavabaseDB.get_relation(inner_table_name);
+	    	
+	    	/*--------------------------no table should be null -------------------------------*/
+	    	if ( ( outer_table == null ) || ( inner_table == null ) ) {
+	    		System.out.println("Inner table or outer table does not exist.");
+	    		return;
+	    	}
 	    	
 	    	/*----------------------get the outer nad inner attribute on which to perform the join */
 	    	int outer_table_attribute = Integer.parseInt(tokens[3]);
@@ -571,6 +579,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    	String out_tablename = "";
 	    	if ( is_output_saved ) {
 	    		out_tablename = tokens[9];
+	    		Table mater_table = new Table(out_tablename, "MATER");
 	    	}
 	    	
 	    	if ( is_output_saved ) {
@@ -583,6 +592,10 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    		System.out.println(" calculating "+join_algo+" on outer table "+ outer_table_name+" attribute "+ outer_table_attribute +
 	    				" and inner table "+ inner_table_name+" attribute "+ inner_table_attribute +
 	    				" with buffer pages: "+join_n_pages+ " and operator type "+op);
+	    	}
+	    	CondExpr[] outFilter = get_op_cond_expr(op);
+	    	if ( outFilter == null ) {
+	    		return;
 	    	}
 	    	
 	    	/* run the appropriate skyline algorithm */
@@ -597,6 +610,28 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    			//TBD run INLJ with proper params
 	    			break;
 	    		case "HJ":
+	    			FldSpec[] outer_projection = get_projection_for_table(outer_table);
+	    			FldSpec[] join_projection = get_projection_for_join_table(outer_table, inner_table);
+	    			FileScan am = new FileScan(outer_table.getTable_heapfile(), 
+	    									   outer_table.getTable_attr_type(),
+	    									   outer_table.getTable_attr_size(),
+	                        				   (short) outer_table.getTable_num_attr(), 
+	                        				   (short) outer_table.getTable_num_attr(), 
+	                        				   outer_projection, 
+	                        				   null);
+	    			HashJoin hj = new HashJoin(outer_table.getTable_attr_type(),
+	    									   outer_table.getTable_num_attr(),
+	    									   outer_table.getTable_attr_size(),
+	    									   inner_table.getTable_attr_type(),
+	    									   inner_table.getTable_num_attr(),
+	    									   inner_table.getTable_attr_size(),
+	    									   join_n_pages,
+	    									   am,
+	    									   inner_table.getTable_heapfile(),
+	    									   outFilter,
+	    									   null,
+	    									   join_projection,
+	    									   join_projection.length);
 	    			//TBD run HJ with proper params
 	    			break;
 	    		default:
@@ -606,6 +641,106 @@ class DriverPhase3 extends TestDriver implements GlobalConst
     	}catch (ArrayIndexOutOfBoundsException e){
 	        validate_token_length(0, "join");
 	    }
+    }
+    
+    private CondExpr[] get_op_cond_expr( String op ) {
+    	CondExpr[] expr = new CondExpr[2];
+    	switch (op) {
+    	case "=":
+    		expr[0].next = null;
+            expr[0].op = new AttrOperator(AttrOperator.aopEQ);
+
+            expr[0].type1 = new AttrType(AttrType.attrSymbol);
+            expr[0].operand1.symbol = new FldSpec(new RelSpec(RelSpec.outer), 1);
+
+            expr[0].type2 = new AttrType(AttrType.attrSymbol);
+            expr[0].operand2.symbol = new FldSpec(new RelSpec(RelSpec.innerRel), 1);
+
+            expr[1] = null;
+    		break;
+    	case "<":
+    		expr[0].next = null;
+            expr[0].op = new AttrOperator(AttrOperator.aopLT);
+
+            expr[0].type1 = new AttrType(AttrType.attrSymbol);
+            expr[0].operand1.symbol = new FldSpec(new RelSpec(RelSpec.outer), 1);
+
+            expr[0].type2 = new AttrType(AttrType.attrSymbol);
+            expr[0].operand2.symbol = new FldSpec(new RelSpec(RelSpec.innerRel), 1);
+
+            expr[1] = null;
+    		break;
+    	case ">":
+    		expr[0].next = null;
+            expr[0].op = new AttrOperator(AttrOperator.aopGT);
+
+            expr[0].type1 = new AttrType(AttrType.attrSymbol);
+            expr[0].operand1.symbol = new FldSpec(new RelSpec(RelSpec.outer), 1);
+
+            expr[0].type2 = new AttrType(AttrType.attrSymbol);
+            expr[0].operand2.symbol = new FldSpec(new RelSpec(RelSpec.innerRel), 1);
+
+            expr[1] = null;
+    		break;
+    	case "<=":
+    		expr[0].next = null;
+            expr[0].op = new AttrOperator(AttrOperator.aopLE);
+
+            expr[0].type1 = new AttrType(AttrType.attrSymbol);
+            expr[0].operand1.symbol = new FldSpec(new RelSpec(RelSpec.outer), 1);
+
+            expr[0].type2 = new AttrType(AttrType.attrSymbol);
+            expr[0].operand2.symbol = new FldSpec(new RelSpec(RelSpec.innerRel), 1);
+
+            expr[1] = null;
+    		break;
+    	case ">=":
+    		expr[0].next = null;
+            expr[0].op = new AttrOperator(AttrOperator.aopGE);
+
+            expr[0].type1 = new AttrType(AttrType.attrSymbol);
+            expr[0].operand1.symbol = new FldSpec(new RelSpec(RelSpec.outer), 1);
+
+            expr[0].type2 = new AttrType(AttrType.attrSymbol);
+            expr[0].operand2.symbol = new FldSpec(new RelSpec(RelSpec.innerRel), 1);
+
+            expr[1] = null;
+    		break;
+    	default:
+    		System.out.println("Define the operator correctly");
+    		return null;
+    	}
+    	return expr;
+    }
+    
+    private FldSpec[] get_projection_for_table( Table proj_table ) {
+    	FldSpec[] proj = new FldSpec[proj_table.getTable_num_attr()];
+    	RelSpec rel = new RelSpec(RelSpec.outer);
+    	for ( int i=0; i<proj_table.getTable_num_attr(); i++ ) {
+    		proj[i] = new FldSpec(rel, i+1);
+    	}
+    	return proj;
+    }
+    
+    private FldSpec[] get_projection_for_join_table( Table out_table, Table inner_table ) {
+    	FldSpec[] projo = new FldSpec[out_table.getTable_num_attr()];
+    	FldSpec[] proji = new FldSpec[inner_table.getTable_num_attr()];
+    	RelSpec rel = new RelSpec(RelSpec.outer);
+    	RelSpec reli = new RelSpec(RelSpec.innerRel);
+    	for ( int i=0; i<projo.length; i++ ) {
+    		projo[i] = new FldSpec(rel, i+1);
+    	}
+    	for ( int i=0; i<proji.length; i++ ) {
+    		proji[i] = new FldSpec(reli, i+1);
+    	}
+    	FldSpec[] proj = new FldSpec[out_table.getTable_num_attr() + inner_table.getTable_num_attr()];
+    	for ( int i=0; i<projo.length; i++ ) {
+    		proj[i] = projo[i];
+    	}
+    	for ( int i=0; i<proji.length; i++ ) {
+    		proj[i + projo.length] = proji[i];
+    	}
+    	return proj;
     }
     
     /* parses the join query for the exact structure 

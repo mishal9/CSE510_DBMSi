@@ -12,7 +12,6 @@ import index.*;
 import iterator.*;
 import btree.*;
 
-import java.awt.*;
 import java.lang.*;
 import java.io.*;
 

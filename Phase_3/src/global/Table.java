@@ -84,7 +84,7 @@ import iterator.UnknowAttrType;
 public class Table implements GlobalConst{
 
 	/* data folder */
-	private  static String data_folder = "data/";
+	private  static String data_folder = "data/Phase3_report_dataset/";
 	
 	/* table separateer in printing the table */
 	private static String table_sep = "\t\t";
@@ -118,6 +118,9 @@ public class Table implements GlobalConst{
 	
 	/* name of this table */
 	private String tablename;
+	
+	/* ext for the table */
+	private String table_data_file_ext;
 	
 	/* name of the heap file containing the heapfile for the tabe data */
 	private String table_heapfile;
@@ -263,8 +266,12 @@ public class Table implements GlobalConst{
   
   public Table( String filename ) {
 	  this.table_data_file = filename;
-	  this.tablename = filename.substring(0, filename.length()-data_file_ext.length());
-	  this.table_heapfile = filename.substring(0, filename.length()-data_file_ext.length()) + heapfile_ext;
+
+	  String[] tokens = filename.split("\\.");
+	  this.tablename = tokens[0];
+	  this.table_data_file_ext = tokens[1];
+	  
+	  this.table_heapfile = this.tablename + heapfile_ext;
   }
   
   public Table( String tablename, String mater ) {

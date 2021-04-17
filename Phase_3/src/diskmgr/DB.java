@@ -25,6 +25,7 @@ import heap.InvalidTypeException;
 import heap.Scan;
 import heap.SpaceNotAvailableException;
 import heap.Tuple;
+import iterator.TupleUtils;
 
 public class DB implements GlobalConst {
 	
@@ -198,6 +199,43 @@ public class DB implements GlobalConst {
 		
 	}
 	
+	public void add_to_mater_table(Tuple temp, Table mater_table) {
+    	try {
+    		if ( mater_table == null ) {
+    			return;
+    		}
+			Tuple t = TupleUtils.getEmptyTuple(mater_table.getTable_attr_type(), mater_table.getTable_attr_size());
+			t.tupleCopy(temp);
+			Heapfile outheapfile = new Heapfile(mater_table.getTable_heapfile());
+			RID newrid = outheapfile.insertRecord(t.getTupleByteArray());
+		} catch (InvalidTypeException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InvalidTupleSizeException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (HFException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (HFBufMgrException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (HFDiskMgrException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InvalidSlotNumberException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (SpaceNotAvailableException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    	
+    }
+
   /** Open the database with the given name.
    *
    * @param fname DB_name
