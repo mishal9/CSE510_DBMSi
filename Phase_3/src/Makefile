@@ -50,3 +50,6 @@ test:
 clean:
 	\rm -f $(CLASSPATH)/*.class *~ \#* core $(JARFILES) TRACE
 
+
+Iterator:
+	make -C iterator

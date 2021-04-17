@@ -61,7 +61,8 @@ class Reserves {
     }
 }
 
-class JoinsDriver implements GlobalConst {
+class HashJoinsDriver extends TestDriver
+implements GlobalConst {
 
     private boolean OK = true;
     private boolean FAIL = false;
@@ -72,7 +73,17 @@ class JoinsDriver implements GlobalConst {
     /**
      * Constructor
      */
-    public JoinsDriver() {
+    private static int   LARGE = 1000;
+    private static short REC_LEN1 = 32;
+    private static short REC_LEN2 = 160;
+    private static int   SORTPGNUM = 12;
+
+    protected String testName()
+    {
+        return "HashJoin";
+    }
+
+    public HashJoinsDriver() {
 
         //build Sailor, Boats, Reserves table
         sailors = new Vector();
@@ -145,13 +156,6 @@ class JoinsDriver implements GlobalConst {
         } catch (IOException e) {
             System.err.println("" + e);
         }
-
-
-    /*
-    ExtendedSystemDefs extSysDef =
-      new ExtendedSystemDefs( "/tmp/minibase.jointestdb", "/tmp/joinlog",
-			      1000,500,200,"Clock");
-    */
 
         SystemDefs sysdef = new SystemDefs(dbpath, 1000, NUMBUF, "Clock");
 
@@ -328,13 +332,6 @@ class JoinsDriver implements GlobalConst {
             e.printStackTrace();
         }
 
-        int keyType=AttrType.attrInteger;
-        try{
-            btree_index = new BTreeFile("reserves.in"+".unclustered", keyType, 100, 0);
-        }catch(Exception e){
-            e.printStackTrace();
-        }
-
         for (int i = 0; i < numreserves; i++) {
             try {
                 t.setIntFld(1, ((Reserves) reserves.elementAt(i)).sid);
@@ -349,8 +346,6 @@ class JoinsDriver implements GlobalConst {
 
             try {
                 rid = f.insertRecord(t.returnTupleByteArray());
-                btree_index.insert(new IntegerKey(t.getIntFld(1)), rid);
-//                System.out.println(t.noOfFlds() + " RID: " + rid.pageNo + "." + rid.slotNo);
             } catch (Exception e) {
                 System.err.println("*** error in Heapfile.insertRecord() ***");
                 status = FAIL;
@@ -365,9 +360,8 @@ class JoinsDriver implements GlobalConst {
 
     }
 
-    public boolean runTests() {
+    public boolean runAllTests() {
 
-        Disclaimer();
         Query7();
 
 
@@ -451,8 +445,7 @@ class JoinsDriver implements GlobalConst {
         FileScan am = null;
         try {
             am = new FileScan("sailors.in", Stypes, Ssizes,
-                    (short) 4, (short) 4,
-                    Sprojection, null);
+                    (short) 4, (short) 4, Sprojection, null);
         } catch (Exception e) {
             status = FAIL;
             System.err.println("" + e);
@@ -470,7 +463,7 @@ class JoinsDriver implements GlobalConst {
         try {
             inl = new HashJoin(Stypes, 4, Ssizes,
                     Rtypes, 3, Rsizes,
-                    5,
+                    50,
                     am, "reserves.in",
                     outFilter, null, proj1, 7);
         } catch (Exception e) {
@@ -489,7 +482,9 @@ class JoinsDriver implements GlobalConst {
                 new AttrType(AttrType.attrString)
         };
         try{
+            int c = 0;
             while ((t = inl.get_next()) != null) {
+                System.out.println("Get next call: " + c++);
                 t.print(JJtype);
             }
             inl.close();
@@ -507,45 +502,22 @@ class JoinsDriver implements GlobalConst {
         }
 
     }
-    private Tuple getEmptyTuple() throws InvalidTypeException, InvalidTupleSizeException, IOException {
-        AttrType[] Rtypes = new AttrType[3];
-        Rtypes[0] = new AttrType(AttrType.attrInteger);
-        Rtypes[1] = new AttrType(AttrType.attrInteger);
-        Rtypes[2] = new AttrType(AttrType.attrString);
-
-        short[] Rsizes = new short[1];
-        Rsizes[0] = 15;
-        Tuple t = new Tuple();
-        try {
-            t.setHdr((short) 3, Rtypes, Rsizes);
-        } catch (Exception e) {
-            System.err.println("*** error in Tuple.setHdr() ***");
-        }
-        int size = t.size();
-        t = new Tuple(size);
-        t.setHdr((short) Rtypes.length, Rtypes, Rsizes);
-        return t;
-    }
-
-    private void Disclaimer() {
-        System.out.print("\n\nAny resemblance of persons in this database to"
-                + " people living or dead\nis purely coincidental. The contents of "
-                + "this database do not reflect\nthe views of the University,"
-                + " the Computer  Sciences Department or the\n"
-                + "developers...\n\n");
-    }
 }
 
 
 public class HashJoinTest {
     public static void main(String argv[]) {
-        boolean sortstatus;
-        //SystemDefs global = new SystemDefs("bingjiedb", 100, 70, null);
-        //JavabaseDB.openDB("/tmp/nwangdb", 5000);
+        boolean sortstatus=false;
+//        SystemDefs global = new SystemDefs("bingjiedb", 100, 70, null);
+//        JavabaseDB.openDB("/tmp/nwangdb", 5000);
 
-        JoinsDriver jjoin = new JoinsDriver();
+        HashJoinsDriver jjoin = new HashJoinsDriver();
 
-        sortstatus = jjoin.runTests();
+        try{
+            sortstatus = jjoin.runAllTests();
+        }catch (Exception e){
+            e.printStackTrace();
+        }
         if (sortstatus != true) {
             System.out.println("Error ocurred during join tests");
         } else {
