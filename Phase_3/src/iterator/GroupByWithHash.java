@@ -71,12 +71,12 @@ public class GroupByWithHash extends Iterator{
     public Tuple get_next() throws Exception {
         Tuple tup;
         Iterator it;
-        while((it=_hiwfs.get_next())!=null){
+        if((it=_hiwfs.get_next())!=null){
             while((tup=it.get_next())!=null){
                 tup.setHdr((short)3, _attrType, _attr_sizes);
                 tup.print(_attrType);
             }
-            System.out.println("\n New Bucket ");
+            //System.out.println("\n New Bucket ");
         }
 
         System.out.println();

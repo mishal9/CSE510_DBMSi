@@ -164,6 +164,8 @@ class GroupByHashDriver extends TestDriver
 
         System.out.println ("\n" + "Running " + testName() + " tests...." + "\n");
 
+        dbpath = "task3-grpByHash.minibase-db";
+
         SystemDefs sysdef = new SystemDefs( dbpath, 3000, 100, "Clock" );
 
         // Kill anything that might be hanging around
@@ -336,14 +338,33 @@ class GroupByHashDriver extends TestDriver
                     3,
                     20);
 
-            System.out.println("Printing the Group By Sort Results");
+            /*
+            System.out.println("Printing the Group By Hash Results");
             try {
-                grpHash.get_next(); // group 1
-                System.out.println("======");
-                grpHash.get_next(); // group 2
+                Tuple res = grpHash.get_next(); // group 1
+
+                while(res != null){
+
+                    res.printTuple(attrType);
+
+                    try {
+                        res = grpHash.get_next();
+                    } catch (Exception e){
+                        e.printStackTrace();
+                    }
+                }
+
             } catch (Exception e) {
                 e.printStackTrace();
             }
+
+             */
+
+            grpHash.get_next();
+            grpHash.get_next();
+            grpHash.get_next();
+            grpHash.get_next();
+
         } catch (Exception e) {
             e.printStackTrace();
         } finally {

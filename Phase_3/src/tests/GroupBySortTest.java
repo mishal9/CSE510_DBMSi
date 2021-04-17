@@ -127,7 +127,7 @@ class GroupBySortDriver extends TestDriver
     public boolean runTests () throws HFDiskMgrException, HFException, HFBufMgrException, IOException {
 
         System.out.println ("\n" + "Running " + testName() + " tests...." + "\n");
-        dbpath = "task3.minibase-db";
+        dbpath = "task3-grpBySort.minibase-db";
 
         SystemDefs sysdef = new SystemDefs( dbpath, 3000, 100, "Clock" );
 
