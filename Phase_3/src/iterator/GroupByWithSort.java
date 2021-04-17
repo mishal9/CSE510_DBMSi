@@ -1,7 +1,6 @@
 package iterator;
 
 import bufmgr.PageNotReadException;
-import diskmgr.PCounter;
 import global.AggType;
 import global.AttrType;
 import global.RID;
@@ -9,12 +8,14 @@ import global.TupleOrder;
 import heap.*;
 import index.IndexException;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import static global.GlobalConst.MINIBASE_PAGESIZE;
 
 public class GroupByWithSort extends Iterator{
-    public static Tuple[] _result;
+    public static List<Tuple> _result;
     private static Sort _sort;
     private static AttrType[] _attrType;
     private static FldSpec _group_by_attr;
@@ -89,7 +90,7 @@ public class GroupByWithSort extends Iterator{
         }
 
         _window_size = ((int)(MINIBASE_PAGESIZE/this._tuple_size))*(_n_pages - buffer_pages);
-        _result = new Tuple[_window_size];
+        _result = new ArrayList<>();
 
         try {
             _skyline_grp_heap = new Heapfile("skyline_group_by.in");
@@ -121,8 +122,6 @@ public class GroupByWithSort extends Iterator{
 
     }
 
-
-
     public void skyline_Aggregation(String skyline_grp_heap, FldSpec[] pref_list, AttrType[] attrType, short[] attrSize, int buffer){
         BlockNestedLoopsSky blockNestedLoopsSky = null;
 
@@ -146,12 +145,7 @@ public class GroupByWithSort extends Iterator{
             try {
                 temp = blockNestedLoopsSky.get_next();
                 while (temp!=null) {
-                    float[] outval = new float[3];
-                    outval[0] = temp.getFloFld(1);
-                    outval[1] = temp.getFloFld(2);
-                    outval[2] = temp.getFloFld(3);
-
-                    System.out.println("Skyline Result: " + outval[0] + " " + outval[1] + " " + outval[2]);
+                    _result.add(temp);
                     temp = blockNestedLoopsSky.get_next();
                 }
 
@@ -166,9 +160,8 @@ public class GroupByWithSort extends Iterator{
         }
     }
 
-    @Override
-    public Tuple get_next() throws IOException, JoinsException, IndexException, InvalidTupleSizeException, InvalidTypeException, PageNotReadException, TupleUtilsException, PredEvalException, SortException, LowMemException, UnknowAttrType, UnknownKeyTypeException, FieldNumberOutOfBoundException, FileAlreadyDeletedException, HFBufMgrException, InvalidSlotNumberException, HFDiskMgrException {
-
+    public List<Tuple> get_next_aggr() throws IOException, FieldNumberOutOfBoundException {
+        _result = new ArrayList<>(_window_size);
         Tuple result = new Tuple(this._tuple_size);
         try {
             result.setHdr((short) _len_in, _attrType, _attr_sizes);
@@ -245,22 +238,29 @@ public class GroupByWithSort extends Iterator{
             }
         }
 
-        // Construct result tuple here
-        result.setFloFld(_group_by_attr.offset,  _lastPolled);
-        result.setFloFld(_agg_list[0].offset,  _grp_result);
-
-        // Reset aggregation
-        resetAggregation();
-
         // Compute Skyline here
         if(_agg_type.aggType == AggType.SKYLINE) {
             skyline_Aggregation("skyline_group_by.in", _agg_list, _attrType, _attr_sizes, 20);
             recreateSkyLineHeap();
+            // Reset aggregation
+            resetAggregation();
+            return  _result;
         }
 
-        System.out.println();
+        // Construct result tuple here
+        result.setFloFld(_group_by_attr.offset,  _lastPolled);
+        result.setFloFld(_agg_list[0].offset,  _grp_result);
+        _result.add(result);
 
-        return result;
+        // Reset aggregation
+        resetAggregation();
+
+        return _result;
+    }
+
+    @Override
+    public Tuple get_next() throws IOException, JoinsException, IndexException, InvalidTupleSizeException, InvalidTypeException, PageNotReadException, TupleUtilsException, PredEvalException, SortException, LowMemException, UnknowAttrType, UnknownKeyTypeException, FieldNumberOutOfBoundException, FileAlreadyDeletedException, HFBufMgrException, InvalidSlotNumberException, HFDiskMgrException {
+        return null;
     }
 
     public void resetAggregation(){

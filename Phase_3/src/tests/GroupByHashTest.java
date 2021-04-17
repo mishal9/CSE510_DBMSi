@@ -30,9 +30,9 @@ class GroupByHashDriver extends TestDriver
             {3, 5, 10},
             {1, 2, 3},
             {2, 3, 4},
-            {4, 8, 9},
-            {3, 100, 20},
-            {4, 5, 8}
+            {7, 8, 9},
+            {8, 100, 20},
+            {9, 5, 8}
     };
 
     private static int COLS;
@@ -256,7 +256,7 @@ class GroupByHashDriver extends TestDriver
 
         // HashIndex Window Scan creation here
         try {
-            HIndex h = new HIndex(index_file_name, AttrType.attrInteger, 10,5);
+            HIndex h = new HIndex(index_file_name, AttrType.attrInteger, 10,10);
             Scan s = (new Heapfile(heap_file_name)).openScan();
             Tuple tup = new Tuple();
             rid = new RID();

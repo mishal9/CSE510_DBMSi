@@ -9,7 +9,9 @@ import heap.*;
 import index.IndexException;
 import iterator.*;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Scanner;
 
 
@@ -200,6 +202,8 @@ class GroupBySortDriver extends TestDriver
 
         short[] attrSize = null;
 
+        List<Tuple> result = new ArrayList<>();
+
         // create a tuple of appropriate size
         Tuple t = new Tuple();
         try {
@@ -270,28 +274,30 @@ class GroupBySortDriver extends TestDriver
                     20);
 
             try {
-                t = grpSort.get_next();
+                result = grpSort.get_next_aggr();
             }
             catch (Exception e) {
                 status = false;
                 e.printStackTrace();
             }
 
-            while(t != null) {
-                Tuple grpRes = t;
-
-                grpRes.print(attrType);
+            while(result != null) {
+                result.forEach((tuple) -> {
+                    try {
+                        tuple.print(attrType);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                });
 
                 try {
-                    t = grpSort.get_next();
+                    result = grpSort.get_next_aggr();
                 }
                 catch (Exception e) {
                     status = false;
                     e.printStackTrace();
                 }
             }
-        }  catch (IOException e) {
-            e.printStackTrace();
         } finally {
             try {
                 grpSort.close();
@@ -324,6 +330,8 @@ class GroupBySortDriver extends TestDriver
         attrType[2] = new AttrType(AttrType.attrReal);
 
         short[] attrSize = null;
+
+        List<Tuple> result = new ArrayList<>();
 
         // create a tuple of appropriate size
         Tuple t = new Tuple();
@@ -395,28 +403,30 @@ class GroupBySortDriver extends TestDriver
                     20);
 
             try {
-                t = grpSort.get_next();
+                result = grpSort.get_next_aggr();
             }
             catch (Exception e) {
                 status = false;
                 e.printStackTrace();
             }
 
-            while(t != null) {
-                Tuple grpRes = t;
-
-                grpRes.print(attrType);
+            while(result != null) {
+                result.forEach((tuple) -> {
+                    try {
+                        tuple.print(attrType);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                });
 
                 try {
-                    t = grpSort.get_next();
+                    result = grpSort.get_next_aggr();
                 }
                 catch (Exception e) {
                     status = false;
                     e.printStackTrace();
                 }
             }
-        }  catch (IOException e) {
-            e.printStackTrace();
         } finally {
             try {
                 grpSort.close();
@@ -447,6 +457,8 @@ class GroupBySortDriver extends TestDriver
         attrType[2] = new AttrType(AttrType.attrReal);
 
         short[] attrSize = null;
+
+        List<Tuple> result = new ArrayList<>();
 
         // create a tuple of appropriate size
         Tuple t = new Tuple();
@@ -518,28 +530,30 @@ class GroupBySortDriver extends TestDriver
                     20);
 
             try {
-                t = grpSort.get_next();
+                result = grpSort.get_next_aggr();
             }
             catch (Exception e) {
                 status = false;
                 e.printStackTrace();
             }
 
-            while(t != null) {
-                Tuple grpRes = t;
-
-                grpRes.print(attrType);
+            while(result != null) {
+                result.forEach((tuple) -> {
+                    try {
+                        tuple.print(attrType);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                });
 
                 try {
-                    t = grpSort.get_next();
+                    result = grpSort.get_next_aggr();
                 }
                 catch (Exception e) {
                     status = false;
                     e.printStackTrace();
                 }
             }
-        }  catch (IOException e) {
-            e.printStackTrace();
         } finally {
             try {
                 grpSort.close();
@@ -553,6 +567,7 @@ class GroupBySortDriver extends TestDriver
         System.out.println("Number of Disk reads: "+ PCounter.get_rcounter());
         System.out.println("Number of Disk writes: "+ PCounter.get_wcounter());
         PCounter.initialize();
+
 
         System.err.println("------------------- TEST 3 completed ---------------------\n");
 
@@ -570,6 +585,8 @@ class GroupBySortDriver extends TestDriver
         attrType[2] = new AttrType(AttrType.attrReal);
 
         short[] attrSize = null;
+
+        List<Tuple> result = new ArrayList<>();
 
         // create a tuple of appropriate size
         Tuple t = new Tuple();
@@ -641,28 +658,30 @@ class GroupBySortDriver extends TestDriver
                     20);
 
             try {
-                t = grpSort.get_next();
+                result = grpSort.get_next_aggr();
             }
             catch (Exception e) {
                 status = false;
                 e.printStackTrace();
             }
 
-            while(t != null) {
-                Tuple grpRes = t;
-
-                grpRes.print(attrType);
+            while(result != null) {
+                result.forEach((tuple) -> {
+                    try {
+                        tuple.print(attrType);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                });
 
                 try {
-                    t = grpSort.get_next();
+                    result = grpSort.get_next_aggr();
                 }
                 catch (Exception e) {
                     status = false;
                     e.printStackTrace();
                 }
             }
-        }  catch (IOException e) {
-            e.printStackTrace();
         } finally {
             try {
                 grpSort.close();

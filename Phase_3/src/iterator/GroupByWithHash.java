@@ -20,7 +20,6 @@ public class GroupByWithHash extends Iterator{
     FldSpec[] _agg_list, _proj_list;
     int _n_out_flds;
     int fld;
-    // size of the tuples in the skyline/window/temporary_heap_file
 
     HashIndexWindowedScan _hiwfs;
     GroupByWithSort grpSort;
@@ -46,6 +45,7 @@ public class GroupByWithHash extends Iterator{
         _hiwfs = am1;
         fld = group_by_attr.offset;
     }
+
 
     public Tuple get_next() throws Exception {
         Tuple tup;
