@@ -997,7 +997,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 			e.printStackTrace();
 		}*/
     	
-    	Table table = SystemDefs.JavabaseDB.get_relation("testtwo");
+    	Table table = SystemDefs.JavabaseDB.get_relation("subset1");
     	try {
 			table.test();
 		} catch (InvalidTypeException e) {

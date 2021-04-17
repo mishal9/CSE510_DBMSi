@@ -429,4 +429,54 @@ implements GlobalConst {
 		scan.leafPage=findRunStart( lo_key, scan.curRid);
 		return scan;
 	}
+	
+	/** create a scan with given keys
+	 * Cases:
+	 *      (1) lo_key = null, hi_key = null
+	 *              scan the whole index
+	 *      (2) lo_key = null, hi_key!= null
+	 *              range scan from min to the hi_key
+	 *      (3) lo_key!= null, hi_key = null
+	 *              range scan from the lo_key to max
+	 *      (4) lo_key!= null, hi_key!= null, lo_key = hi_key
+	 *              exact match ( might not unique)
+	 *      (5) lo_key!= null, hi_key!= null, lo_key < hi_key
+	 *              range scan from lo_key to hi_key
+	 *@param lo_key the key where we begin scanning. Input parameter.
+	 *@param hi_key the key where we stop scanning. Input parameter.
+	 *@exception IOException error from the lower layer
+	 *@exception KeyNotMatchException key is not integer key nor string key
+	 *@exception IteratorException iterator error
+	 *@exception ConstructPageException error in BT page constructor
+	 *@exception PinPageException error when pin a page
+	 *@exception UnpinPageException error when unpin a page
+	 */
+	public ClBTFileScanASC new_scan_cl_ASC(KeyClass lo_key, KeyClass hi_key)
+			throws IOException,  
+			KeyNotMatchException, 
+			IteratorException, 
+			ConstructPageException, 
+			PinPageException, 
+			UnpinPageException
+
+	{
+		ClBTFileScanASC scan = new ClBTFileScanASC();
+		if ( headerPage.get_rootId().pid==INVALID_PAGE) {
+			scan.leafPage=null;
+			return scan;
+		}
+
+		scan.treeFilename=dbname;
+		scan.endkey=hi_key;
+		scan.didfirst=false;
+		scan.deletedcurrent=false;
+		scan.curRid=new RID();     
+		scan.keyType=headerPage.get_keyType();
+		scan.maxKeysize=headerPage.get_maxKeySize();
+		scan.bfile=this;
+
+		//this sets up scan at the starting position, ready for iteration
+		scan.leafPage=findRunStart( lo_key, scan.curRid);
+		return scan;
+	}
 }

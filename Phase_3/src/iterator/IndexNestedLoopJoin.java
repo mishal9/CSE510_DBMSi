@@ -143,32 +143,32 @@ public class IndexNestedLoopJoin extends Iterator {
             }
 
             Table table = SystemDefs.JavabaseDB.get_relation(relationName);
-            if (false && table == null) {       // TODO: removing extra booleans after integreating with task6
+            if ( table == null) {       // TODO: removing extra booleans after integreating with task6
                 System.err.println("ERROR: Table does not exist**");
                 return;
             }
-            if (true || table.getBtree_unclustered_attr()[fld2]) {  // TODO: removing extra booleans after integreating with task6
+            if ( table.getBtree_unclustered_attr()[fld2] ) {  // TODO: removing extra booleans after integreating with task6
                 // unclustered btree exists on fld2
                 indexType = IndexType.B_Index;
-                index_name = relationName+".unclustered"; //table.get_unclustered_index_filename(fld2, "btree");
+                index_name = table.get_unclustered_index_filename(fld2, "btree");
                 index_found = true;
             }
-            else if(table.getHash_unclustered_attr()[fld2]) {
+            else if( table.getHash_unclustered_attr()[fld2] ) {
                 // unclustered hash exist on fld2
                 indexType = IndexType.Hash;
-                index_name = ""; // table.get_unclustered_index_filename(fld2, "hash");
+                index_name = table.get_unclustered_index_filename(fld2, "hash");
                 index_found = true;
             }
-            else if(table.getClustered_btree_attr() == fld2){
+            else if( table.getClustered_btree_attr() == fld2 ){
                 // we have btree clustered
                 indexType = IndexType.B_Index;
-                index_name = ""; // TODO: get name, if possible
+                index_name = table.get_clustered_index_filename(fld2, "btree");
                 index_found = true;
             }
-            else if(table.getClustered_hash_attr() == fld2){
+            else if( table.getClustered_hash_attr() == fld2 ){
                 // we have btree clustered
                 indexType = IndexType.Hash;
-                index_name = ""; // TODO: get name, if possible
+                index_name = table.get_clustered_index_filename(fld2, "hash");
                 index_found = true;
             }
             else{
