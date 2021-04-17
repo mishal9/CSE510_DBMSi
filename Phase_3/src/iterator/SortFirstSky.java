@@ -139,7 +139,7 @@ public class SortFirstSky extends Iterator implements GlobalConst {
         try {
             if(temp.getRecCnt() > 0)
                 bnls.close();
-                temp.deleteFile();
+            temp.deleteFile();
         } catch (InvalidSlotNumberException e) {
             e.printStackTrace();
         } catch (InvalidTupleSizeException e) {

@@ -6,6 +6,11 @@
  */
 package btree;
 import java.io.*;
+
+import bufmgr.HashEntryNotFoundException;
+import bufmgr.InvalidFrameNumberException;
+import bufmgr.PageUnpinnedException;
+import bufmgr.ReplacerException;
 import global.*;
 import heap.*;
 
@@ -35,6 +40,9 @@ public class BTFileScan  extends IndexFileScan
                         // a single value).
   public int keyType;
   public int maxKeysize;
+  
+  private boolean first_record = true;
+  public RID next_rid_scan = null;
 
   /**
    * Iterate once (during a scan).  
@@ -157,6 +165,76 @@ public Tuple get_next_tuple() {
 	// TODO Auto-generated method stub
 	return null;
 }
+
+
+@Override
+public KeyDataEntry get_next_entry() {
+	// TODO Auto-generated method stub
+	try {
+		KeyDataEntry entry;
+		if ( first_record ) {
+			while ( true ) {
+				PageId nextLeafPage;
+				
+				nextLeafPage = leafPage.getNextPage();
+				if ( nextLeafPage.pid != INVALID_PAGE ) {
+					SystemDefs.JavabaseBM.unpinPage(leafPage.getCurPage(), false);
+					leafPage = new BTLeafPage(nextLeafPage, keyType);
+				}
+				else {
+					break;
+				}
+			}
+			first_record = false;
+			next_rid_scan = leafPage.lastRecord();
+		}
+		if ( next_rid_scan != null ) {
+			entry = leafPage.getRecordEntry(next_rid_scan);
+			next_rid_scan = leafPage.prevRecord(next_rid_scan);
+			return entry;
+		}
+		else {
+			PageId nextLeafPage;
+			nextLeafPage = leafPage.getPrevPage();
+			if ( nextLeafPage.pid != INVALID_PAGE ) {
+				SystemDefs.JavabaseBM.unpinPage(leafPage.getCurPage(), false);
+				leafPage = new BTLeafPage(nextLeafPage, keyType);
+				next_rid_scan = leafPage.lastRecord();
+			}
+			else {
+				return null;
+			}
+			entry = leafPage.getRecordEntry(next_rid_scan);
+			next_rid_scan = leafPage.prevRecord(next_rid_scan);
+			return entry;
+		}
+		
+	}catch (IOException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (ReplacerException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (PageUnpinnedException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (HashEntryNotFoundException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (InvalidFrameNumberException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (ConstructPageException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (IteratorException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	}
+	return null;
+}
+
+
 
 
 
