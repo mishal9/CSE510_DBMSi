@@ -303,6 +303,30 @@ public class Table implements GlobalConst{
       }
   }
   
+  public void intialise_table_str_sizes() {
+	  /* create the tuple and calculate the size of the tuple */
+	  table_attr_size = new short[table_num_attr];
+	  for(int i=0; i<table_attr_size.length; i++){
+		  table_attr_size[i] = STRSIZE;
+      }
+  }
+  
+  public void intialise_table_bunc() {
+	  /* create the tuple and calculate the size of the tuple */
+	  this.btree_unclustered_attr = new boolean[table_num_attr];
+	  for(int i=0; i<btree_unclustered_attr.length; i++){
+		  btree_unclustered_attr[i] = false;
+      }
+  }
+  
+  public void intialise_table_hunc() {
+	  /* create the tuple and calculate the size of the tuple */
+	  this.hash_unclustered_attr = new boolean[table_num_attr];
+	  for(int i=0; i<hash_unclustered_attr.length; i++){
+		  hash_unclustered_attr[i] = false;
+      }
+  }
+  
   /* create a table from the data file and stores it in the heap file */
   public void create_table(String heap_file_name, String data_file_name) {
 	  try {

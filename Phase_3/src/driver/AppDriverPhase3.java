@@ -600,9 +600,10 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    	/*---------------------extract tablename and outtablename--------------------------*/
 	    	boolean is_output_saved = query.contains("MATER");
 	    	String out_tablename = "";
+	    	Table mater_table = null;
 	    	if ( is_output_saved ) {
 	    		out_tablename = tokens[9];
-	    		Table mater_table = new Table(out_tablename, "MATER");
+	    		mater_table = new Table(out_tablename, "MATER");
 	    	}
 	    	
 	    	if ( is_output_saved ) {
@@ -618,60 +619,146 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    	}
 	    	CondExpr[] outFilter = get_op_cond_expr(op, outer_table_attribute, inner_table_attribute);
 	    	if ( outFilter == null ) {
+	    		validate_token_length(0, "join");
 	    		return;
 	    	}
 	    	AttrType[] join_attr_type = get_join_attr_type(outer_table, inner_table, inner_table_attribute);
-	    	
+	    	short[] outer_str_sizes = outer_table.getTable_attr_size();
+	    	short[] inner_str_sizes = inner_table.getTable_attr_size();
+	    	FldSpec[] outer_projection = get_projection_for_table(outer_table, "outer", -1);
+	    	FldSpec[] inner_complete_projection = get_projection_for_table(inner_table, "outer", -1);
+			FldSpec[] inner_projection = get_projection_for_table(inner_table, "inner", inner_table_attribute);
+			FldSpec[] join_projection = get_projection_for_join_table(outer_projection, inner_projection);
+			FileScan outer_table_file_scan =  new FileScan(outer_table.getTable_heapfile(), 
+										   				   outer_table.getTable_attr_type(),
+										   				   outer_table.getTable_attr_size(),
+										   				   (short) outer_table.getTable_num_attr(),
+										   				   (short) outer_table.getTable_num_attr(),
+										   				   outer_projection, 
+										   				   null);
+			FileScan inner_table_file_scan =  new FileScan(inner_table.getTable_heapfile(), 
+														   inner_table.getTable_attr_type(),
+														   inner_table.getTable_attr_size(),
+										   				   (short) inner_table.getTable_num_attr(),
+										   				   (short) inner_table.getTable_num_attr(),
+										   				   inner_complete_projection, 
+										   				   null);
+			
+			String[] join_col_names = get_join_attr_name(outer_table, inner_table, inner_table_attribute);
+			/* fill in the output_table */
+			if ( mater_table != null ) {
+				mater_table.setTable_attr_type(join_attr_type);
+				mater_table.setTable_num_attr(join_attr_type.length);
+				mater_table.intialise_table_str_sizes();
+				mater_table.intialise_table_bunc();
+				mater_table.intialise_table_hunc();
+				mater_table.setTable_attr_name(join_col_names);
+			}
+			Iterator joiner = null;
 	    	/* run the appropriate skyline algorithm */
 	    	switch ( join_algo ) {
 	    		case "NLJ":
+	    			joiner = new NestedLoopsJoins (outer_table.getTable_attr_type(),
+	    										   outer_table.getTable_num_attr(), 
+	    										   outer_table.getTable_attr_size(),
+	    										   inner_table.getTable_attr_type(),
+	    										   inner_table.getTable_num_attr(),
+	    										   inner_table.getTable_attr_size(),
+	    										   join_n_pages,
+	    										   outer_table_file_scan, 
+	    										   inner_table.getTable_heapfile(),
+	    										   outFilter,
+	    										   null,
+	    										   join_projection,
+	    										   join_projection.length);
 	    			//TBD run NLJ with proper params
 	    			break;
 	    		case "SMJ":
+	    			TupleOrder ascending = new TupleOrder(TupleOrder.Ascending);
+	    			joiner = new SortMerge(outer_table.getTable_attr_type(),
+										   outer_table.getTable_num_attr(), 
+										   outer_table.getTable_attr_size(),
+										   inner_table.getTable_attr_type(),
+										   inner_table.getTable_num_attr(),
+										   inner_table.getTable_attr_size(),
+										   outer_table_attribute,
+										   outer_str_sizes[outer_table_attribute-1],
+										   inner_table_attribute,
+										   inner_str_sizes[inner_table_attribute-1],
+										   join_n_pages,
+										   outer_table_file_scan, 
+										   inner_table_file_scan,
+										   false, 
+										   false, 
+										   ascending,
+										   outFilter, 
+										   join_projection,
+										   join_projection.length);
 	    			//TBD run SMJ with proper params
 	    			break;
 	    		case "INLJ":
 	    			//TBD run INLJ with proper params
 	    			break;
 	    		case "HJ":
-	    			FldSpec[] outer_projection = get_projection_for_table(outer_table, "outer", -1);
-	    			FldSpec[] inner_projection = get_projection_for_table(inner_table, "inner", inner_table_attribute);
-	    			FldSpec[] join_projection = get_projection_for_join_table(outer_projection, inner_projection);
-	    			FileScan am = new FileScan(outer_table.getTable_heapfile(), 
-	    									   outer_table.getTable_attr_type(),
-	    									   outer_table.getTable_attr_size(),
-	                        				   (short) outer_table.getTable_num_attr(),
-	                        				   (short) outer_table.getTable_num_attr(),
-	                        				   outer_projection, 
-	                        				   null);
-	    			HashJoin hj = new HashJoin(outer_table.getTable_attr_type(),
-	    									   outer_table.getTable_num_attr(),
-	    									   outer_table.getTable_attr_size(),
-	    									   inner_table.getTable_attr_type(),
-	    									   inner_table.getTable_num_attr(),
-	    									   inner_table.getTable_attr_size(),
-	    									   join_n_pages,
-	    									   am,
-	    									   inner_table.getTable_heapfile(),
-	    									   outFilter,
-	    									   null,
-	    									   join_projection,
-	    									   join_projection.length);
-	    			Tuple temp = hj.get_next();
-	    			while ( temp != null ) {
-	    				temp.print(join_attr_type);
-	    				temp = hj.get_next();
-	    			}
-	    			hj.close();
+	    			joiner = new HashJoin(outer_table.getTable_attr_type(),
+									      outer_table.getTable_num_attr(),
+									      outer_table.getTable_attr_size(),
+									      inner_table.getTable_attr_type(),
+									      inner_table.getTable_num_attr(),
+									      inner_table.getTable_attr_size(),
+									      join_n_pages,
+									      outer_table_file_scan,
+									      inner_table.getTable_heapfile(),
+									      outFilter,
+									      null,
+									      join_projection,
+									      join_projection.length);
 	    			//TBD run HJ with proper params
 	    			break;
 	    		default:
 	    			validate_token_length(0, "join");
 	    			break;
 	    	}
+	    	Tuple temp = joiner.get_next();
+	    	if ( mater_table != null ) {
+	    		mater_table.setTable_tuple_size(temp.size());
+	    	}
+			while ( temp != null ) {
+				//temp.print(join_attr_type);
+				SystemDefs.JavabaseDB.add_to_mater_table(temp, mater_table);
+				temp = joiner.get_next();
+			}
+			joiner.close();
+			if ( outer_table_file_scan.closeFlag == false ) {
+				outer_table_file_scan.close();
+			}
+			if ( inner_table_file_scan.closeFlag == false ) {
+				inner_table_file_scan.close();
+			}
+			if ( mater_table != null ) {
+				mater_table.add_table_to_global_queue();
+				mater_table.print_table_cl();
+			}
     	}catch (ArrayIndexOutOfBoundsException e){
 	        validate_token_length(0, "join");
 	    }
+    }
+    
+    private String[] get_join_attr_name( Table outer_table, Table inner_table, int inner_join_attr ) {
+    	String[] join_attr_name = new String[outer_table.getTable_num_attr() + inner_table.getTable_num_attr() -1];
+    	String[] outer_attr_name = outer_table.getTable_attr_name();
+    	String[] inner_attr_name = inner_table.getTable_attr_name();
+    	for ( int i=0; i<outer_table.getTable_num_attr(); i++ ) {
+    		join_attr_name[i] = outer_attr_name[i];
+    	}
+    	for ( int i=0; i<(inner_join_attr - 1); i++ ) {
+    		join_attr_name[outer_attr_name.length+i] = inner_attr_name[i];
+    	}
+    	for ( int i=inner_join_attr; i<inner_attr_name.length; i++ ) {
+    		join_attr_name[outer_attr_name.length+i-1] = inner_attr_name[i];
+    	}
+    	
+    	return join_attr_name;
     }
     
     private AttrType[] get_join_attr_type( Table outer_table, Table inner_table, int inner_join_attr ) {
@@ -682,10 +769,10 @@ class DriverPhase3 extends TestDriver implements GlobalConst
     		join_attr_type[i] = outer_attr_type[i];
     	}
     	for ( int i=0; i<(inner_join_attr - 1); i++ ) {
-    		join_attr_type[outer_attr_type.length+i] = outer_attr_type[i];
+    		join_attr_type[outer_attr_type.length+i] = inner_attr_type[i];
     	}
     	for ( int i=inner_join_attr; i<inner_attr_type.length; i++ ) {
-    		join_attr_type[outer_attr_type.length+i-1] = outer_attr_type[i];
+    		join_attr_type[outer_attr_type.length+i-1] = inner_attr_type[i];
     	}
     	
     	return join_attr_type;
