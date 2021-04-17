@@ -64,16 +64,7 @@ public class SortFirstSky extends Iterator implements GlobalConst {
         _window = new Tuple[(MINIBASE_PAGESIZE / _tuple_size) * (_n_pages/2)];
         //_window = new Tuple[1];
         // Sort "test1sortPref.in"
-        /*
-        try {
-            _sort = new SortPref(_attrType, (short) _len_in, _attrSize, _fscan,  new TupleOrder(TupleOrder.Descending), _pref_list, _pref_list_length, 900);
-        }
-        catch (Exception e) {
-            status = FAIL;
-            e.printStackTrace();
-        }
 
-         */
         _sort = (Sort)am1;
 
         try {

@@ -194,7 +194,7 @@ public class TestDriver {
     
     //The following runs all the test functions without checking
     //the logged error types. 
-
+    System.out.println("Run tests");
     //Running test1() to test6()
     if (!test1()) { _passAll = FAIL; }
     if (!test2()) { _passAll = FAIL; }
