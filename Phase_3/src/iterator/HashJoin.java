@@ -211,9 +211,9 @@ public class HashJoin extends Iterator {
         	else {
         		//create and unclustered hash
         		inner_table.create_unclustered_index(fld2, "hash");
-        		//update the globals here
-        		inner_hash_index_name = inner_table.get_unclustered_index_filename(fld2, "hash");
         	}
+        	inner_hash_index_name = inner_table.get_unclustered_index_filename(fld2, "hash");
+        	outer_temp_heap_name = outer_table.getTable_heapfile();
         	inner_h = new HIndex(inner_hash_index_name);
         }
         n_win1 = inner_h.get_number_of_buckets();
@@ -251,10 +251,10 @@ public class HashJoin extends Iterator {
         		System.out.println("A clustered hash index does not exist on the table\nCreating one....");
         		//create and unclustered hash
         		outer_table.create_unclustered_index(fld1, "hash");
-        		//update the globals here
-        		outer_hash_index_name = outer_table.get_unclustered_index_filename(fld1, "hash");
-        		outer_temp_heap_name = outer_table.getTable_heapfile();
+        		
         	}
+        	outer_hash_index_name = outer_table.get_unclustered_index_filename(fld1, "hash");
+    		outer_temp_heap_name = outer_table.getTable_heapfile();
         	outer_h = new HIndex(outer_hash_index_name);
         }
         n_win2 = outer_h.get_number_of_buckets();

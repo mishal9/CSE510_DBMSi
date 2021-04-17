@@ -84,7 +84,6 @@ public class DB implements GlobalConst {
 	public void read_table_relation() {
 		try {
 			//System.out.println("reading the tables in DB");
-			System.out.println(table_relation);
 			Heapfile hf = new Heapfile(table_relation);
 			Scan relation_scan = hf.openScan();
 			//System.out.println("Number of tables in the DB "+hf.getRecCnt());
