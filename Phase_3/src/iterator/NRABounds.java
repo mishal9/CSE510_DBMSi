@@ -4,17 +4,17 @@ import java.util.Comparator;
 
 public class NRABounds {
 
-	public float lVal1;
-	public float lVal2;
+	public int lVal1;
+	public int lVal2;
 	
-	public float uVal1;
-	public float uVal2;
+	public int uVal1;
+	public int uVal2;
 	
 	public boolean isFullySeen = false;
 
 	public String createBy; //REL1 or REL2
 
-	public NRABounds(float val, String createBy) {
+	public NRABounds(int val, String createBy) {
 		this.lVal1 = val;
 		this.uVal1 = val;	
 		this.lVal2 = 0;
@@ -22,7 +22,7 @@ public class NRABounds {
 		this.createBy = createBy;
 	}
 	
-	public void updateBounds(float newVal) {
+	public void updateBounds(int newVal) {
 		this.lVal2 = newVal;
 		this.uVal2 = newVal;
 		this.isFullySeen = true;

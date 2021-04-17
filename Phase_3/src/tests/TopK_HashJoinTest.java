@@ -50,28 +50,6 @@ implements GlobalConst {
 	protected boolean test1() {
         System.out.println("------------------------ TEST 2 --------------------------");
         
-        BTFileScan scan1;
-        KeyDataEntry entry1;
-        System.out.println("CombinedBTreeIndex scanning");
-        
-        int [] pref_list1 = new int[] {0,1};
-        int pref_list_length1 = 2;
-        
-
-        GenerateIndexFiles obj = new GenerateIndexFiles();
-        IndexFile indexFile1 = null;
-        IndexFile indexFile2 = null;
-
-		try {
-			indexFile1 = obj.createCombinedBTreeIndex("/Users/kunjpatel/Desktop/CSE510_DBMSi/Phase_3/data/nra1.txt",pref_list1, pref_list_length1);
-			indexFile2 = obj.createCombinedBTreeIndex("/Users/kunjpatel/Desktop/CSE510_DBMSi/Phase_3/data/nra2.txt",pref_list1, pref_list_length1);
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		} 
-		
-        System.out.println("Index created! ");
-        
         AttrType[] attrType = new AttrType[2];
         attrType[0] = new AttrType(AttrType.attrReal);
         attrType[1] = new AttrType(AttrType.attrReal);

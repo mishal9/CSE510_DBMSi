@@ -614,7 +614,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
      * part of task
      * structure: topkjoin HASH/NRA K OTABLENAME O_J_ATT_NO O_M_ATT_NO ITABLENAME I_J_ATT_NO I_M_ATT_NO NPAGES [MATER OUTTABLENAME]
      * */
-    public void parse_topkjoin() {
+    public void parse_topkjoin() throws JoinsException, PageNotReadException, TupleUtilsException, PredEvalException, SortException, LowMemException, UnknowAttrType, UnknownKeyTypeException, Exception {
     	try {
 	    	/* ----------------------which join needs to be calculated ------------------------------------*/
 	    	String join_algo = tokens[1]; //HASH/NRA
@@ -662,6 +662,37 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    	switch ( join_algo ) {
 	    		case "HASH":
 	    			//TBD run top-K-join HASH with proper params
+	    			FldSpec joinAttr1_Hash = new FldSpec(new RelSpec(RelSpec.outer), outer_join_attribute);
+	    	        FldSpec mergeAttr1_Hash = new FldSpec(new RelSpec(RelSpec.outer), outer_merge_attribute);
+	    	        
+	    	        FldSpec joinAttr2_Hash = new FldSpec(new RelSpec(RelSpec.innerRel), innerr_join_attribute);
+	    	        FldSpec mergeAttr2_Hash = new FldSpec(new RelSpec(RelSpec.innerRel), inner_merge_attribute);
+	    	        
+	    	        AttrType[] attrTypeHash = new AttrType[2];
+	    	        attrTypeHash[0] = new AttrType(AttrType.attrInteger);
+	    	        attrTypeHash[1] = new AttrType(AttrType.attrInteger);
+	    	        
+	    	        short[] attrSizeHash = new short[2];
+
+	                for(int i=0; i<2; i++){
+	                	attrSizeHash[i] = 32;
+	                }
+	                
+				
+	                TopK_HashJoin tjhj = new TopK_HashJoin(
+							attrTypeHash, attrTypeHash.length, attrSizeHash,
+	    	        		joinAttr1_Hash,
+	    	    			mergeAttr1_Hash,
+	    	    			attrTypeHash, attrTypeHash.length, attrSizeHash,
+	    	    			joinAttr2_Hash,
+	    	    			mergeAttr2_Hash,
+	    	    			outer_table_name,
+	    	    			inner_table_name,
+	    	    			join_k,
+						    join_n_pages
+	    	    		);
+				
+	    	        
 	    			break;
 	    		case "NRA":
 	    			//TBD run top-K-join NRA with proper params
@@ -677,12 +708,12 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    	        attrType[2] = new AttrType(AttrType.attrInteger);
 	    	        attrType[3] = new AttrType(AttrType.attrInteger);
 	    	        attrType[4] = new AttrType(AttrType.attrInteger);
-	    	        attrType[5] = new AttrType(AttrType.attrInteger);
+	    	        attrType[5] = new AttrType(AttrType.attrString);
 	    	        
 	    	        short[] attrSizetemp = new short[6];
 
 	                for(int i=0; i<6; i++){
-	                	if(i == 0 ) {
+	                	if(i == 0 || i == 5 ) {
 	                		attrSizetemp[i] = 32;
 	                	}
 	                }

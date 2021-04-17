@@ -86,102 +86,108 @@ public class TopK_NRAJoin extends Iterator implements GlobalConst {
 			projlist[i] = new FldSpec(rel, i+1);
 		}
 				
-		IndexScan iscan = new IndexScan(new IndexType(IndexType.Cl_B_Index_DESC), 
+		IndexScan iscan1 = new IndexScan(new IndexType(IndexType.Cl_B_Index_DESC), 
 					  this.relationName1, 
 					  table1.get_clustered_index_filename(this.mergeAttr1.offset, "btree"), 
-					  this.in1, 
-					  this.t1_str_sizes, 
-					  this.len_in1, 
-					  this.len_in1, 
+					  table1.getTable_attr_type(), 
+					  table1.getTable_attr_size(), 
+					  table1.getTable_num_attr(), 
+					  table1.getTable_num_attr(), 
 					  projlist, 
 					  null,
-					  this.len_in1, 
+					  table1.getTable_num_attr(), 
 					  false);
 		
-		Tuple temper = iscan.get_next();
-		while ( temper != null ) {
-			temper.print(in1);
-			temper = iscan.get_next();
-		}
-		iscan.close();
-
-        short [] Ssizes = null;
-        
-        Tuple t = new Tuple();
-        t.setHdr((short)2, in1, Ssizes);            
-        int size = t.size();
-        
+		IndexScan iscan2 = new IndexScan(new IndexType(IndexType.Cl_B_Index_DESC), 
+				  this.relationName1, 
+				  table2.get_clustered_index_filename(this.mergeAttr2.offset, "btree"), 
+				  table2.getTable_attr_type(), 
+				  table2.getTable_attr_size(), 
+				  table2.getTable_num_attr(), 
+				  table2.getTable_num_attr(), 
+				  projlist, 
+				  null,
+				  table2.getTable_num_attr(), 
+				  false);
+		
+		Tuple temp1 = iscan1.get_next();
+		Tuple temp2 = iscan2.get_next();
+ 
         int objectsSeen = 0;
     	float currDepthScore = 0.0f;
     	float minLowerBound = 0.0f;
     	
     	int depth = 0;
     	
-//    	while(true) {
-//    		depth += 1;
-//    		
-//    		
-//    		float join1 = t1.getFloFld(joinAttr1.offset);
-//    		float join2 = t2.getFloFld(joinAttr2.offset);
-//    		
-//    		float merge1 = t1.getFloFld(mergeAttr1.offset);
-//    		float merge2 = t2.getFloFld(mergeAttr2.offset);
-//    		
-//    		currDepthScore = merge1 + merge2;
-//    		
-//    		System.out.println("***********************************");
-//    		System.out.println("objectsSeen: " + objectsSeen);
-//    		System.out.println("currDepthScore: " + currDepthScore);
-//    		System.out.println("minLowerBound: " + minLowerBound);
-//        	System.out.println("***********************************");
-//        	
-//    		if(objectsSeen >= k && currDepthScore < minLowerBound) break;
-//    		
-//    		String key1 = "" + join1;
-//    		if(map.containsKey(key1)) {
-//    			NRABounds temp = map.get(key1);
-//    			if(temp.createBy == "REL2") {
-//    				temp.updateBounds(merge1);
-//    				minLowerBound = getMinLowerBound();
-//    			}
-//    			else {
-//    			}
-//    		}
-//    		else {
-//    			NRABounds nbound = new NRABounds(merge1, "REL1");
-//    			map.put(key1, nbound);
-//				minLowerBound = getMinLowerBound();
-//        		objectsSeen += 1;
-//    		}
-//    		
-//    		String key2 = "" + join2;
-//    		if(map.containsKey(key2)) {
-//    			NRABounds temp = map.get(key2);
-//    			if(temp.createBy == "REL1") {
-//    				temp.updateBounds(merge2);
-//    				minLowerBound = getMinLowerBound();
-//
-//    			}
-//    			else {
-//    			}
-//    		}
-//    		else {
-//    			NRABounds nbound = new NRABounds(merge2, "REL2");
-//    			map.put(key2, nbound);
-//        		objectsSeen += 1;
-//				minLowerBound = getMinLowerBound();
-//    		}
-//    	}
+    	while(true) {
+    		depth += 1;
+    		
+    		if(temp1 == null || temp2 == null) break;
+    		
+    		int join1 = temp1.getIntFld(joinAttr1.offset);
+    		int join2 = temp2.getIntFld(joinAttr2.offset);
+    		
+    		int merge1 = temp1.getIntFld(mergeAttr1.offset);
+    		int merge2 = temp2.getIntFld(mergeAttr2.offset);
+    		
+    		currDepthScore = merge1 + merge2;
+    		
+    		System.out.println("***********************************");
+    		System.out.println("objectsSeen: " + objectsSeen);
+    		System.out.println("currDepthScore: " + currDepthScore);
+    		System.out.println("minLowerBound: " + minLowerBound);
+        	System.out.println("***********************************");
+        	
+    		if(objectsSeen >= k && currDepthScore < minLowerBound) break;
+    		
+    		String key1 = "" + join1;
+    		if(map.containsKey(key1)) {
+    			NRABounds temp = map.get(key1);
+    			if(temp.createBy == "REL2") {
+    				temp.updateBounds(merge1);
+    				minLowerBound = getMinLowerBound();
+    			}
+    			else {
+    			}
+    		}
+    		else {
+    			NRABounds nbound = new NRABounds(merge1, "REL1");
+    			map.put(key1, nbound);
+				minLowerBound = getMinLowerBound();
+        		objectsSeen += 1;
+    		}
+    		
+    		String key2 = "" + join2;
+    		if(map.containsKey(key2)) {
+    			NRABounds temp = map.get(key2);
+    			if(temp.createBy == "REL1") {
+    				temp.updateBounds(merge2);
+    				minLowerBound = getMinLowerBound();
+
+    			}
+    			else {
+    			}
+    		}
+    		else {
+    			NRABounds nbound = new NRABounds(merge2, "REL2");
+    			map.put(key2, nbound);
+        		objectsSeen += 1;
+				minLowerBound = getMinLowerBound();
+    		}
+    		
+    		temp1 = iscan1.get_next();
+    		temp2 = iscan2.get_next();
+    	}
     	
-//    	System.out.println("===================================");
-//    	
-//    	PriorityQueue<NRABounds> pq = new 
-//                PriorityQueue<NRABounds>(k, new TupleComparator());
-//    	
-//    	for (Map.Entry<String,NRABounds> entry : map.entrySet()) {
-//    		pq.add(entry.getValue());
-//        }
-//    	
+    	System.out.println("===================================");
+    	
+    	PriorityQueue<NRABounds> pq = new 
+                PriorityQueue<NRABounds>(k, new TupleComparator());
+    	
+    	for (Map.Entry<String,NRABounds> entry : map.entrySet()) {
+    		pq.add(entry.getValue());
+        }
+    	
 //    	System.out.println(pq.poll().toString());
 //    	System.out.println(pq.poll().toString());
 

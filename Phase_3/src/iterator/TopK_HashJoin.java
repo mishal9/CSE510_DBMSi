@@ -55,22 +55,41 @@ public class TopK_HashJoin extends Iterator implements GlobalConst {
 		this.relationName2 = relationName2;
 		this.k = k;
 		this.n_pages = n_pages;
-		
-	    IndexType b_index = new IndexType (IndexType.B_Index);
-	    
+			    
+	    Table table1 = SystemDefs.JavabaseDB.get_relation(this.relationName1);
+		Table table2 = SystemDefs.JavabaseDB.get_relation(this.relationName2);
+
 	    FldSpec [] Sprojection = {
 	    	       new FldSpec(new RelSpec(RelSpec.outer), 1),
 	    	       new FldSpec(new RelSpec(RelSpec.outer), 2),
 	    };
 	    
-	    System.out.println("relationName1: "+ relationName1);
-	    iterator.Iterator am = new IndexScan ( b_index, relationName1,
-	    		"AAA1", in1, null, 2, 2,
-				   Sprojection, null, 2, false);
+	    FldSpec[] projlist = new FldSpec[this.len_in1];
+		RelSpec rel = new RelSpec(RelSpec.outer);
+		
+		for (int i=0; i<this.len_in1; i++ ) {
+			projlist[i] = new FldSpec(rel, i+1);
+		}
+		
 
-	    Tuple t = new Tuple();
+	    IndexScan am = new IndexScan(new IndexType(IndexType.Cl_B_Index_DESC), 
+				  this.relationName1, 
+				  table1.get_clustered_index_filename(this.mergeAttr1.offset, "btree"), 
+				  table1.getTable_attr_type(), 
+				  table1.getTable_attr_size(), 
+				  table1.getTable_num_attr(), 
+				  table1.getTable_num_attr(), 
+				  projlist, 
+				  null,
+				  table1.getTable_num_attr(), 
+				  false);
 	    
-	    //heap_AAA1
+//	    Tuple t = am.get_next();
+//	    
+//	    while(t!= null) {
+//	    	t.print(table1.getTable_attr_type());
+//	    	t = am.get_next();
+//	    }
 	    
 	    FldSpec []  proj1 = {
 	    	       new FldSpec(new RelSpec(RelSpec.outer), 1),
@@ -79,40 +98,47 @@ public class TopK_HashJoin extends Iterator implements GlobalConst {
 	    	       new FldSpec(new RelSpec(RelSpec.innerRel), 2)
 	    };
 	    
-	     CondExpr [] outFilter = new CondExpr[2];
-		    outFilter[0] = new CondExpr();
-		    outFilter[1] = new CondExpr();
-	     
+	    CondExpr [] outFilter = new CondExpr[2];
+	    outFilter[0] = new CondExpr();
+	    outFilter[1] = new CondExpr();
+    
+	    outFilter[0].next  = null;
+	    outFilter[0].op    = new AttrOperator(AttrOperator.aopEQ);
+	    outFilter[0].type1 = new AttrType(AttrType.attrSymbol);
+	    outFilter[0].operand1.symbol = new FldSpec (new RelSpec(RelSpec.outer), 1);
+	    outFilter[0].type2 = new AttrType(AttrType.attrSymbol);
+	    outFilter[0].operand2.symbol = new FldSpec (new RelSpec(RelSpec.innerRel),1);
+	    outFilter[1] = null;
 	    
-		    outFilter[0].next  = null;
-		    outFilter[0].op    = new AttrOperator(AttrOperator.aopEQ);
-		    outFilter[0].type1 = new AttrType(AttrType.attrSymbol);
-		    outFilter[0].operand1.symbol = new FldSpec (new RelSpec(RelSpec.outer), 1);
-		    outFilter[0].type2 = new AttrType(AttrType.attrSymbol);
-		    outFilter[0].operand2.symbol = new FldSpec (new RelSpec(RelSpec.innerRel),1);
-		    outFilter[1] = null;
+//	    Tuple t = am.get_next();
+//	    
+//	    while(t!=null) {
+//	    	t.print(in1);
+//	    	t = am.get_next();
+//	    }
 	    
-	    NestedLoopsJoins nlj = null;
-	    try {
-	      nlj = new NestedLoopsJoins (in1, 2, null,
-	    		  in2, 2, null,
-					  10,
-					  am, "heap_AAA2",
-					  outFilter, null, proj1, 4);
-	    }
-	    catch (Exception e) {
-	      System.err.println ("*** Error preparing for nested_loop_join");
-	    }
+	    System.out.println("" + this.relationName2);
+	    HashJoin nlj = null;
+	    
+	    nlj = new HashJoin(
+    		  table1.getTable_attr_type(), table1.getTable_attr_type().length, table1.getTable_attr_size(),
+    		  table2.getTable_attr_type(), table2.getTable_attr_type().length, table2.getTable_attr_size(),
+    		  100,
+    		  am, this.relationName2+".txt",
+    		  outFilter, null, proj1, 4);
+	    
 	    
 	    AttrType[] temp = new AttrType[4];
-	    temp[0] = new AttrType (AttrType.attrReal);
-	    temp[1] = new AttrType (AttrType.attrReal);
-	    temp[2] = new AttrType (AttrType.attrReal);
-	    temp[3] = new AttrType (AttrType.attrReal);
+	    temp[0] = new AttrType (AttrType.attrInteger);
+	    temp[1] = new AttrType (AttrType.attrInteger);
+	    temp[2] = new AttrType (AttrType.attrInteger);
+	    temp[3] = new AttrType (AttrType.attrInteger);
 	    
+	    System.out.println("============================");
 	    nlj.get_next().print(temp);
 	    nlj.get_next().print(temp);
-	    nlj.get_next().print(temp);
+//	    nlj.get_next().print(temp);
+	    System.out.println("============================");
 	    
 	}
 
