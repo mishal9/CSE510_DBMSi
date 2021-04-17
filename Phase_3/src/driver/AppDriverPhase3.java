@@ -418,34 +418,45 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    	/* ----------------------which skyline needs to be calculated ------------------------------------*/
 	    	String skyline_algo = tokens[1];//NLS/BNLS/SFS/BTS/BTSS
 	    	
-	    	/* --------------------------extract the preference list and n pages from the query------------ */
-	    	String temp_query = String.valueOf(query);
-	    	temp_query = temp_query.replaceAll("[^\\d]", " ");
-	    	temp_query = temp_query.trim();
-	    	temp_query = temp_query.replaceAll(" +", " ");
-	    	String[] temp_tokens = temp_query.split(" ");
-	    	/*------------------------ the last digit in the query is the n_pages---------------------- */
-	    	int skyline_n_pages = Integer.parseInt(temp_tokens[temp_tokens.length-1]);
-	    	int[] skyline_preference_list = new int[temp_tokens.length-1];
-	    	
-	    	/* -----------------------extract the preference list form the token array------------- */
-	    	for ( int pref_count = 0; pref_count < skyline_preference_list.length; pref_count++ ) {
-	    		skyline_preference_list[pref_count] = Integer.parseInt(temp_tokens[pref_count]);
-	    	}
-	    	
 	    	/*---------------------extract tablename and outtablename--------------------------*/
 	    	boolean is_output_saved = query.contains("MATER");
+	    	
 	    	int index_mater = -1;
+	    	int skyline_n_pages = 0;
 	    	String skyline_tablename;
 	    	String out_tablename = "";
+	    	String temp_sub_query = "";
+	    	
 	    	if ( is_output_saved ) {
 	    		index_mater = Arrays.asList(tokens).indexOf("MATER");
 	    		out_tablename = tokens[index_mater+1];
 	    		skyline_tablename = tokens[index_mater-2];
+	    		skyline_n_pages = Integer.parseInt( tokens[index_mater-1] );
+	    		
+	    		tokens = Arrays.copyOfRange(tokens, 2, index_mater-2);
+	    		temp_sub_query = String.join(" ", tokens);
 	    	}
 	    	else {
-	    		index_mater = Arrays.asList(tokens).indexOf(Integer.toString(skyline_n_pages));
+	    		index_mater = tokens.length - 1;
 	    		skyline_tablename = tokens[index_mater-1];
+	    		skyline_n_pages = Integer.parseInt( tokens[index_mater] );
+	    		
+	    		tokens = Arrays.copyOfRange(tokens, 2, index_mater-1);
+	    		temp_sub_query = String.join(" ", tokens);
+	    	}
+	    	
+	    	/* --------------------------extract the preference list and n pages from the query------------ */
+	    	String temp_query = String.valueOf(temp_sub_query);
+	    	temp_query = temp_query.replaceAll("[^\\d]", " ");
+	    	temp_query = temp_query.trim();
+	    	temp_query = temp_query.replaceAll(" +", " ");
+	    	System.out.println(temp_query);
+	    	String[] temp_tokens = temp_query.split(" ");
+	    	
+	    	/* -----------------------extract the preference list form the token array------------- */
+	    	int[] skyline_preference_list = new int[temp_tokens.length];
+	    	for ( int pref_count = 0; pref_count < skyline_preference_list.length; pref_count++ ) {
+	    		skyline_preference_list[pref_count] = Integer.parseInt(temp_tokens[pref_count]);
 	    	}
     	
 	    	if ( is_output_saved ) {
@@ -477,48 +488,55 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    	/* ---------------------which aggregation needs to be used----------------------------------*/
 	    	String agg_algo = tokens[2];
 	    	
+	    	/*---------------------extract tablename and outtablename--------------------------*/
+	    	boolean is_output_saved = query.contains("MATER");
+	    	int index_mater = -1;
+	    	int groupby_n_pages = 0;
+	    	String groupby_tablename;
+	    	String out_tablename = "";
+	    	String temp_sub_query = "";
+	    	
+	    	if ( is_output_saved ) {
+	    		index_mater = Arrays.asList(tokens).indexOf("MATER");
+	    		out_tablename = tokens[index_mater+1];
+	    		groupby_tablename = tokens[index_mater-2];
+	    		groupby_n_pages = Integer.parseInt(tokens[index_mater-1]);
+	    		tokens = Arrays.copyOfRange(tokens, 2, index_mater-2);
+	    		temp_sub_query = String.join(" ", tokens); 
+	    	}
+	    	else {
+	    		index_mater = tokens.length - 1;
+	    		groupby_tablename = tokens[tokens.length-2];
+	    		groupby_n_pages = Integer.parseInt(tokens[index_mater]);
+	    		tokens = Arrays.copyOfRange(tokens, 2, index_mater-1);
+	    		temp_sub_query = String.join(" ", tokens);
+	    	}
+	    	
 	    	/* --------------------------extract the preference list and n pages from the query------------ */
-	    	String temp_query = String.valueOf(query);
+	    	String temp_query = String.valueOf(temp_sub_query);
 	    	temp_query = temp_query.replaceAll("[^\\d]", " ");
 	    	temp_query = temp_query.trim();
 	    	temp_query = temp_query.replaceAll(" +", " ");
 	    	String[] temp_tokens = temp_query.split(" ");
 	    	
-	    	/*------------------------ the last digit in the query is the n_pages---------------------- */
-	    	int groupby_n_pages = Integer.parseInt(temp_tokens[temp_tokens.length-1]);
-	    	
 	    	/*------------------------extract the groupby attributes ----------------------------*/
 	    	int groupby_attribute = Integer.parseInt(temp_tokens[0]);
 	    	
 	    	/* --------------------------extract the preference list and n pages from the query------------ */
-	    	int[] agg_attributes = new int[temp_tokens.length-2];
+	    	int[] agg_attributes = new int[temp_tokens.length-1];
 	    	
 	    	/* ------------------extract the aggregation attributes list form the token array------------- */
 	    	for ( int pref_count = 0; pref_count < agg_attributes.length; pref_count++ ) {
 	    		agg_attributes[pref_count] = Integer.parseInt(temp_tokens[pref_count+1]);
 	    	}
 	    	
-	    	/*---------------------extract tablename and outtablename--------------------------*/
-	    	boolean is_output_saved = query.contains("MATER");
-	    	int index_mater = -1;
-	    	String groupby_tablename;
-	    	String out_tablename = "";
 	    	if ( is_output_saved ) {
-	    		index_mater = Arrays.asList(tokens).indexOf("MATER");
-	    		out_tablename = tokens[index_mater+1];
-	    		groupby_tablename = tokens[index_mater-2];
-	    	}
-	    	else {
-	    		groupby_tablename = tokens[tokens.length-2];
-	    	}
-	    	
-	    	if ( is_output_saved ) {
-	    		System.out.println(" calculating groupby "+group_algo+" on table "+ groupby_tablename+" on attribute "+ groupby_attribute +
+	    		System.out.println("Calculating groupby "+group_algo+" on table "+ groupby_tablename+" on attribute "+ groupby_attribute +
 	    				" with buffer pages: "+groupby_n_pages+ " and aggregation type "+ agg_algo + " on attributes" + Arrays.toString(agg_attributes) +
 	    				". Saving the output table to "+out_tablename);
 	    	}
 	    	else {
-	    		System.out.println(" calculating groupby "+group_algo+" on table "+ groupby_tablename+" on attribute "+ groupby_attribute +
+	    		System.out.println("Calculating groupby "+group_algo+" on table "+ groupby_tablename+" on attribute "+ groupby_attribute +
 	    				" with buffer pages: "+groupby_n_pages+ " and aggregation type "+ agg_algo + " on attributes" + Arrays.toString(agg_attributes));
 	    	}
 	    	

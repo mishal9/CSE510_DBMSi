@@ -321,6 +321,7 @@ public class Table implements GlobalConst{
 	    
 	    /* initialising the number of attributes in the table */
 	    //table_num_attr = sc.nextInt();
+	    //System.out.println(sc.next());
 	    table_num_attr = Integer.parseInt(sc.next());
 	    
 	    /* initialise the btree unclustered attr array i.e. no unclustered index exist at the time of creating the table for the first time*/
