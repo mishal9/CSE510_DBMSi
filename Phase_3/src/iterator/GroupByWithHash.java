@@ -1,22 +1,33 @@
 package iterator;
 
+import bufmgr.PageNotReadException;
 import global.AggType;
 import global.AttrType;
 
+import global.SystemDefs;
 import hashindex.HashIndexWindowedScan;
+import heap.InvalidTupleSizeException;
+import heap.InvalidTypeException;
 import heap.Tuple;
+import index.IndexException;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import static global.GlobalConst.MINIBASE_PAGESIZE;
 
 public class GroupByWithHash extends Iterator{
-    public static Tuple[] _result;
+    public static List<Tuple> _result;
     private static AttrType[] _attrType;
     private static int _len_in;
     private static boolean status = true;
     private static short[] _attr_sizes;
     private static AggType _agg_type;
     private static int idx;
+    // number of tuples the queue can hold
     private int _n_pages;
+    private int          _tuple_size;
     FldSpec[] _agg_list, _proj_list;
     int _n_out_flds;
     int fld;
@@ -41,30 +52,62 @@ public class GroupByWithHash extends Iterator{
         _n_pages = n_pages;
         _agg_list = agg_list;
         _proj_list = proj_list;
+
+        /* initialise tuple size */
+        try {
+            Tuple tuple_candidate = new Tuple();
+            tuple_candidate.setHdr((short) this._len_in, this._attrType, this._attr_sizes);
+            this._tuple_size = tuple_candidate.size();
+        } catch (InvalidTypeException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (InvalidTupleSizeException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+
+        _result = new ArrayList<>();
+
         _n_out_flds = n_out_flds;
         _hiwfs = am1;
         fld = group_by_attr.offset;
     }
 
 
-    public Tuple get_next() throws Exception {
-        Tuple tup;
+    public List<Tuple> get_next_aggr() throws Exception {
+        _result = new ArrayList<>();
         Iterator it;
         if((it=_hiwfs.get_next())!=null){
             grpSort = new GroupByWithSort(_attrType,_len_in, _attr_sizes, it, new FldSpec(new RelSpec(RelSpec.outer), fld),
                     _agg_list, _agg_type, _proj_list, _n_out_flds, _n_pages);
-            while((tup=grpSort.get_next())!=null){
-                tup.setHdr((short)3, _attrType, _attr_sizes);
-                tup.print(_attrType);
+
+            List<Tuple> iterator;
+
+            while((iterator = grpSort.get_next_aggr()) != null){
+                iterator.forEach((tuple) -> {
+                    _result.add(tuple);
+                });
             }
+
+        }else{
+            return null;
         }
 
-        System.out.println();
+        // TODO: find a way to claim back allocated n_pages
+
+        return _result;
+    }
+
+    @Override
+    public Tuple get_next() throws IOException, JoinsException, IndexException, InvalidTupleSizeException, InvalidTypeException, PageNotReadException, TupleUtilsException, PredEvalException, SortException, LowMemException, UnknowAttrType, UnknownKeyTypeException, Exception {
         return null;
     }
 
     @Override
     public void close() throws IOException, SortException {
-
+        _hiwfs.close();
     }
 }

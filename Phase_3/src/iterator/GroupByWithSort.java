@@ -108,15 +108,7 @@ public class GroupByWithSort extends Iterator{
             e.printStackTrace();
         }
 
-        if(status) {
-            System.out.println("Group by operator has been initialised with params");
-            System.out.println("Window size: "+_window_size);
-            System.out.println("Buffer for sorting: "+buffer_pages);
-            System.out.println("Group by attribute: "+group_by_attr.offset);
-            System.out.println("Aggregation type: "+_agg_type);
-            System.out.println("Aggregation attribute: "+Arrays.toString(agg_list));
-            System.out.println("Projection list: "+ Arrays.toString(proj_list));
-        }else{
+        if(!status) {
             System.exit(-1);
         }
 
