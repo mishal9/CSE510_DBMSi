@@ -22,7 +22,7 @@ class GroupByHashDriver extends TestDriver
     // agg_list: 2
     // agg_types: MIN | MAX | AVG | SKYLINE
 
-    private static int[][] data1 = {
+    private static int[][] data = {
             {1, 6, 8},
             {1, 4, 5},
             {2, 7, 8},
@@ -33,43 +33,6 @@ class GroupByHashDriver extends TestDriver
             {4, 8, 9},
             {3, 100, 20},
             {4, 5, 8}
-
-            /*
-
-            it -> 1 1 1
-
-            it -> 2 2
-
-            it -> 3 3
-             */
-    };
-
-    private static float[][] data2 = {              // AVG
-            {1, 10/3, 13/3},
-            {2, 10/2, 12/2},
-            {5, 5, 8},
-            {9, 6, 8}
-    };
-
-    private static float[][] data3 = {              // SKYLINE
-            {1, 4, 5},
-            {2, 7, 8},
-            {5, 5, 8},
-            {9, 6, 8}
-    };
-
-    private static float[][] data4 = {              // MIN
-            {1, 2, 3},
-            {2, 3, 4},
-            {5, 5, 8},
-            {9, 6, 8}
-    };
-
-    private static float[][] data5 = {              // MAX
-            {1, 4, 5},
-            {2, 7, 8},
-            {5, 5, 8},
-            {9, 6, 8}
     };
 
     private static int COLS;
@@ -79,7 +42,6 @@ class GroupByHashDriver extends TestDriver
     private static Heapfile  f = null;
     private static RID   rid;
 
-    private static int   NUM_RECORDS = data1.length;
     private static short REC_LEN1 = 32;
     private static short REC_LEN2 = 32;
     private static short REC_LEN3 = 32;
@@ -249,10 +211,10 @@ class GroupByHashDriver extends TestDriver
 
             RID rid;
 
-            for (int i=0; i<data1.length; i++) {
-                t.setIntFld(1, data1[i][0]);
-                t.setIntFld(2, data1[i][1]);
-                t.setIntFld(3, data1[i][2]);
+            for (int i=0; i<data.length; i++) {
+                t.setIntFld(1, data[i][0]);
+                t.setIntFld(2, data[i][1]);
+                t.setIntFld(3, data[i][2]);
 
                 hf.insertRecord(t.getTupleByteArray());
             }
@@ -439,7 +401,7 @@ class GroupByHashDriver extends TestDriver
         for (int i=0; i<NUM_RECORDS; i++) {
             try {
                 for(int j=0; j<3; j++)
-                    t.setFloFld(j+1, data1[i][j]);
+                    t.setFloFld(j+1, data[i][j]);
             }
             catch (Exception e) {
                 status = FAIL;
@@ -567,7 +529,7 @@ class GroupByHashDriver extends TestDriver
         for (int i=0; i<NUM_RECORDS; i++) {
             try {
                 for(int j=0; j<3; j++)
-                    t.setFloFld(j+1, data1[i][j]);
+                    t.setFloFld(j+1, data[i][j]);
             }
             catch (Exception e) {
                 status = FAIL;
@@ -695,7 +657,7 @@ class GroupByHashDriver extends TestDriver
         for (int i=0; i<NUM_RECORDS; i++) {
             try {
                 for(int j=0; j<3; j++)
-                    t.setFloFld(j+1, data1[i][j]);
+                    t.setFloFld(j+1, data[i][j]);
             }
             catch (Exception e) {
                 status = FAIL;

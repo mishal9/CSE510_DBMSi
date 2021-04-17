@@ -4,8 +4,6 @@ import global.AggType;
 import global.AttrType;
 
 import hashindex.HashIndexWindowedScan;
-import heap.InvalidTupleSizeException;
-import heap.InvalidTypeException;
 import heap.Tuple;
 
 import java.io.IOException;
@@ -23,7 +21,7 @@ public class GroupByWithHash extends Iterator{
     int _n_out_flds;
     int fld;
     // size of the tuples in the skyline/window/temporary_heap_file
-    private int          _tuple_size;
+
     HashIndexWindowedScan _hiwfs;
     GroupByWithSort grpSort;
 
@@ -47,36 +45,18 @@ public class GroupByWithHash extends Iterator{
         _n_out_flds = n_out_flds;
         _hiwfs = am1;
         fld = group_by_attr.offset;
-
-        int buffer_pages = _n_pages/2;
-
-        /* initialise tuple size */
-        try {
-            Tuple tuple_candidate = new Tuple();
-            tuple_candidate.setHdr((short) this._len_in, this._attrType, this._attr_sizes);
-            this._tuple_size = tuple_candidate.size();
-        } catch (InvalidTypeException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (InvalidTupleSizeException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-
     }
 
     public Tuple get_next() throws Exception {
         Tuple tup;
         Iterator it;
         if((it=_hiwfs.get_next())!=null){
-            while((tup=it.get_next())!=null){
+            grpSort = new GroupByWithSort(_attrType,_len_in, _attr_sizes, it, new FldSpec(new RelSpec(RelSpec.outer), fld),
+                    _agg_list, _agg_type, _proj_list, _n_out_flds, _n_pages);
+            while((tup=grpSort.get_next())!=null){
                 tup.setHdr((short)3, _attrType, _attr_sizes);
                 tup.print(_attrType);
             }
-            //System.out.println("\n New Bucket ");
         }
 
         System.out.println();

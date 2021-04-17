@@ -100,7 +100,7 @@ public class GroupByWithSort extends Iterator{
         }
 
         try {
-            _sort = new Sort(_attrType, (short) _len_in, _attr_sizes, (FileScan) am1, group_by_attr.offset, new TupleOrder(TupleOrder.Descending), 32, buffer_pages);
+            _sort = new Sort(_attrType, (short) _len_in, _attr_sizes, am1, group_by_attr.offset, new TupleOrder(TupleOrder.Descending), 32, buffer_pages);
         }
         catch (Exception e) {
             status = false;
