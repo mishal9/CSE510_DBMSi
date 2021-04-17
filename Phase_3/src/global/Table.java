@@ -125,9 +125,6 @@ public class Table implements GlobalConst{
 	/* list of all the unclustered index attributes in the table --> 0,1,2,3... */
 	private boolean[] btree_unclustered_attr;
 	
-	/* return a boolean on whether an unclustered btree
-	 * index exist on that attribute or not
-	 */
 	public boolean[] getBtree_unclustered_attr() {
 		return btree_unclustered_attr;
 	}
@@ -139,9 +136,6 @@ public class Table implements GlobalConst{
 	/* list of all the hash unclustered index attributes in the table --> 0,1,2,3... */
 	private boolean[] hash_unclustered_attr;
 
-	/* return a boolean on whether an unclustered hash
-	 * index exist on that attribute or not
-	 */
 	public boolean[] getHash_unclustered_attr() {
 		return hash_unclustered_attr;
 	}
@@ -153,8 +147,6 @@ public class Table implements GlobalConst{
 	/* attribute number for the btree clustered index --> 0,1,2,3....*/
 	private int clustered_btree_attr = -1;
 	
-	/* Index of unclustered btree attr
-	 */
 	public int getClustered_btree_attr() {
 		return clustered_btree_attr;
 	}
@@ -163,8 +155,6 @@ public class Table implements GlobalConst{
 		this.clustered_btree_attr = clustered_btree_attr;
 	}
 
-	/* Index of unclustered btree attr
-	 */
 	public int getClustered_hash_attr() {
 		return clustered_hash_attr;
 	}
@@ -176,9 +166,7 @@ public class Table implements GlobalConst{
 	/* attribute number for the hash clustered index --> 0,1,2,3.... */
 	private int clustered_hash_attr = -1;
 	
-	/* returns heapfile containing the
-	 * table data
-	 */
+	
 	public String getTable_heapfile() {
 		return table_heapfile;
 	}
@@ -265,11 +253,6 @@ public class Table implements GlobalConst{
 	  this.table_data_file = filename;
 	  this.tablename = filename.substring(0, filename.length()-data_file_ext.length());
 	  this.table_heapfile = filename.substring(0, filename.length()-data_file_ext.length()) + heapfile_ext;
-  }
-  
-  public Table( String tablename, String mater ) {
-	  this.tablename = tablename;
-	  this.table_heapfile = tablename + heapfile_ext;
   }
   
   public Table( String tablename,
@@ -410,68 +393,6 @@ public class Table implements GlobalConst{
 	}
   }
   
-  public void print_table_cl() throws InvalidTupleSizeException {
-	  print_table_attr();
-	  CommandLineTable st = new CommandLineTable(table_num_attr);
-	  st.setShowVerticalLines(true);
-	  st.setHeaders(table_attr_name);
-	  /* open the data heap file */
-  	  Heapfile heap_file;
-  	  Scan data_scan;
-  	  Tuple t, temp_t;
-  	  RID rid = new RID();
-	try {
-		heap_file = new Heapfile(table_heapfile);
-		//System.out.println("Number of records in the file: "+heap_file.getRecCnt());
-		/* open a scan on the heap file */
-	    data_scan = heap_file.openScan();
-	    t = new Tuple(table_tuple_size);
-	    temp_t = new Tuple(table_tuple_size);
-        t.setHdr( (short)table_num_attr, table_attr_type, table_attr_size);
-        temp_t.setHdr( (short)table_num_attr, table_attr_type, table_attr_size);
-        temp_t = data_scan.getNext(rid);
-        while ( temp_t != null ) {
-        	t.tupleCopy(temp_t);
-        	for ( int i=0; i<table_num_attr; i++) {
-        		switch (table_attr_type[i].attrType) {
-        			case AttrType.attrInteger:
-        				st.addRow(Integer.toString(t.getIntFld(i+1)));
-        				//System.out.print(t.getIntFld(i+1) + table_sep);
-        				break;
-        			case AttrType.attrString:
-        				st.addRow(t.getStrFld(i+1));
-        				//System.out.print(t.getStrFld(i+1) + table_sep);
-        				break;
-        			default:
-        				System.out.println("Error in the system");
-        				System.exit(0);
-        				break;
-        		}
-        	}
-        	//System.out.println();
-        	//System.out.println("Out table rid page "+rid.pageNo.pid+" slot"+rid.slotNo);
-        	temp_t = data_scan.getNext(rid);
-        }
-        data_scan.closescan();
-        st.print();
-	} catch (HFException e) {
-		// TODO Auto-generated catch block
-		e.printStackTrace();
-	} catch (HFBufMgrException e) {
-		// TODO Auto-generated catch block
-		e.printStackTrace();
-	} catch (HFDiskMgrException e) {
-		// TODO Auto-generated catch block
-		e.printStackTrace();
-	} catch (IOException e) {
-		// TODO Auto-generated catch block
-		e.printStackTrace();
-	} catch (Exception e) {
-        e.printStackTrace();
-    }
-  	  
-  }
-  
   public void print_table() throws InvalidTupleSizeException {
 	  print_table_attr();
 	  for( int i=0; i<table_num_attr; i++ ) {
@@ -564,8 +485,8 @@ public class Table implements GlobalConst{
 			temp = scan.getNext(rid);
 		}
 		scan.closescan();
-		//BT.printBTree(btf.getHeaderPage());
-		//BT.printAllLeafPages(btf.getHeaderPage());
+		BT.printBTree(btf.getHeaderPage());
+		BT.printAllLeafPages(btf.getHeaderPage());
 		btf.close();
 		
 		/* mark the unclustered index exist key */
@@ -684,7 +605,7 @@ public class Table implements GlobalConst{
 			temp = scan.getNext(rid);
 		}
 		scan.closescan();
-		//hasher.printBucketInfo();
+		hasher.printBucketInfo();
 		hasher.close();
 		
 		/* mark the unclustered index exist key */
@@ -836,9 +757,6 @@ public class Table implements GlobalConst{
 	  }
   }
   
-  /* Returns true if a clustered index exist on the table
-   * Returns false if no clustered index exist on the table
-   */
   /* attr_number --> 1,2,3,4... */
   public boolean clustered_index_exist( String clustered_index_type ) {
 	  if ( clustered_index_type.equals("btree") ) {
@@ -862,9 +780,7 @@ public class Table implements GlobalConst{
 	  }
   }
   
-  /* Returns true if a clustered index exist on the table on the attribute
-   * Returns false if no clustered index exist on the table on the attribute
-   */
+  
   /* attr_number --> 1,2,3,4... */
   public boolean clustered_index_exist( int attr_number, String clustered_index_type ) {
 	  if ( clustered_index_type.equals("btree") ) {
@@ -1002,9 +918,6 @@ public class Table implements GlobalConst{
 	}
   }
   
-  /* inserts a key,rid pair into an already existing
-   * unclustered index
-   */
   private void insert_into_unclustered_index( Tuple t, RID rid ) {
 	  // TBD/* update all the btree clustered indexes */
 	  
@@ -1116,9 +1029,6 @@ public class Table implements GlobalConst{
 		}
   }
 
-  /* initialises basic table properties from 
-   * given data file scanner
-   */
   public void create_table_struct( Scanner sc ) {
   	/* initialising the number of attributes in the table */
   	table_num_attr = sc.nextInt();
@@ -1182,7 +1092,6 @@ public class Table implements GlobalConst{
 	  System.out.print("\n");
   }
   
-  /* creates a clustered hash file on data */
   private void create_clustered_hash_file() throws Exception {
 	  /* opening the data file for reading */
 	  File file = new File(data_folder + table_data_file);
@@ -1236,10 +1145,8 @@ public class Table implements GlobalConst{
 	  	sc.close();
   }
   
-  /* prints table properties */
   private void print_table_attr() {
 	  System.out.println("Tablename: "+this.tablename);
-	  System.out.println("Table col names: "+Arrays.toString(table_attr_name));
 	  System.out.println("Table num attr: "+ Integer.toString(table_num_attr));
 	  System.out.println("Table attrypes: "+ Arrays.toString(this.table_attr_type));
 	  System.out.println("Table strsizes: "+Arrays.toString(this.table_attr_size));
@@ -1356,7 +1263,7 @@ public class Table implements GlobalConst{
 			else {
 				key = new StringKey(t_s.getStrFld(this.clustered_btree_attr));
 			}
-        	curr_rid = hf1.insertRecord(t_s.getTupleByteArray()/*, this.table_attr_type, this.table_attr_size*/);
+        	curr_rid = hf1.insertRecord(t_s.getTupleByteArray(), this.table_attr_type, this.table_attr_size);
         	System.out.println("BTREE clustered insert rid page "+ curr_rid.pageNo.pid+" slot "+curr_rid.slotNo);
         	if ( ( prev_rid.pageNo.pid != curr_rid.pageNo.pid ) && ( prev_rid.pageNo.pid != INVALID_PAGE ) ) {
         		btf.insert(prev_key, prev_rid);
@@ -1534,11 +1441,11 @@ public class Table implements GlobalConst{
   
   /* prints all the indexes on the attribute */
   public void print_index(int att_number) throws Exception {
-	  System.out.println("****************************Printing all indices on attribute "+this.table_attr_name[att_number-1]+" ************************\n\n");
+	  System.out.println("*******************Printing all indices on attribute "+this.table_attr_name[att_number-1]+" *******************\n\n");
 	  
 	  /* print the btree index first */
 	  if ( unclustered_index_exist(att_number, "btree") ) {
-		  System.out.println("**********************Printing unclustered btree index***********************");
+		  System.out.println("*******************Printing unclustered btree index*******************");
 		  String btsfilename = get_unclustered_index_filename(att_number, "btree");
 		  BTreeFile btf  = new BTreeFile(btsfilename);
 		  BT.printBTree(btf.getHeaderPage());
@@ -1546,7 +1453,7 @@ public class Table implements GlobalConst{
 		  btf.close();
 	  }
 	  if ( clustered_index_exist(att_number, "btree") ) {
-		  System.out.println("***********************Printing clustered btree index***********************");
+		  System.out.println("********************Printing clustered btree index********************");
 		  String btsfilename = get_clustered_index_filename(att_number, "btree");
 		  ClusteredBTreeFile btf  = new ClusteredBTreeFile(btsfilename);
 		  BT.printBTree(btf.getHeaderPage());
@@ -1554,14 +1461,14 @@ public class Table implements GlobalConst{
 		  btf.close();
 	  }
 	  if ( unclustered_index_exist(att_number, "hash") ) {
-		  System.out.println("**********************Printing unclustered hash index**********************");
+		  System.out.println("*******************Printing unclustered hash index*******************");
 		  String hsfilename = get_unclustered_index_filename(att_number, "hash");
 		  HIndex hasher = new HIndex(hsfilename);
 		  hasher.printBucketInfo();
 		  hasher.close();
 	  }
 	  if ( clustered_index_exist(att_number, "hash") ) {
-		  System.out.println("**********************Printing clustered hash index**********************");
+		  System.out.println("*******************Printing clustered hash index*******************");
 		  String hsfilename = get_clustered_index_filename(att_number, "hash");
 		  ClusHIndex hasher = new ClusHIndex(this.table_heapfile, hsfilename);
 		  hasher.printBucketInfo();
@@ -1617,14 +1524,14 @@ public class Table implements GlobalConst{
 	  System.out.println("RID page no. "+rid.pageNo.pid);
 	  rid = hp.insertRecord(t3, this.table_attr_type, this.table_attr_size, this.clustered_btree_attr, get_clustered_index_filename(clustered_btree_attr, "btree"));
 	  System.out.println("RID page no. "+rid.pageNo.pid);*/
-	  /*FldSpec[] projlist = new FldSpec[this.table_num_attr];
+	  FldSpec[] projlist = new FldSpec[this.table_num_attr];
 	  RelSpec rel = new RelSpec(RelSpec.outer);
 	  for ( int i=0; i<this.table_num_attr; i++ ) {
 		  projlist[i] = new FldSpec(rel, i+1);
 	  }
 	  IndexScan iscan = new IndexScan(new IndexType(IndexType.Cl_B_Index_DESC), 
 			   						  this.table_heapfile, 
-			   						  this.get_clustered_index_filename(2, "btree"), 
+			   						  this.get_clustered_index_filename(1, "btree"), 
 			   						  this.table_attr_type, 
 			   						  this.table_attr_size, 
 			   						  this.table_num_attr, 
@@ -1638,11 +1545,9 @@ public class Table implements GlobalConst{
 		  temper.print(table_attr_type);
 		  temper = iscan.get_next();
 	  }
-	  iscan.close();*/
-	  print_table_attr();
+	  iscan.close();
   }
   
-  /* removes a tuple from the table heapfile */
   private List<RID> delete_record_from_heapfile(String heapfilename, Tuple t) throws InvalidSlotNumberException, Exception {
 	  //TBD keep a list of all the deleted rids
 	  List<RID> deleted = new ArrayList<>();
@@ -1664,7 +1569,6 @@ public class Table implements GlobalConst{
 	  return deleted;
   }
   
-  /* removes list of rids from a table's unclustered indexes */
   private void delete_records_from_unclustered_indexes(List<RID> deleted, Tuple deleted_tuple) {
 	  // TBD/* update all the btree clustered indexes */
 	  
@@ -1775,9 +1679,6 @@ public class Table implements GlobalConst{
 		}
   }
   
-  /* adds and delete data to unclustered indexes
-   * from the global queue in DB
-   */
   private void update_records_from_global_queue() throws Exception {
 	  assert ( SystemDefs.JavabaseDB.db_deleted_rids.size() == SystemDefs.JavabaseDB.db_deleted_tuples.size() );
 	  assert ( SystemDefs.JavabaseDB.db_inserted_rids.size() == SystemDefs.JavabaseDB.db_inserted_tuples.size() );
@@ -1860,10 +1761,6 @@ public class Table implements GlobalConst{
 	  }
   }
 
-  /* adds table to global queue */
-  public void add_table_to_global_queue() {
-	  SystemDefs.JavabaseDB.add_to_relation_queue(this);
-  }
 }
 
 

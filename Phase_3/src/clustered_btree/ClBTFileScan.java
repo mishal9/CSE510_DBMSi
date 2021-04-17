@@ -199,10 +199,4 @@ implements  GlobalConst
 		return null;
 	}
 
-	@Override
-	public KeyDataEntry get_next_entry() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
 }

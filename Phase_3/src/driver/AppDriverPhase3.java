@@ -349,7 +349,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 				System.out.println("*********ERROR: table does not exist **************");
 			}
 			else {
-				table.print_table_cl();
+				table.print_table();
 			}
 		} catch (InvalidTupleSizeException e) {
 			// TODO Auto-generated catch block
@@ -385,7 +385,9 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 		} catch (ConstructPageException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}catch (IteratorException e) {
+		}
+    	//TBD print all the indices on table specified
+ catch (IteratorException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (HashEntryNotFoundException e) {
@@ -722,7 +724,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 			e.printStackTrace();
 		}*/
     	
-    	Table table = SystemDefs.JavabaseDB.get_relation("testtwo");
+    	Table table = SystemDefs.JavabaseDB.get_relation("subsetone");
     	try {
 			table.test();
 		} catch (InvalidTypeException e) {

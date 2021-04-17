@@ -19,7 +19,6 @@ import iterator.JoinsException;
 import iterator.LowMemException;
 import iterator.PredEvalException;
 import iterator.SortException;
-import iterator.TupleUtils;
 import iterator.TupleUtilsException;
 import iterator.UnknowAttrType;
 import iterator.UnknownKeyTypeException;
@@ -109,7 +108,7 @@ public class BTreeSky extends Iterator implements GlobalConst {
 
 			// loop over full index scans for each btree
 			for (int i = 0; i < numberOfBtreeIndexes; i++) {
-				KeyDataEntry scannedVal = fullBtreeIndexScans[i].get_next_entry();
+				KeyDataEntry scannedVal = fullBtreeIndexScans[i].get_next();
 				if (scannedVal == null) {
 					System.out.println("got null");
 					break;
@@ -162,7 +161,7 @@ public class BTreeSky extends Iterator implements GlobalConst {
 
 		//open main relation data file
 		Heapfile originalDataHeapFile = new Heapfile(relationName);
-		firstSkyLineElement = TupleUtils.getEmptyTuple(attrType, t1_str_sizes);
+		firstSkyLineElement = getEmptyTuple();
 		firstSkyLineElement.tupleCopy(originalDataHeapFile.getRecord(firstSkyLineElementRID));
 
 		//create heapfile with all elements of the all the arrays of the indexes
@@ -244,6 +243,25 @@ public class BTreeSky extends Iterator implements GlobalConst {
 		//SystemDefs.JavabaseBM.flushAllPages();
 		Iterator bnlIterator = null;
 		blockNestedLoopSkyline = new BlockNestedLoopsSky(attrType, attrType.length, t1_str_sizes, bnlIterator, prunedHeapFileName, pref_list, pref_length_list, n_pages);
+	}
+
+
+	public static void main(String[] args) {
+		System.out.println("start");
+		float aa = (float) 0.356314137;
+		System.out.println(aa+" " );
+
+
+	}
+
+	//util method to create an empty tuple of reqd specs
+	private Tuple getEmptyTuple() throws InvalidTypeException, InvalidTupleSizeException, IOException {
+		Tuple t = new Tuple();
+		t.setHdr((short) attrType.length, attrType, t1_str_sizes);
+		int size = t.size();
+		t = new Tuple(size);
+		t.setHdr((short) attrType.length, attrType, t1_str_sizes);
+		return t;
 	}
 
 
