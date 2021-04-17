@@ -259,9 +259,7 @@ public class HashJoin extends Iterator {
             Exception
     {
         Tuple t;
-        System.out.println("outer_hiws: " + (outer_hiws==null) + " | Inner hiws:" + (inner_hiws==null) +
-                " | it_inner: "+ (it_inner==null) +" | it_outer: "+ (it_outer==null) + " | it: "+(it==null));
-        if(it==null){
+        if(it==null ||  (t = it.get_next())==null ){
             it_outer = outer_hiws.get_next();
             it_inner = inner_hiws.get_next();
             if(it_inner==null | it_outer==null){
@@ -293,7 +291,7 @@ public class HashJoin extends Iterator {
               return it.get_next();
         }
         else{
-            return it.get_next();
+            return t;
         }
     }
 

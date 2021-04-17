@@ -484,7 +484,6 @@ implements GlobalConst {
         try{
             int c = 0;
             while ((t = inl.get_next()) != null) {
-                System.out.println("Get next call: " + c++);
                 t.print(JJtype);
             }
             inl.close();
