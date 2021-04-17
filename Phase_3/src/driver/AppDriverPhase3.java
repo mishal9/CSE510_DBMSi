@@ -697,6 +697,19 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    			//TBD run SMJ with proper params
 	    			break;
 	    		case "INLJ":
+	    			joiner = new IndexNestedLoopJoin(outer_table.getTable_attr_type(),
+	    											 outer_table.getTable_num_attr(),
+	    											 outer_table.getTable_attr_size(),
+	    											 inner_table.getTable_attr_type(),
+	    											 inner_table.getTable_num_attr(),
+	    											 inner_table.getTable_attr_size(),
+	    											 join_n_pages,
+	    											 outer_table_file_scan,
+	    											 inner_table.getTable_heapfile(),
+	    											 outFilter,
+	    											 null,
+	    											 join_projection,
+	    											 join_projection.length);
 	    			//TBD run INLJ with proper params
 	    			break;
 	    		case "HJ":

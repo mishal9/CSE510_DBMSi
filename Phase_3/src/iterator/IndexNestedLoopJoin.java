@@ -50,6 +50,7 @@ public class IndexNestedLoopJoin extends Iterator {
     private String index_name;
     private CondExpr[] outFilter;
     IndexScan iscan;
+    private String innertablename;
     int indexType;
     /**
      * constructor
@@ -108,6 +109,7 @@ public class IndexNestedLoopJoin extends Iterator {
         AttrType[] Jtypes = new AttrType[n_out_flds];
         short[] t_size;
         RelationName = relationName;
+        this.innertablename = (relationName.split("\\."))[0];
         perm_mat = proj_list;
         nOutFlds = n_out_flds;
 
@@ -142,18 +144,18 @@ public class IndexNestedLoopJoin extends Iterator {
                 }
             }
 
-            Table table = SystemDefs.JavabaseDB.get_relation(relationName);
+            Table table = SystemDefs.JavabaseDB.get_relation(this.innertablename);
             if ( table == null) {       // TODO: removing extra booleans after integreating with task6
                 System.err.println("ERROR: Table does not exist**");
                 return;
             }
-            if ( table.getBtree_unclustered_attr()[fld2] ) {  // TODO: removing extra booleans after integreating with task6
+            if ( table.getBtree_unclustered_attr()[fld2-1] ) {  // TODO: removing extra booleans after integreating with task6
                 // unclustered btree exists on fld2
                 indexType = IndexType.B_Index;
                 index_name = table.get_unclustered_index_filename(fld2, "btree");
                 index_found = true;
             }
-            else if( table.getHash_unclustered_attr()[fld2] ) {
+            else if( table.getHash_unclustered_attr()[fld2-1] ) {
                 // unclustered hash exist on fld2
                 indexType = IndexType.Hash;
                 index_name = table.get_unclustered_index_filename(fld2, "hash");
@@ -161,7 +163,7 @@ public class IndexNestedLoopJoin extends Iterator {
             }
             else if( table.getClustered_btree_attr() == fld2 ){
                 // we have btree clustered
-                indexType = IndexType.B_Index;
+                indexType = IndexType.Cl_B_Index_ASC;
                 index_name = table.get_clustered_index_filename(fld2, "btree");
                 index_found = true;
             }
@@ -175,6 +177,7 @@ public class IndexNestedLoopJoin extends Iterator {
                 index_found = false;
                 hf = new Heapfile(relationName);
             }
+            System.out.println(fld2+" "+index_found);
         }catch (Exception e){
             e.printStackTrace();
         }
@@ -241,6 +244,9 @@ public class IndexNestedLoopJoin extends Iterator {
                     switch(indexType) {
                         case IndexType.B_Index:
                             iscan = new IndexScan(new IndexType(IndexType.B_Index), RelationName, index_name, _in2, t2_str_sizescopy, in2_len, inner_proj_count, inner_proj, outFilter, fld2, false);
+                            break;
+                        case IndexType.Cl_B_Index_ASC:
+                            iscan = new IndexScan(new IndexType(IndexType.Cl_B_Index_ASC), RelationName, index_name, _in2, t2_str_sizescopy, in2_len, inner_proj_count, inner_proj, outFilter, fld2, false);
                             break;
                         default:
                             System.out.println("What index~");
