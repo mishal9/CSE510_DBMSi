@@ -109,7 +109,7 @@ public class BTreeSky extends Iterator implements GlobalConst {
 
 			// loop over full index scans for each btree
 			for (int i = 0; i < numberOfBtreeIndexes; i++) {
-				KeyDataEntry scannedVal = fullBtreeIndexScans[i].get_next();
+				KeyDataEntry scannedVal = fullBtreeIndexScans[i].get_next_entry();
 				if (scannedVal == null) {
 					System.out.println("got null");
 					break;
