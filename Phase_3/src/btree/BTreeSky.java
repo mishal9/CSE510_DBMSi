@@ -1,6 +1,7 @@
 package btree;
 
 import java.io.IOException;
+import java.util.List;
 
 import bufmgr.PageNotReadException;
 import driver.BtreeGeneratorUtil;
@@ -299,6 +300,13 @@ public class BTreeSky extends Iterator implements GlobalConst {
 			e.printStackTrace();
 		}
 		blockNestedLoopSkyline.close();
+	}
+
+
+	@Override
+	public List<Tuple> get_next_aggr() throws Exception {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

@@ -7,6 +7,7 @@ import bufmgr.*;
 import diskmgr.*;
 import index.*;
 import java.lang.*;
+import java.util.List;
 import java.io.*;
 /** 
  *
@@ -241,6 +242,12 @@ public class NestedLoopsJoins  extends Iterator
 			}
 			closeFlag = true;
 		}
+	}
+
+	@Override
+	public List<Tuple> get_next_aggr() throws Exception {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }
 

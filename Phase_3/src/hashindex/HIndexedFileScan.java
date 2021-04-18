@@ -8,6 +8,7 @@ import index.IndexException;
 import iterator.*;
 
 import java.io.IOException;
+import java.util.List;
 
 /*
   Given the name of heap file for a window,
@@ -76,4 +77,10 @@ public class HIndexedFileScan extends Iterator {
         main_scan.closescan();
         main_heap = null;
     }
+
+	@Override
+	public List<Tuple> get_next_aggr() throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

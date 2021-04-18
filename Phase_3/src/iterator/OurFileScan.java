@@ -8,6 +8,7 @@ import iterator.*;
 
 //import javax.swing.*;
 import java.io.IOException;
+import java.util.List;
 
 public class OurFileScan extends Iterator{
     private AttrType[] _in1;
@@ -143,6 +144,11 @@ public class OurFileScan extends Iterator{
             closeFlag = true;
         }
     }
+	@Override
+	public List<Tuple> get_next_aggr() throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
 }
 

@@ -245,4 +245,10 @@ public class TopK_HashJoin extends Iterator implements GlobalConst {
 		// TODO Auto-generated method stub
 	}
 
+	@Override
+	public List<Tuple> get_next_aggr() throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }
