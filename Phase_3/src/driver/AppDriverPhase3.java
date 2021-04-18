@@ -120,16 +120,21 @@ class DriverPhase3 extends TestDriver implements GlobalConst
     public void open_DB( String db_name, boolean db_exists ) {
     	if ( db_exists ) {
     		/* open the already existing DB */
-			sysdef = new SystemDefs(db_name,0, NUMBFPAGES,DBREPLACER);
-			//SystemDefs.JavabaseDB.openDB(db_name);
+    		sysdef = new SystemDefs(db_name,0, NUMBFPAGES,DBREPLACER);
+    		//SystemDefs.JavabaseDB.openDB(db_name);
     	}
     	else {
+    		File f = new File(db_name);
+    		if ( f.exists() ) {
+    			sysdef = new SystemDefs(db_name,0, NUMBFPAGES,DBREPLACER);
+    		}
+    		else {
     			sysdef = new SystemDefs(db_name,NUMDBPAGES, NUMBFPAGES,DBREPLACER);
-				//SystemDefs.JavabaseDB.openDB(db_name, 5000);
-				list_db_name.add(db_name);
+    		}
+    		list_db_name.add(db_name);
     	}
     	open_db_name = db_name;
-		is_current_db_open = true;
+    	is_current_db_open = true;
     }
     
     /* closes the DB and flushes all pages to disk */
@@ -418,34 +423,45 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    	/* ----------------------which skyline needs to be calculated ------------------------------------*/
 	    	String skyline_algo = tokens[1];//NLS/BNLS/SFS/BTS/BTSS
 	    	
-	    	/* --------------------------extract the preference list and n pages from the query------------ */
-	    	String temp_query = String.valueOf(query);
-	    	temp_query = temp_query.replaceAll("[^\\d]", " ");
-	    	temp_query = temp_query.trim();
-	    	temp_query = temp_query.replaceAll(" +", " ");
-	    	String[] temp_tokens = temp_query.split(" ");
-	    	/*------------------------ the last digit in the query is the n_pages---------------------- */
-	    	int skyline_n_pages = Integer.parseInt(temp_tokens[temp_tokens.length-1]);
-	    	int[] skyline_preference_list = new int[temp_tokens.length-1];
-	    	
-	    	/* -----------------------extract the preference list form the token array------------- */
-	    	for ( int pref_count = 0; pref_count < skyline_preference_list.length; pref_count++ ) {
-	    		skyline_preference_list[pref_count] = Integer.parseInt(temp_tokens[pref_count]);
-	    	}
-	    	
 	    	/*---------------------extract tablename and outtablename--------------------------*/
 	    	boolean is_output_saved = query.contains("MATER");
+	    	
 	    	int index_mater = -1;
+	    	int skyline_n_pages = 0;
 	    	String skyline_tablename;
 	    	String out_tablename = "";
+	    	String temp_sub_query = "";
+	    	
 	    	if ( is_output_saved ) {
 	    		index_mater = Arrays.asList(tokens).indexOf("MATER");
 	    		out_tablename = tokens[index_mater+1];
 	    		skyline_tablename = tokens[index_mater-2];
+	    		skyline_n_pages = Integer.parseInt( tokens[index_mater-1] );
+	    		
+	    		tokens = Arrays.copyOfRange(tokens, 2, index_mater-2);
+	    		temp_sub_query = String.join(" ", tokens);
 	    	}
 	    	else {
-	    		index_mater = Arrays.asList(tokens).indexOf(Integer.toString(skyline_n_pages));
+	    		index_mater = tokens.length - 1;
 	    		skyline_tablename = tokens[index_mater-1];
+	    		skyline_n_pages = Integer.parseInt( tokens[index_mater] );
+	    		
+	    		tokens = Arrays.copyOfRange(tokens, 2, index_mater-1);
+	    		temp_sub_query = String.join(" ", tokens);
+	    	}
+	    	
+	    	/* --------------------------extract the preference list and n pages from the query------------ */
+	    	String temp_query = String.valueOf(temp_sub_query);
+	    	temp_query = temp_query.replaceAll("[^\\d]", " ");
+	    	temp_query = temp_query.trim();
+	    	temp_query = temp_query.replaceAll(" +", " ");
+	    	System.out.println(temp_query);
+	    	String[] temp_tokens = temp_query.split(" ");
+	    	
+	    	/* -----------------------extract the preference list form the token array------------- */
+	    	int[] skyline_preference_list = new int[temp_tokens.length];
+	    	for ( int pref_count = 0; pref_count < skyline_preference_list.length; pref_count++ ) {
+	    		skyline_preference_list[pref_count] = Integer.parseInt(temp_tokens[pref_count]);
 	    	}
     	
 	    	if ( is_output_saved ) {
@@ -477,48 +493,55 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    	/* ---------------------which aggregation needs to be used----------------------------------*/
 	    	String agg_algo = tokens[2];
 	    	
+	    	/*---------------------extract tablename and outtablename--------------------------*/
+	    	boolean is_output_saved = query.contains("MATER");
+	    	int index_mater = -1;
+	    	int groupby_n_pages = 0;
+	    	String groupby_tablename;
+	    	String out_tablename = "";
+	    	String temp_sub_query = "";
+	    	
+	    	if ( is_output_saved ) {
+	    		index_mater = Arrays.asList(tokens).indexOf("MATER");
+	    		out_tablename = tokens[index_mater+1];
+	    		groupby_tablename = tokens[index_mater-2];
+	    		groupby_n_pages = Integer.parseInt(tokens[index_mater-1]);
+	    		tokens = Arrays.copyOfRange(tokens, 2, index_mater-2);
+	    		temp_sub_query = String.join(" ", tokens); 
+	    	}
+	    	else {
+	    		index_mater = tokens.length - 1;
+	    		groupby_tablename = tokens[tokens.length-2];
+	    		groupby_n_pages = Integer.parseInt(tokens[index_mater]);
+	    		tokens = Arrays.copyOfRange(tokens, 2, index_mater-1);
+	    		temp_sub_query = String.join(" ", tokens);
+	    	}
+	    	
 	    	/* --------------------------extract the preference list and n pages from the query------------ */
-	    	String temp_query = String.valueOf(query);
+	    	String temp_query = String.valueOf(temp_sub_query);
 	    	temp_query = temp_query.replaceAll("[^\\d]", " ");
 	    	temp_query = temp_query.trim();
 	    	temp_query = temp_query.replaceAll(" +", " ");
 	    	String[] temp_tokens = temp_query.split(" ");
 	    	
-	    	/*------------------------ the last digit in the query is the n_pages---------------------- */
-	    	int groupby_n_pages = Integer.parseInt(temp_tokens[temp_tokens.length-1]);
-	    	
 	    	/*------------------------extract the groupby attributes ----------------------------*/
 	    	int groupby_attribute = Integer.parseInt(temp_tokens[0]);
 	    	
 	    	/* --------------------------extract the preference list and n pages from the query------------ */
-	    	int[] agg_attributes = new int[temp_tokens.length-2];
+	    	int[] agg_attributes = new int[temp_tokens.length-1];
 	    	
 	    	/* ------------------extract the aggregation attributes list form the token array------------- */
 	    	for ( int pref_count = 0; pref_count < agg_attributes.length; pref_count++ ) {
 	    		agg_attributes[pref_count] = Integer.parseInt(temp_tokens[pref_count+1]);
 	    	}
 	    	
-	    	/*---------------------extract tablename and outtablename--------------------------*/
-	    	boolean is_output_saved = query.contains("MATER");
-	    	int index_mater = -1;
-	    	String groupby_tablename;
-	    	String out_tablename = "";
 	    	if ( is_output_saved ) {
-	    		index_mater = Arrays.asList(tokens).indexOf("MATER");
-	    		out_tablename = tokens[index_mater+1];
-	    		groupby_tablename = tokens[index_mater-2];
-	    	}
-	    	else {
-	    		groupby_tablename = tokens[tokens.length-2];
-	    	}
-	    	
-	    	if ( is_output_saved ) {
-	    		System.out.println(" calculating groupby "+group_algo+" on table "+ groupby_tablename+" on attribute "+ groupby_attribute +
+	    		System.out.println("Calculating groupby "+group_algo+" on table "+ groupby_tablename+" on attribute "+ groupby_attribute +
 	    				" with buffer pages: "+groupby_n_pages+ " and aggregation type "+ agg_algo + " on attributes" + Arrays.toString(agg_attributes) +
 	    				". Saving the output table to "+out_tablename);
 	    	}
 	    	else {
-	    		System.out.println(" calculating groupby "+group_algo+" on table "+ groupby_tablename+" on attribute "+ groupby_attribute +
+	    		System.out.println("Calculating groupby "+group_algo+" on table "+ groupby_tablename+" on attribute "+ groupby_attribute +
 	    				" with buffer pages: "+groupby_n_pages+ " and aggregation type "+ agg_algo + " on attributes" + Arrays.toString(agg_attributes));
 	    	}
 	    	
@@ -545,16 +568,24 @@ class DriverPhase3 extends TestDriver implements GlobalConst
      * part of task
      * structure: join NLJ/SMJ/INLJ/HJ OTABLENAME O_ATT_NO ITABLENAME I_ATT_NO OP NPAGES [MATER OUTTABLENAME]
      * */
-    public void parse_join() {
+    public void parse_join() throws Exception {
     	try {
 	    	/* ----------------------which join needs to be calculated ------------------------------------*/
 	    	String join_algo = tokens[1]; //NLJ/SMJ/INLJ/HJ
 	    	
 	    	/* ---------------------which is the outer table----------------------------------*/
 	    	String outer_table_name = tokens[2];
+	    	Table outer_table = SystemDefs.JavabaseDB.get_relation(outer_table_name);
 	    	
 	    	/* ---------------------which is the inner table----------------------------------*/
 	    	String inner_table_name = tokens[4];
+	    	Table inner_table = SystemDefs.JavabaseDB.get_relation(inner_table_name);
+	    	
+	    	/*--------------------------no table should be null -------------------------------*/
+	    	if ( ( outer_table == null ) || ( inner_table == null ) ) {
+	    		System.out.println("Inner table or outer table does not exist.");
+	    		return;
+	    	}
 	    	
 	    	/*----------------------get the outer nad inner attribute on which to perform the join */
 	    	int outer_table_attribute = Integer.parseInt(tokens[3]);
@@ -569,8 +600,10 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    	/*---------------------extract tablename and outtablename--------------------------*/
 	    	boolean is_output_saved = query.contains("MATER");
 	    	String out_tablename = "";
+	    	Table mater_table = null;
 	    	if ( is_output_saved ) {
 	    		out_tablename = tokens[9];
+	    		mater_table = new Table(out_tablename, "MATER");
 	    	}
 	    	
 	    	if ( is_output_saved ) {
@@ -584,28 +617,283 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    				" and inner table "+ inner_table_name+" attribute "+ inner_table_attribute +
 	    				" with buffer pages: "+join_n_pages+ " and operator type "+op);
 	    	}
-	    	
+	    	CondExpr[] outFilter = get_op_cond_expr(op, outer_table_attribute, inner_table_attribute);
+	    	if ( outFilter == null ) {
+	    		validate_token_length(0, "join");
+	    		return;
+	    	}
+	    	AttrType[] join_attr_type = get_join_attr_type(outer_table, inner_table, inner_table_attribute);
+	    	short[] outer_str_sizes = outer_table.getTable_attr_size();
+	    	short[] inner_str_sizes = inner_table.getTable_attr_size();
+	    	FldSpec[] outer_projection = get_projection_for_table(outer_table, "outer", -1);
+	    	FldSpec[] inner_complete_projection = get_projection_for_table(inner_table, "outer", -1);
+			FldSpec[] inner_projection = get_projection_for_table(inner_table, "inner", inner_table_attribute);
+			FldSpec[] join_projection = get_projection_for_join_table(outer_projection, inner_projection);
+			FileScan outer_table_file_scan =  new FileScan(outer_table.getTable_heapfile(), 
+										   				   outer_table.getTable_attr_type(),
+										   				   outer_table.getTable_attr_size(),
+										   				   (short) outer_table.getTable_num_attr(),
+										   				   (short) outer_table.getTable_num_attr(),
+										   				   outer_projection, 
+										   				   null);
+			FileScan inner_table_file_scan =  new FileScan(inner_table.getTable_heapfile(), 
+														   inner_table.getTable_attr_type(),
+														   inner_table.getTable_attr_size(),
+										   				   (short) inner_table.getTable_num_attr(),
+										   				   (short) inner_table.getTable_num_attr(),
+										   				   inner_complete_projection, 
+										   				   null);
+			
+			String[] join_col_names = get_join_attr_name(outer_table, inner_table, inner_table_attribute);
+			/* fill in the output_table */
+			if ( mater_table != null ) {
+				mater_table.setTable_attr_type(join_attr_type);
+				mater_table.setTable_num_attr(join_attr_type.length);
+				mater_table.intialise_table_str_sizes();
+				mater_table.intialise_table_bunc();
+				mater_table.intialise_table_hunc();
+				mater_table.setTable_attr_name(join_col_names);
+			}
+			Iterator joiner = null;
 	    	/* run the appropriate skyline algorithm */
 	    	switch ( join_algo ) {
 	    		case "NLJ":
+	    			joiner = new NestedLoopsJoins (outer_table.getTable_attr_type(),
+	    										   outer_table.getTable_num_attr(), 
+	    										   outer_table.getTable_attr_size(),
+	    										   inner_table.getTable_attr_type(),
+	    										   inner_table.getTable_num_attr(),
+	    										   inner_table.getTable_attr_size(),
+	    										   join_n_pages,
+	    										   outer_table_file_scan, 
+	    										   inner_table.getTable_heapfile(),
+	    										   outFilter,
+	    										   null,
+	    										   join_projection,
+	    										   join_projection.length);
 	    			//TBD run NLJ with proper params
 	    			break;
 	    		case "SMJ":
+	    			TupleOrder ascending = new TupleOrder(TupleOrder.Ascending);
+	    			joiner = new SortMerge(outer_table.getTable_attr_type(),
+										   outer_table.getTable_num_attr(), 
+										   outer_table.getTable_attr_size(),
+										   inner_table.getTable_attr_type(),
+										   inner_table.getTable_num_attr(),
+										   inner_table.getTable_attr_size(),
+										   outer_table_attribute,
+										   outer_str_sizes[outer_table_attribute-1],
+										   inner_table_attribute,
+										   inner_str_sizes[inner_table_attribute-1],
+										   join_n_pages,
+										   outer_table_file_scan, 
+										   inner_table_file_scan,
+										   false, 
+										   false, 
+										   ascending,
+										   outFilter, 
+										   join_projection,
+										   join_projection.length);
 	    			//TBD run SMJ with proper params
 	    			break;
 	    		case "INLJ":
+	    			joiner = new IndexNestedLoopJoin(outer_table.getTable_attr_type(),
+	    											 outer_table.getTable_num_attr(),
+	    											 outer_table.getTable_attr_size(),
+	    											 inner_table.getTable_attr_type(),
+	    											 inner_table.getTable_num_attr(),
+	    											 inner_table.getTable_attr_size(),
+	    											 join_n_pages,
+	    											 outer_table_file_scan,
+	    											 inner_table.getTable_heapfile(),
+	    											 outFilter,
+	    											 null,
+	    											 join_projection,
+	    											 join_projection.length);
 	    			//TBD run INLJ with proper params
 	    			break;
 	    		case "HJ":
+	    			joiner = new HashJoin(outer_table.getTable_attr_type(),
+									      outer_table.getTable_num_attr(),
+									      outer_table.getTable_attr_size(),
+									      inner_table.getTable_attr_type(),
+									      inner_table.getTable_num_attr(),
+									      inner_table.getTable_attr_size(),
+									      join_n_pages,
+									      outer_table_file_scan,
+									      inner_table.getTable_heapfile(),
+									      outFilter,
+									      null,
+									      join_projection,
+									      join_projection.length);
 	    			//TBD run HJ with proper params
 	    			break;
 	    		default:
 	    			validate_token_length(0, "join");
 	    			break;
 	    	}
+	    	Tuple temp = joiner.get_next();
+	    	if ( mater_table != null ) {
+	    		mater_table.setTable_tuple_size(temp.size());
+	    	}
+			while ( temp != null ) {
+				//temp.print(join_attr_type);
+				SystemDefs.JavabaseDB.add_to_mater_table(temp, mater_table);
+				temp = joiner.get_next();
+			}
+			joiner.close();
+			if ( outer_table_file_scan.closeFlag == false ) {
+				outer_table_file_scan.close();
+			}
+			if ( inner_table_file_scan.closeFlag == false ) {
+				inner_table_file_scan.close();
+			}
+			if ( mater_table != null ) {
+				mater_table.add_table_to_global_queue();
+				mater_table.print_table_cl();
+			}
     	}catch (ArrayIndexOutOfBoundsException e){
 	        validate_token_length(0, "join");
 	    }
+    }
+    
+    private String[] get_join_attr_name( Table outer_table, Table inner_table, int inner_join_attr ) {
+    	String[] join_attr_name = new String[outer_table.getTable_num_attr() + inner_table.getTable_num_attr() -1];
+    	String[] outer_attr_name = outer_table.getTable_attr_name();
+    	String[] inner_attr_name = inner_table.getTable_attr_name();
+    	for ( int i=0; i<outer_table.getTable_num_attr(); i++ ) {
+    		join_attr_name[i] = outer_attr_name[i];
+    	}
+    	for ( int i=0; i<(inner_join_attr - 1); i++ ) {
+    		join_attr_name[outer_attr_name.length+i] = inner_attr_name[i];
+    	}
+    	for ( int i=inner_join_attr; i<inner_attr_name.length; i++ ) {
+    		join_attr_name[outer_attr_name.length+i-1] = inner_attr_name[i];
+    	}
+    	
+    	return join_attr_name;
+    }
+    
+    private AttrType[] get_join_attr_type( Table outer_table, Table inner_table, int inner_join_attr ) {
+    	AttrType[] join_attr_type = new AttrType[outer_table.getTable_num_attr() + inner_table.getTable_num_attr() -1];
+    	AttrType[] outer_attr_type = outer_table.getTable_attr_type();
+    	AttrType[] inner_attr_type = inner_table.getTable_attr_type();
+    	for ( int i=0; i<outer_table.getTable_num_attr(); i++ ) {
+    		join_attr_type[i] = outer_attr_type[i];
+    	}
+    	for ( int i=0; i<(inner_join_attr - 1); i++ ) {
+    		join_attr_type[outer_attr_type.length+i] = inner_attr_type[i];
+    	}
+    	for ( int i=inner_join_attr; i<inner_attr_type.length; i++ ) {
+    		join_attr_type[outer_attr_type.length+i-1] = inner_attr_type[i];
+    	}
+    	
+    	return join_attr_type;
+    }
+    
+    private CondExpr[] get_op_cond_expr( String op, int outer_table_join_attr, int inner_table_join_attr ) {
+    	CondExpr[] expr = new CondExpr[2];
+    	expr[0] = new CondExpr();
+    	expr[1] = new CondExpr();
+    	switch (op) {
+    	case "=":
+    		expr[0].next = null;
+            expr[0].op = new AttrOperator(AttrOperator.aopEQ);
+
+            expr[0].type1 = new AttrType(AttrType.attrSymbol);
+            expr[0].operand1.symbol = new FldSpec(new RelSpec(RelSpec.outer), outer_table_join_attr);
+
+            expr[0].type2 = new AttrType(AttrType.attrSymbol);
+            expr[0].operand2.symbol = new FldSpec(new RelSpec(RelSpec.innerRel), inner_table_join_attr);
+
+            expr[1] = null;
+    		break;
+    	case "<":
+    		expr[0].next = null;
+            expr[0].op = new AttrOperator(AttrOperator.aopLT);
+
+            expr[0].type1 = new AttrType(AttrType.attrSymbol);
+            expr[0].operand1.symbol = new FldSpec(new RelSpec(RelSpec.outer), outer_table_join_attr);
+
+            expr[0].type2 = new AttrType(AttrType.attrSymbol);
+            expr[0].operand2.symbol = new FldSpec(new RelSpec(RelSpec.innerRel), inner_table_join_attr);
+
+            expr[1] = null;
+    		break;
+    	case ">":
+    		expr[0].next = null;
+            expr[0].op = new AttrOperator(AttrOperator.aopGT);
+
+            expr[0].type1 = new AttrType(AttrType.attrSymbol);
+            expr[0].operand1.symbol = new FldSpec(new RelSpec(RelSpec.outer), outer_table_join_attr);
+
+            expr[0].type2 = new AttrType(AttrType.attrSymbol);
+            expr[0].operand2.symbol = new FldSpec(new RelSpec(RelSpec.innerRel), inner_table_join_attr);
+
+            expr[1] = null;
+    		break;
+    	case "<=":
+    		expr[0].next = null;
+            expr[0].op = new AttrOperator(AttrOperator.aopLE);
+
+            expr[0].type1 = new AttrType(AttrType.attrSymbol);
+            expr[0].operand1.symbol = new FldSpec(new RelSpec(RelSpec.outer), outer_table_join_attr);
+
+            expr[0].type2 = new AttrType(AttrType.attrSymbol);
+            expr[0].operand2.symbol = new FldSpec(new RelSpec(RelSpec.innerRel), inner_table_join_attr);
+
+            expr[1] = null;
+    		break;
+    	case ">=":
+    		expr[0].next = null;
+            expr[0].op = new AttrOperator(AttrOperator.aopGE);
+
+            expr[0].type1 = new AttrType(AttrType.attrSymbol);
+            expr[0].operand1.symbol = new FldSpec(new RelSpec(RelSpec.outer), outer_table_join_attr);
+
+            expr[0].type2 = new AttrType(AttrType.attrSymbol);
+            expr[0].operand2.symbol = new FldSpec(new RelSpec(RelSpec.innerRel), inner_table_join_attr);
+
+            expr[1] = null;
+    		break;
+    	default:
+    		System.out.println("Define the operator correctly");
+    		return null;
+    	}
+    	return expr;
+    }
+    
+    private FldSpec[] get_projection_for_table( Table proj_table, String table_type, int join_attr ) {
+    	FldSpec[] proj;
+    	if ( table_type.equals("outer") ) {
+    		proj = new FldSpec[proj_table.getTable_num_attr()];
+        	RelSpec rel = new RelSpec(RelSpec.outer);
+        	for ( int i=0; i<proj_table.getTable_num_attr(); i++ ) {
+        		proj[i] = new FldSpec(rel, i+1);
+        	}
+    	}
+    	else if ( table_type.equals("inner") ) {
+    		proj = new FldSpec[proj_table.getTable_num_attr()-1];
+        	RelSpec rel = new RelSpec(RelSpec.innerRel);
+        	for ( int i=0; i<(join_attr - 1); i++ ) {
+        		proj[i] = new FldSpec(rel, i+1);
+        	}
+        	for ( int i=join_attr; i<proj_table.getTable_num_attr(); i++ ) {
+        		proj[i-1] = new FldSpec(rel, i+1);
+        	}
+    	}
+    	else {
+    		proj = null;
+    	}
+    	
+    	return proj;
+    }
+    
+    private FldSpec[] get_projection_for_join_table( FldSpec[] outer_proj, FldSpec[] inner_proj ) {
+    	FldSpec[] join_proj = new FldSpec[outer_proj.length + inner_proj.length];
+    	System.arraycopy(outer_proj, 0, join_proj, 0, outer_proj.length);
+    	System.arraycopy(inner_proj, 0, join_proj, outer_proj.length, inner_proj.length);
+    	return join_proj;
     }
     
     /* parses the join query for the exact structure 
@@ -810,8 +1098,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}*/
-    	
-    	Table table = SystemDefs.JavabaseDB.get_relation("testtwo");
+    	Table table = SystemDefs.JavabaseDB.get_relation("subset1");
     	try {
 			table.test();
 		} catch (InvalidTypeException e) {

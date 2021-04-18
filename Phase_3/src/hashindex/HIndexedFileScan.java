@@ -62,7 +62,9 @@ public class HIndexedFileScan extends Iterator {
             return null;
         }
         scannedHashEntry = new HashEntry(tup.returnTupleByteArray(), 0);
+
 //        System.out.println("  <"+scannedHashEntry.key.value+","+scannedHashEntry.rid+">");
+
 //        main_scan.position(scannedHashEntry.rid);
 //        Jtuple = main_scan.getNext(rid);
         Jtuple = main_heap.getRecord(scannedHashEntry.rid);

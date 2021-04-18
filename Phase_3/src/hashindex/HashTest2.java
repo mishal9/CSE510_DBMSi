@@ -11,7 +11,6 @@ import heap.Tuple;
 import iterator.FldSpec;
 import iterator.Iterator;
 import iterator.RelSpec;
-//import tests.Sailor;
 
 
 class Row{
@@ -28,6 +27,29 @@ public class HashTest2 implements GlobalConst {
     String heap_file_name = "heap1.in", index_file_name= "notwhatever";
     AttrType [] Dtypes;
     short [] Ssizes;
+
+    private static int[][] data1 = {
+            {1, 6, 8},
+            {1, 4, 5},
+            {2, 7, 8},
+            {1, 4, 3},
+            {3, 5, 10},
+            {1, 2, 3},
+            {2, 3, 4},
+            {4, 8, 9},
+            {3, 100, 20},
+            {1, 6, 8},
+            {1, 4, 5},
+            {2, 7, 8},
+            {1, 4, 3},
+            {3, 5, 10},
+            {1, 2, 3},
+            {2, 3, 4},
+            {4, 8, 9},
+            {3, 100, 20},
+            {4, 5, 8}
+    };
+
 
     public static void main(String[] args) {
 
@@ -46,50 +68,52 @@ public class HashTest2 implements GlobalConst {
 
     private void createAHeapFile() throws Exception{
         hf = new Heapfile(heap_file_name);
-        Vector data = new Vector();
-        for(int i=1; i<10; i++){
-            data.addElement(new Row(i, (char)(96+i) ) );
-        }
 
-        Dtypes = new AttrType[2];
+        Dtypes = new AttrType[3];
         Dtypes[0] = new AttrType (AttrType.attrInteger);
-        Dtypes[1] = new AttrType (AttrType.attrString);
-        Ssizes = new short [1];
-        Ssizes[0] = 30; //first elt. is 30
-
+        Dtypes[1] = new AttrType (AttrType.attrInteger);
+        Dtypes[2] = new AttrType (AttrType.attrInteger);
+        Ssizes = null;
         Tuple t = new Tuple();
-        t.setHdr((short) 2, Dtypes, Ssizes);
+        t.setHdr((short) 3, Dtypes, Ssizes);
+
         int size = t.size();
 
         RID rid;
 
-        for (int i=0; i<data.size(); i++) {
-            t.setIntFld(1, ((Row)data.elementAt(i)).id);
-            t.setStrFld(2, String.valueOf(((Row)data.elementAt(i)).name));
+
+        for (int i=0; i<data1.length; i++) {
+            t.setIntFld(1, data1[i][0]);
+            t.setIntFld(2, data1[i][1]);
+            t.setIntFld(3, data1[i][2]);
+
             hf.insertRecord(t.getTupleByteArray());
         }
         hf = null;
     }
 
     private void testHindex() throws Exception {
-        HIndex h = new HIndex(index_file_name, AttrType.attrInteger, 4,5);
+        HIndex h = new HIndex(index_file_name, AttrType.attrInteger, 10,50);
         Scan s = (new Heapfile(heap_file_name)).openScan();
         Tuple tup = new Tuple();
         RID rid = new RID();
         while((tup=s.getNext(rid))!=null){
-            tup.setHdr((short)2, Dtypes, Ssizes);
+            tup.setHdr((short)3, Dtypes, Ssizes);
+
             HashKey key = new HashKey(tup.getIntFld(1));
             h.insert(key, rid);
         }
         FldSpec[] out = {
-            new FldSpec(new RelSpec(RelSpec.outer), 1),
-            new FldSpec(new RelSpec(RelSpec.outer), 2)
+                new FldSpec(new RelSpec(RelSpec.outer), 1),
+                new FldSpec(new RelSpec(RelSpec.outer), 2),
+                new FldSpec(new RelSpec(RelSpec.outer), 3)
+
         };
         HashIndexWindowedScan hiwfs = new HashIndexWindowedScan(new IndexType(IndexType.Hash), heap_file_name, index_file_name, Dtypes, Ssizes, Dtypes.length, out.length, out, null, 1, false);
         Iterator it;
         while((it=hiwfs.get_next())!=null){
             while((tup=it.get_next())!=null){
-                tup.setHdr((short)2, Dtypes, Ssizes);
+                tup.setHdr((short)3, Dtypes, Ssizes);
                 tup.print(Dtypes);
             }
             System.out.println("\n New Bucket ");
@@ -116,3 +140,4 @@ public class HashTest2 implements GlobalConst {
     }
 
 }
+

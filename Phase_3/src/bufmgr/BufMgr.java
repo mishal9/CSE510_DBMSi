@@ -284,7 +284,7 @@ class Clock extends Replacer {
     			  state_bit[temp_head].state = Available;
     			  temp_head++;
     		  }
-    		  System.out.println("limit memory usage hit"+numBuffers);
+    		  System.out.println("limit memory usage hit "+numBuffers);
     		  mgr.limit_memory_usage(false, 0);
     		  throw new BufferPoolExceededException (null, "BUFMGR: BUFFER_EXCEEDED.");
 	  

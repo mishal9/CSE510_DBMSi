@@ -84,7 +84,7 @@ import iterator.UnknowAttrType;
 public class Table implements GlobalConst{
 
 	/* data folder */
-	private  static String data_folder = "data/";
+	private  static String data_folder = "data/Phase3_report_dataset/";
 	
 	/* table separateer in printing the table */
 	private static String table_sep = "\t\t";
@@ -110,14 +110,14 @@ public class Table implements GlobalConst{
 	/* extension for clustered index */
 	private static String hash_unclustered_file_ext = ".hashunclustered";
 	
-	/* list of all the tables that exist in this DB */
-	private static List<String> DBtablenames;
-	
-	/* number of tables in the DB */
-	private static int num_tables;
+	/* Delimiter used to read the data file */
+	private static String data_file_delimiter = ",";
 	
 	/* name of this table */
 	private String tablename;
+	
+	/* ext for the table */
+	private String table_data_file_ext;
 	
 	/* name of the heap file containing the heapfile for the tabe data */
 	private String table_heapfile;
@@ -263,8 +263,17 @@ public class Table implements GlobalConst{
   
   public Table( String filename ) {
 	  this.table_data_file = filename;
-	  this.tablename = filename.substring(0, filename.length()-data_file_ext.length());
-	  this.table_heapfile = filename.substring(0, filename.length()-data_file_ext.length()) + heapfile_ext;
+
+	  String[] tokens = filename.split("\\.");
+	  this.tablename = tokens[0];
+	  this.table_data_file_ext = tokens[1];
+	  
+	  this.table_heapfile = this.tablename + heapfile_ext;
+  }
+  
+  public Table( String tablename, String mater ) {
+	  this.tablename = tablename;
+	  this.table_heapfile = tablename + heapfile_ext;
   }
   
   public Table( String tablename, String mater ) {
@@ -299,6 +308,30 @@ public class Table implements GlobalConst{
       }
   }
   
+  public void intialise_table_str_sizes() {
+	  /* create the tuple and calculate the size of the tuple */
+	  table_attr_size = new short[table_num_attr];
+	  for(int i=0; i<table_attr_size.length; i++){
+		  table_attr_size[i] = STRSIZE;
+      }
+  }
+  
+  public void intialise_table_bunc() {
+	  /* create the tuple and calculate the size of the tuple */
+	  this.btree_unclustered_attr = new boolean[table_num_attr];
+	  for(int i=0; i<btree_unclustered_attr.length; i++){
+		  btree_unclustered_attr[i] = false;
+      }
+  }
+  
+  public void intialise_table_hunc() {
+	  /* create the tuple and calculate the size of the tuple */
+	  this.hash_unclustered_attr = new boolean[table_num_attr];
+	  for(int i=0; i<hash_unclustered_attr.length; i++){
+		  hash_unclustered_attr[i] = false;
+      }
+  }
+  
   /* create a table from the data file and stores it in the heap file */
   public void create_table(String heap_file_name, String data_file_name) {
 	  try {
@@ -307,12 +340,18 @@ public class Table implements GlobalConst{
 		/* initialising the heapfile for the table */
 		Heapfile hf = new Heapfile(heap_file_name);
 		
+		/* open a csv reader */
+//		CSVReader reader = null;
+		
 		/* opening the data file for reading */
 		File file = new File(data_folder + table_data_file);
-	    Scanner sc = new Scanner(file);
+	    Scanner sc = new Scanner(file, "utf-8");
+	    sc.useDelimiter(this.data_file_delimiter);
 	    
 	    /* initialising the number of attributes in the table */
-	    table_num_attr = sc.nextInt();
+	    //table_num_attr = sc.nextInt();
+	    //System.out.println(sc.next());
+	    table_num_attr = Integer.parseInt(sc.next());
 	    
 	    /* initialise the btree unclustered attr array i.e. no unclustered index exist at the time of creating the table for the first time*/
 	    btree_unclustered_attr = new boolean[table_num_attr];
@@ -335,7 +374,8 @@ public class Table implements GlobalConst{
 	    int counter = 0;
 	    while ( sc.hasNextLine() && ( counter < table_num_attr ) ) {
 	    	String next_line = sc.nextLine();
-	    	String[] tokens_next_line = next_line.split("\\s+");
+	    	//String[] tokens_next_line = next_line.split("\\s+");
+	    	String[] tokens_next_line = next_line.split(this.data_file_delimiter);
 	    	table_attr_name[counter] = tokens_next_line[0];
 	    	table_attr_type[counter] = new AttrType(tokens_next_line[1].equals("STR") ? AttrType.attrString : AttrType.attrInteger);
 	    	counter++;
@@ -361,7 +401,7 @@ public class Table implements GlobalConst{
         /* parse the data and store it in the heapfile */
 	    while ( sc.hasNextLine() ) {
 	    	String temp_next_line = sc.nextLine().trim();
-	    	String[] token_next_line = temp_next_line.split("\\s+");
+	    	String[] token_next_line = temp_next_line.split(this.data_file_delimiter);
 	    	for ( int i=0; i<table_num_attr; i++ ) {
 	    		try {
 		    		switch ( table_attr_type[i].attrType ) {
@@ -908,9 +948,10 @@ public class Table implements GlobalConst{
 		/* opening the data file for reading */
 		File file = new File(data_folder + filename);
 	    Scanner sc = new Scanner(file);
+	    sc.useDelimiter(this.data_file_delimiter);
 	    
 	    /* initialising the number of attributes in the table */
-	    assert ( this.table_num_attr == sc.nextInt() );
+	    assert ( this.table_num_attr == Integer.parseInt(sc.next()) );
 	    
 	    /* moving to next line to skip the first line read above */
 	    sc.nextLine();
@@ -919,7 +960,7 @@ public class Table implements GlobalConst{
 	    int counter = 0;
 	    while ( sc.hasNextLine() && ( counter < table_num_attr ) ) {
 	    	String next_line = sc.nextLine();
-	    	String[] tokens_next_line = next_line.split("\\s+");
+	    	String[] tokens_next_line = next_line.split(this.data_file_delimiter);
 	    	assert ( table_attr_name[counter] == tokens_next_line[0] );
 	    	assert (table_attr_type[counter].attrType == (tokens_next_line[1].equals("STR") ? AttrType.attrString : AttrType.attrInteger) );
 	    	counter++;
@@ -931,7 +972,7 @@ public class Table implements GlobalConst{
         	/* parse the data and store it in the heapfile */
 		    while ( sc.hasNextLine() ) {
 		    	String temp_next_line = sc.nextLine().trim();
-		    	String[] token_next_line = temp_next_line.split("\\s+");
+		    	String[] token_next_line = temp_next_line.split(this.data_file_delimiter);
 		    	for ( int i=0; i<table_num_attr; i++ ) {
 		    		try {
 			    		switch ( table_attr_type[i].attrType ) {
@@ -1121,7 +1162,7 @@ public class Table implements GlobalConst{
    */
   public void create_table_struct( Scanner sc ) {
   	/* initialising the number of attributes in the table */
-  	table_num_attr = sc.nextInt();
+  	table_num_attr = Integer.parseInt(sc.next());
   
   	/* initialise the btree unclustered attr array i.e. no unclustered index exist at the time of creating the table for the first time*/
 	btree_unclustered_attr = new boolean[table_num_attr];
@@ -1144,7 +1185,7 @@ public class Table implements GlobalConst{
     int counter = 0;
     while ( sc.hasNextLine() && ( counter < table_num_attr ) ) {
     	String next_line = sc.nextLine();
-    	String[] tokens_next_line = next_line.split("\\s+");
+    	String[] tokens_next_line = next_line.split(this.data_file_delimiter);
     	table_attr_name[counter] = tokens_next_line[0];
     	table_attr_type[counter] = new AttrType(tokens_next_line[1].equals("STR") ? AttrType.attrString : AttrType.attrInteger);
     	counter++;
@@ -1187,6 +1228,7 @@ public class Table implements GlobalConst{
 	  /* opening the data file for reading */
 	  File file = new File(data_folder + table_data_file);
 	  Scanner sc = new Scanner(file);
+	  sc.useDelimiter(this.data_file_delimiter);
 
 	  /* initialising the number of attributes in the table */
 	  create_table_struct(sc);
@@ -1205,7 +1247,7 @@ public class Table implements GlobalConst{
 	  {
 		  	Tuple t1 = TupleUtils.getEmptyTuple(this.table_attr_type, this.table_attr_size);
 	    	String temp_next_line = sc.nextLine().trim();
-	    	String[] token_next_line = temp_next_line.split("\\s+");
+	    	String[] token_next_line = temp_next_line.split(this.data_file_delimiter);
 	    	for ( int i=0; i<table_num_attr; i++ ) {
 	    		try {
 		    		switch ( table_attr_type[i].attrType ) {
@@ -1259,6 +1301,7 @@ public class Table implements GlobalConst{
 		/* opening the data file for reading */
 		File file = new File(data_folder + table_data_file);
 	    Scanner sc = new Scanner(file);
+	    sc.useDelimiter(this.data_file_delimiter);
 	    
 	    /* initialising the number of attributes in the table */
 	    create_table_struct(sc);
@@ -1276,7 +1319,7 @@ public class Table implements GlobalConst{
         /* parse the data and store it in the heapfile */
 	    while ( sc.hasNextLine() ) {
 	    	String temp_next_line = sc.nextLine().trim();
-	    	String[] token_next_line = temp_next_line.split("\\s+");
+	    	String[] token_next_line = temp_next_line.split(this.data_file_delimiter);
 	    	for ( int i=0; i<table_num_attr; i++ ) {
 	    		try {
 		    		switch ( table_attr_type[i].attrType ) {
@@ -1436,9 +1479,10 @@ public class Table implements GlobalConst{
 			 * TBD might need a change in case we need to input paths of the files*/
 			File file = new File(data_folder + delete_data_file_name);
 		    Scanner sc = new Scanner(file);
+		    sc.useDelimiter(this.data_file_delimiter);
 		    
 		    /* initialising the number of attributes in the table */
-		    assert ( this.table_num_attr == sc.nextInt() );
+		    assert ( this.table_num_attr == Integer.parseInt(sc.next()) );
 		    
 		    /* moving to next line to skip the firs tline read above */
 		    sc.nextLine();
@@ -1447,7 +1491,7 @@ public class Table implements GlobalConst{
 		    int counter = 0;
 		    while ( sc.hasNextLine() && ( counter < table_num_attr ) ) {
 		    	String next_line = sc.nextLine();
-		    	String[] tokens_next_line = next_line.split("\\s+");
+		    	String[] tokens_next_line = next_line.split(this.data_file_delimiter);
 		    	assert ( table_attr_name[counter] == tokens_next_line[0] );
 		    	assert (table_attr_type[counter].attrType == (tokens_next_line[1].equals("STR") ? AttrType.attrString : AttrType.attrInteger) );
 		    	counter++;
@@ -1459,7 +1503,7 @@ public class Table implements GlobalConst{
 		    {
 		    	rids_deleted.clear();
 		    	String temp_next_line = sc.nextLine().trim();
-		    	String[] token_next_line = temp_next_line.split("\\s+");
+		    	String[] token_next_line = temp_next_line.split(this.data_file_delimiter);
 		    	for ( int i=0; i<table_num_attr; i++ ) {
 		    		try {
 			    		switch ( table_attr_type[i].attrType ) {
@@ -1617,14 +1661,15 @@ public class Table implements GlobalConst{
 	  System.out.println("RID page no. "+rid.pageNo.pid);
 	  rid = hp.insertRecord(t3, this.table_attr_type, this.table_attr_size, this.clustered_btree_attr, get_clustered_index_filename(clustered_btree_attr, "btree"));
 	  System.out.println("RID page no. "+rid.pageNo.pid);*/
+    
 	  /*FldSpec[] projlist = new FldSpec[this.table_num_attr];
 	  RelSpec rel = new RelSpec(RelSpec.outer);
 	  for ( int i=0; i<this.table_num_attr; i++ ) {
 		  projlist[i] = new FldSpec(rel, i+1);
 	  }
-	  IndexScan iscan = new IndexScan(new IndexType(IndexType.Cl_B_Index_DESC), 
+	  IndexScan iscan = new IndexScan(new IndexType(IndexType.Cl_B_Index_ASC), 
 			   						  this.table_heapfile, 
-			   						  this.get_clustered_index_filename(2, "btree"), 
+			   						  this.get_clustered_index_filename(1, "btree"),
 			   						  this.table_attr_type, 
 			   						  this.table_attr_size, 
 			   						  this.table_num_attr, 
