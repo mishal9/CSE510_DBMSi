@@ -22,6 +22,7 @@ public class OurFileScan extends Iterator{
     private CondExpr[] OutputFilter;
     private int[] _pref_list;
     public FldSpec[] perm_mat;
+    private RID rid;
 
     /**
      * constructor
@@ -45,7 +46,7 @@ public class OurFileScan extends Iterator{
         in1_len = len_in1;
         s_sizes = s1_sizes;
         _pref_list = pref_list;
-
+        rid = new RID();
         Jtuple = new Tuple();
         AttrType[] Jtypes = new AttrType[n_out_flds+1];
         short[] ts_size;
@@ -105,27 +106,30 @@ public class OurFileScan extends Iterator{
             UnknowAttrType,
             FieldNumberOutOfBoundException,
             WrongPermat {
-        RID rid = new RID();
 
-        while (true) {
+
+        //while (true) {
             if ((tuple1 = scan.getNext(rid)) == null) {
                 return null;
-            }
+            }else {
 
-            tuple1.setHdr(in1_len, _in1, s_sizes);
-            if (PredEval.Eval(OutputFilter, tuple1, null, _in1, null) == true) {
-                Projection.Project(tuple1, _in1, Jtuple, perm_mat, nOutFlds);
+                tuple1.setHdr(in1_len, _in1, s_sizes);
+                if (PredEval.Eval(OutputFilter, tuple1, null, _in1, null) == true) {
+                    Projection.Project(tuple1, _in1, Jtuple, perm_mat, nOutFlds);
 
-                float sum = 0;
-                for(int i=0 ; i<_pref_list.length;i++){
-                    sum += Jtuple.getFloFld(_pref_list[i]);
+                    float sum = 0;
+                    for (int i = 0; i < _pref_list.length; i++) {
+                        sum += Jtuple.getFloFld(_pref_list[i]);
 //                    System.out.print(Jtuple.getFloFld(_pref_list[i]));
-                }
-                Jtuple.setFloFld(Jtuple.noOfFlds(), sum);
+                    }
+                    Jtuple.setFloFld(Jtuple.noOfFlds(), sum);
 //                System.out.println(" | "+sum);
-                return Jtuple;
+                    return Jtuple;
+                }
             }
-        }
+        //}
+
+        return null;
     }
 
     /**

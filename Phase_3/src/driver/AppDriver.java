@@ -52,7 +52,7 @@ class Driver extends TestDriver implements GlobalConst
         dbpath = "MINIBASE.minibase-db";
 		logpath = "MINIBASE.minibase-log";
         // Each page can handle at most 25 tuples on original data => 7308 / 25 = 292
-        SystemDefs sysdef = new SystemDefs(dbpath,160000, 3000,"Clock");
+        SystemDefs sysdef = new SystemDefs(dbpath,7000, 500,"Clock");
 
         // Kill anything that might be hanging around
         String newdbpath;
@@ -137,15 +137,15 @@ class Driver extends TestDriver implements GlobalConst
         int choice= GetStuff.getChoice();
          switch(choice) {
          case 1:
-        	 dataFile = OS.indexOf("mac") >= 0 ? "data/demo_data/nc_2_3000_single.txt" : "data/data2.txt";
+        	 dataFile = OS.indexOf("mac") >= 0 ? "../../data/data2.txt" : "data/data2.txt";
         	 numberOfDimensions = 2;
         	 break;
          case 2:
-        	 dataFile = OS.indexOf("mac") >= 0 ? "data/data3.txt" : "data/data3.txt";
+        	 dataFile = OS.indexOf("mac") >= 0 ? "../../data/data3.txt" : "data/data3.txt";
         	 numberOfDimensions = 5;
         	 break;
          case 3:
-        	 dataFile = OS.indexOf("mac") >= 0 ? "data/data_large_skyline.txt" : "data/data_large_skyline.txt";
+        	 dataFile = OS.indexOf("mac") >= 0 ? "../../data/data_large_skyline.txt" : "data/data_large_skyline.txt";
         	 numberOfDimensions = 2;
         	 break;
          default:
@@ -482,51 +482,6 @@ class Driver extends TestDriver implements GlobalConst
 
         PCounter.initialize();
 
-        /*
-        try {
-            fscan = new FileScan(hFile, attrType, attrSize, (short) COLS, COLS, projlist, null);
-        }
-        catch (Exception e) {
-            status = FAIL;
-            e.printStackTrace();
-        }
-
-        SortFirstSky sortFirstSky = null;
-        try {
-            sortFirstSky = new SortFirstSky(attrType,
-                (short) COLS,
-                attrSize,
-                fscan,
-                (short)_t_size,
-                hFile,
-                _pref_list,
-                _pref_list.length,
-                _n_pages);
-
-
-            while(sortFirstSky.hasNext()) {
-                System.out.println("Skyline object: ");
-                sortFirstSky.get_next().print(attrType);
-            }
-
-
-            
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            status = OK;
-            // clean up
-            try {
-                sortFirstSky.close();
-            }
-            catch (Exception e) {
-                status = FAIL;
-                e.printStackTrace();
-            }
-        }
-
-         */
-
         FldSpec[] projlist = new FldSpec[COLS+1];
         RelSpec rel = new RelSpec(RelSpec.outer);
         for(int i=0;i<COLS;i++)
@@ -562,16 +517,15 @@ class Driver extends TestDriver implements GlobalConst
 
         Sort sort = null;
         try {
-            sort = new Sort(attrType_for_sort, (short) (COLS+1), attrSize, fscan, (COLS+1), new TupleOrder(TupleOrder.Descending), 32, _n_pages/2);
+            sort = new Sort(attrType_for_sort, (short) (COLS+1), attrSize, fscan, (COLS+1), new TupleOrder(TupleOrder.Descending), 32, 5);
         }
         catch (Exception e) {
             status = FAIL;
             e.printStackTrace();
         }
-        System.out.println("Number of Disk reads: "+ PCounter.get_rcounter());
-        System.out.println("Number of Disk writes: "+ PCounter.get_wcounter());
-        PCounter.initialize();
+
         // pass this sort object to the sortfirstsky
+        int numSkyEle = 0;
 
         SortFirstSky sortFirstSky = null;
         try {
@@ -583,11 +537,10 @@ class Driver extends TestDriver implements GlobalConst
                     hFile,
                     _pref_list,
                     _pref_list.length,
-                    _n_pages);
+                    _n_pages-5);
 
             System.out.println("Skyline object: ");
             Tuple temp;
-            int numSkyEle = 0;
             try {
                 temp = sortFirstSky.get_next();
                 while (temp!=null) {
@@ -615,8 +568,11 @@ class Driver extends TestDriver implements GlobalConst
             }
         }
 
+        System.out.println("Skyline Length: "+numSkyEle);
         System.out.println("Number of Disk reads: "+ PCounter.get_rcounter());
         System.out.println("Number of Disk writes: "+ PCounter.get_wcounter());
+
+        SystemDefs.JavabaseBM.limit_memory_usage(false, _n_pages);
         PCounter.initialize();
 
     }
