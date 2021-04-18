@@ -7,6 +7,7 @@ import btree.*;
 import iterator.*;
 import heap.*; 
 import java.io.*;
+import java.util.List;
 
 
 /**
@@ -136,6 +137,25 @@ public class IndexScan extends Iterator {
 			}
 
 			break;
+		case IndexType.Cl_B_Index_ASC:
+			// error check the select condition
+			// must be of the type: value op symbol || symbol op value
+			// but not symbol op symbol || value op value
+			try {
+				indFile = new ClusteredBTreeFile(indName);
+			}
+			catch (Exception e) {
+				throw new IndexException(e, "IndexScan.java: BTreeFile exceptions caught from ClusteredBTreeFile constructor");
+			}
+
+			try {
+				indScan = (ClBTFileScanASC) IndexUtils.ClBTree_scan_ASC(selects, indFile);
+			}
+			catch (Exception e) {
+				throw new IndexException(e, "IndexScan.java: ClusteredBTreeFile exceptions caught from IndexUtils.ClBTree_scan().");
+			}
+
+			break;
 		case IndexType.None:
 		default:
 			throw new UnknownIndexTypeException("Only BTree index is supported so far");
@@ -159,7 +179,7 @@ public class IndexScan extends Iterator {
 			UnknownKeyTypeException,
 			IOException
 	{
-		if ( _index_type.indexType == IndexType.Cl_B_Index_DESC ) {
+		if ( ( _index_type.indexType == IndexType.Cl_B_Index_DESC ) || ( _index_type.indexType == IndexType.Cl_B_Index_ASC ) ) {
 			Tuple temper = indScan.get_next_tuple();
 			try {
 				Tuple temper_hdr = TupleUtils.getEmptyTuple(_types, _s_sizes);
@@ -329,6 +349,14 @@ public class IndexScan extends Iterator {
 					throw new IndexException(e, "BTree error in destroying index scan.");
 				}
 			}
+			if (indScan instanceof ClBTFileScanASC) {
+				try {
+					((ClBTFileScanASC)indScan).DestroyBTreeFileScan();
+				}
+				catch(Exception e) {
+					throw new IndexException(e, "BTree error in destroying index scan.");
+				}
+			}
 			try {
 				indFile.close();
 			} catch (PageUnpinnedException e) {
@@ -363,6 +391,11 @@ public class IndexScan extends Iterator {
 	private int           _fldNum;       
 	private boolean       index_only;
 	private IndexType     _index_type;
+	@Override
+	public List<Tuple> get_next_aggr() throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
 }
 

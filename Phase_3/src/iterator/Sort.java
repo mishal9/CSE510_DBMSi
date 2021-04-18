@@ -1,6 +1,8 @@
 package iterator;
 
 import java.io.*;
+import java.util.List;
+
 import global.*;
 import bufmgr.*;
 import diskmgr.*;
@@ -744,6 +746,12 @@ public class Sort extends Iterator implements GlobalConst
             closeFlag = true;
         }
     }
+
+	@Override
+	public List<Tuple> get_next_aggr() throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
 }
 

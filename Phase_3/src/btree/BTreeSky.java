@@ -1,8 +1,10 @@
 package btree;
 
 import java.io.IOException;
+import java.util.List;
 
 import bufmgr.PageNotReadException;
+import driver.BtreeGeneratorUtil;
 import global.AttrType;
 import global.GlobalConst;
 import global.RID;
@@ -103,6 +105,7 @@ public class BTreeSky extends Iterator implements GlobalConst {
 				//System.out.println("getNumUnpinnedBuffers "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
 			}
 		}
+		KeyClass firstSkyEleKey = null; int btreeWithFirstSkyEle = -1;
 		RID firstSkyLineElementRID = null;
 		boolean stopBtreeSkyLoop =false;
 		for (int skyLoopCtr = 0; /*skyLoopCtr <= 5 &&*/ stopBtreeSkyLoop  == false; skyLoopCtr++) {
@@ -141,6 +144,9 @@ public class BTreeSky extends Iterator implements GlobalConst {
 				if (foundCount == (numberOfBtreeIndexes - 1)) {
 					stopBtreeSkyLoop = true; // stop the btree skyline loop
 					firstSkyLineElementRID = rid;
+					firstSkyEleKey = scannedVal.key;
+					btreeWithFirstSkyEle = i;
+					System.out.println("firstSkyEleKey: "+firstSkyEleKey+" btreeWithFirstSkyEle: "+btreeWithFirstSkyEle);
 					if (debug) {
 						System.out.println("firstSkyLineElement: " + firstSkyLineElementRID);
 					}
@@ -166,7 +172,31 @@ public class BTreeSky extends Iterator implements GlobalConst {
 		firstSkyLineElement.tupleCopy(originalDataHeapFile.getRecord(firstSkyLineElementRID));
 
 		//create heapfile with all elements of the all the arrays of the indexes
+		
+		//BtreeGeneratorUtil.scanBtree(relationName,btreeindexes[btreeWithFirstSkyEle].dbname, attrType, t1_str_sizes,5,btreeWithFirstSkyEle);
+		//handling duplicates on skyline
+		//do handle duplicates open a scan on btree which found the first sky eleemnt
+		// keep scanning till key is same as key of first sky element
+		BTFileScan bla = btreeindexes[btreeWithFirstSkyEle].new_scan(firstSkyEleKey, null);
+		for (boolean flag = false; flag == false; ) {
+			KeyDataEntry scannedVal = bla.get_next();
+			if (scannedVal == null) {
+				//System.out.println("got null");
+				flag = true;
+				break;
+			}
 
+			RID rid = ((LeafData) scannedVal.data).getData();
+			KeyClass key = scannedVal.key;
+			//System.out.println("key::::::::::::::::;; "+key+" sky key:"+firstSkyEleKey);
+			if (BT.keyCompare(key, firstSkyEleKey) == 0) {
+				//System.out.println("heuheuehuehueheu: " + key + " rid: " + rid);
+				setArr[btreeWithFirstSkyEle].add(rid);
+			} else {
+				flag = true;
+			}
+		}
+		bla.DestroyBTreeFileScan();
 		//create a heapfile which will store the pruned data
 		Heapfile prunedDataFile = new Heapfile(prunedHeapFileName );
 
@@ -264,7 +294,19 @@ public class BTreeSky extends Iterator implements GlobalConst {
 
 	@Override
 	public void close() throws IOException, JoinsException, SortException, IndexException {
+		try {
+			new Heapfile(prunedHeapFileName).deleteFile();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 		blockNestedLoopSkyline.close();
+	}
+
+
+	@Override
+	public List<Tuple> get_next_aggr() throws Exception {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

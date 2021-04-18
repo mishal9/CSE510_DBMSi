@@ -7,6 +7,7 @@ import bufmgr.*;
 import java.lang.*;
 import java.io.*;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  *use the iterator and relationName to compute the skyline using nested loop method
@@ -243,6 +244,14 @@ public class NestedLoopsSky extends Iterator
             closeFlag = true;
         }
     }
+
+
+
+	@Override
+	public List<Tuple> get_next_aggr() throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
 }
 

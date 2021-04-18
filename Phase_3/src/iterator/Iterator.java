@@ -5,6 +5,7 @@ import diskmgr.*;
 import bufmgr.*;
 import index.*;
 import java.io.*;
+import java.util.List;
 
 /**
  *All the relational operators and access methods are iterators.
@@ -20,6 +21,11 @@ public abstract class Iterator implements Flags {
    */
   public boolean closeFlag = false; // added by bingjie 5/4/98
 
+  /* used to store the table on which this iterator is working on.
+   * In cases where this iterator is working on sort, the string
+   * will remain empty
+   */
+  public String tablename = "";
   /**
    *abstract method, every subclass must implement it.
    *@return the result tuple
@@ -52,6 +58,7 @@ public abstract class Iterator implements Flags {
 	   UnknownKeyTypeException,
 	   Exception;
 
+  public abstract List<Tuple> get_next_aggr() throws Exception;
   /**
    *@exception IOException I/O errors
    *@exception JoinsException some join exception

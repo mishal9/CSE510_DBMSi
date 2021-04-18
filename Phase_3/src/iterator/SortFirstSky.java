@@ -8,6 +8,7 @@ import index.IndexException;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 
 import static tests.TestDriver.FAIL;
 import static tests.TestDriver.OK;
@@ -237,5 +238,11 @@ public class SortFirstSky extends Iterator implements GlobalConst {
 
         return;
     }
+
+	@Override
+	public List<Tuple> get_next_aggr() throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
 }

@@ -5,6 +5,7 @@ import static tests.TestDriver.OK;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 
 import bufmgr.PageNotReadException;
 import global.AttrType;
@@ -260,6 +261,14 @@ public class BTreeSortedSky extends Iterator implements GlobalConst {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	}
+
+
+
+	@Override
+	public List<Tuple> get_next_aggr() throws Exception {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

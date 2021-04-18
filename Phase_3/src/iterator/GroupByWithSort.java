@@ -144,6 +144,7 @@ public class GroupByWithSort extends Iterator{
 
     public List<Tuple> get_next_aggr() throws IOException, FieldNumberOutOfBoundException {
         _result = new ArrayList<>();
+
         Tuple result = new Tuple(this._tuple_size);
         try {
             result.setHdr((short) _len_in, _attrType, _attr_sizes);
