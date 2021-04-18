@@ -485,7 +485,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
      * part of task
      * structure: groupby SORT/HASH MAX/MIN/AGG/SKY G_ATT_NO{ATT_NO1,...ATT_NOh} TABLENAME NPAGES [MATER OUTTABLENAME]
      * */
-    public void parse_groupby() {
+    public void parse_groupby() throws JoinsException, IndexException, InvalidTupleSizeException, InvalidTypeException, PageNotReadException, PredEvalException, SortException, LowMemException, UnknowAttrType, UnknownKeyTypeException, Exception {
     	try {
 	    	/* ----------------------which GROUPBY needs to be calculated ------------------------------------*/
 	    	String group_algo = tokens[1]; //SORT/HASH
@@ -544,24 +544,84 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    		System.out.println("Calculating groupby "+group_algo+" on table "+ groupby_tablename+" on attribute "+ groupby_attribute +
 	    				" with buffer pages: "+groupby_n_pages+ " and aggregation type "+ agg_algo + " on attributes" + Arrays.toString(agg_attributes));
 	    	}
+	    	AggType agg = null;
+	    	if ( agg_algo.equals("MIN") ) {
+	    		agg = new AggType(AggType.MIN);
+	    	}
+	    	else if ( agg_algo.equals("MAX") ) {
+	    		agg = new AggType(AggType.MAX);
+	    	}
+	    	else if ( agg_algo.equals("SKY") ) {
+	    		agg = new AggType(AggType.SKYLINE);
+	    	}
+	    	else if ( agg_algo.equals("AVG") ) {
+	    		agg = new AggType(AggType.AVG);
+	    	}
+	    	else {
+	    		agg = null;
+	    	}
 	    	
-	    	/* run the appropriate skyline algorithm */
+	    	Table groupby_table = SystemDefs.JavabaseDB.get_relation(groupby_tablename);
+	    	if ( ( agg == null ) || ( groupby_table == null ) ) {
+	    		validate_token_length(0, "groupby");
+	    		System.err.println("***ERROR in the Query***");
+	    		return;
+	    	}
+	    	Iterator groupby = null;
+	    	FldSpec[] groupby_projection = get_projection_for_table(groupby_table, "outer", -1);
+			FileScan groupby_table_file_scan =  new FileScan(groupby_table.getTable_heapfile(), 
+														   	 groupby_table.getTable_attr_type(),
+														   	 groupby_table.getTable_attr_size(),
+														   	 (short) groupby_table.getTable_num_attr(),
+														   	 (short) groupby_table.getTable_num_attr(),
+														   	 groupby_projection, 
+														   	 null);
+			FldSpec[] agg_fldspc = get_aggregation_list(agg_attributes);
+			FldSpec groupByAttr = new FldSpec(new RelSpec(RelSpec.outer), groupby_attribute);
+	    	/* run the appropriate groupby algorithm */
 	    	switch ( group_algo ) {
 	    		case "HASH":
 	    			//TBD run HASH groupby with proper params
 	    			break;
 	    		case "SORT":
 	    			//TBD run SORT hash with proper params
+	    			System.out.println("Running groupby sort algorithm");
+	    			groupby = new GroupByWithSort(groupby_table.getTable_attr_type(),
+	    										  groupby_table.getTable_num_attr(),
+	    										  groupby_table.getTable_attr_size(),
+	    										  groupby_table_file_scan,
+	    										  groupByAttr,
+	    										  agg_fldspc,
+	    										  agg,
+	    										  groupby_projection,
+	    										  groupby_projection.length,
+	    										  groupby_n_pages);
 	    			break;
 	    		default:
 	    			validate_token_length(0, "groupby");
 	    			break;
 	    	}
+	    	Tuple temp = groupby.get_next();
+	    	while ( temp!= null ) {
+	    		System.out.print("Next element: ");
+	    		temp.print(groupby_table.getTable_attr_type());
+	    		temp = groupby.get_next();
+	    	}
+	    	groupby.close();
     	}catch (ArrayIndexOutOfBoundsException e){
 	        validate_token_length(0, "groupby");
 	    }catch (NegativeArraySizeException e) {
 	    	validate_token_length(0, "groupby");
 	    }
+    }
+    
+    private FldSpec[] get_aggregation_list( int[] pref_list) {
+    	FldSpec[] fldspc = new FldSpec[pref_list.length];
+    	RelSpec rel = new RelSpec(RelSpec.outer);
+    	for ( int i=0; i<pref_list.length; i++ ) {
+    		fldspc[i] = new FldSpec(rel, pref_list[i]);
+    	}
+    	return fldspc;
     }
     
     /* parses the join query for the exact structure 
