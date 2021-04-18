@@ -705,7 +705,7 @@ class GroupBySortDriver extends TestDriver
     {
         System.out.println("------------------------ TEST 5 --------------------------");
         try{
-            readDataIntoHeap("../../data/data3.txt");
+            readDataIntoHeap("../../data/Phase3_report_dataset/subset1.csv");
         }catch (Exception e){
             e.printStackTrace();
         }
