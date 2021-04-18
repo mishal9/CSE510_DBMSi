@@ -143,7 +143,6 @@ public class GroupByWithSort extends Iterator{
     }
 
     public List<Tuple> get_next_aggr() throws IOException, FieldNumberOutOfBoundException {
-        System.out.println("Allocated n_pages to grpBySort: "+(_n_pages - 3));
         _result = new ArrayList<>();
         Tuple result = new Tuple(this._tuple_size);
         try {
