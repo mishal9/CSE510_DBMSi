@@ -12,8 +12,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static global.GlobalConst.MINIBASE_PAGESIZE;
-
 public class GroupByWithHash extends Iterator{
     public static List<Tuple> _result;
     private static AttrType[] _attrType;
@@ -21,7 +19,6 @@ public class GroupByWithHash extends Iterator{
     private static boolean status = true;
     private static short[] _attr_sizes;
     private static AggType _agg_type;
-    private static int idx;
     // number of tuples the queue can hold
     private int _n_pages;
     private int          _tuple_size;
