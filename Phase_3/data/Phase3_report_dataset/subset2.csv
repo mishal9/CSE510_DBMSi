@@ -1,0 +1,8 @@
+6,,
+Name,STR,
+Age,INT,
+Address,INT,
+Number,INT,
+Relation,INT,
+PinCode,STR,
+Khushal,1,2,3,4,5

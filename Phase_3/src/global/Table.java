@@ -303,6 +303,30 @@ public class Table implements GlobalConst{
       }
   }
   
+  public void intialise_table_str_sizes() {
+	  /* create the tuple and calculate the size of the tuple */
+	  table_attr_size = new short[table_num_attr];
+	  for(int i=0; i<table_attr_size.length; i++){
+		  table_attr_size[i] = STRSIZE;
+      }
+  }
+  
+  public void intialise_table_bunc() {
+	  /* create the tuple and calculate the size of the tuple */
+	  this.btree_unclustered_attr = new boolean[table_num_attr];
+	  for(int i=0; i<btree_unclustered_attr.length; i++){
+		  btree_unclustered_attr[i] = false;
+      }
+  }
+  
+  public void intialise_table_hunc() {
+	  /* create the tuple and calculate the size of the tuple */
+	  this.hash_unclustered_attr = new boolean[table_num_attr];
+	  for(int i=0; i<hash_unclustered_attr.length; i++){
+		  hash_unclustered_attr[i] = false;
+      }
+  }
+  
   /* create a table from the data file and stores it in the heap file */
   public void create_table(String heap_file_name, String data_file_name) {
 	  try {
@@ -316,7 +340,7 @@ public class Table implements GlobalConst{
 		
 		/* opening the data file for reading */
 		File file = new File(data_folder + table_data_file);
-	    Scanner sc = new Scanner(file);
+	    Scanner sc = new Scanner(file, "utf-8");
 	    sc.useDelimiter(this.data_file_delimiter);
 	    
 	    /* initialising the number of attributes in the table */
@@ -348,7 +372,16 @@ public class Table implements GlobalConst{
 	    	//String[] tokens_next_line = next_line.split("\\s+");
 	    	String[] tokens_next_line = next_line.split(this.data_file_delimiter);
 	    	table_attr_name[counter] = tokens_next_line[0];
-	    	table_attr_type[counter] = new AttrType(tokens_next_line[1].equals("STR") ? AttrType.attrString : AttrType.attrInteger);
+	    	if ( tokens_next_line[1].equals("STR") ) {
+	    		table_attr_type[counter] = new AttrType(AttrType.attrString);
+	    	}
+	    	else if ( tokens_next_line[1].equals("INT") ) {
+	    		table_attr_type[counter] = new AttrType(AttrType.attrInteger);
+	    	}
+	    	else {
+	    		table_attr_type[counter] = new AttrType(AttrType.attrReal);
+	    	}
+	    	//table_attr_type[counter] = new AttrType(tokens_next_line[1].equals("STR") ? AttrType.attrString : AttrType.attrInteger);
 	    	counter++;
 	    }
 	    
@@ -381,6 +414,9 @@ public class Table implements GlobalConst{
 		    				break;
 		    			case AttrType.attrInteger:
 		    				t.setIntFld(i+1, Integer.parseInt(token_next_line[i]));
+		    				break;
+		    			case AttrType.attrReal:
+		    				t.setFloFld(i+1, Float.parseFloat(token_next_line[i]));
 		    				break;
 		    			default:
 		    				break;	    			
@@ -453,6 +489,9 @@ public class Table implements GlobalConst{
         				st.addRow(t.getStrFld(i+1));
         				//System.out.print(t.getStrFld(i+1) + table_sep);
         				break;
+        			case AttrType.attrReal:
+        				st.addRow(Float.toString(t.getFloFld(i+1)));
+        				break;
         			default:
         				System.out.println("Error in the system");
         				System.exit(0);
@@ -514,6 +553,9 @@ public class Table implements GlobalConst{
         			case AttrType.attrString:
         				System.out.print(t.getStrFld(i+1) + table_sep);
         				break;
+        			case AttrType.attrReal:
+        				System.out.println(t.getFloFld(i+1) + table_sep);
+        				break;
         			default:
         				System.out.println("Error in the system");
         				System.exit(0);
@@ -551,7 +593,7 @@ public class Table implements GlobalConst{
 		Scan scan = hf.openScan();
 		
 		/* keep the key ready for insertion */
-		KeyClass key;
+		//KeyClass key;
 		
 		// create the index file
 		BTreeFile btf  = new BTreeFile(this.get_unclustered_index_filename(attr_number, "btree"),
@@ -565,17 +607,17 @@ public class Table implements GlobalConst{
 		Tuple temp = scan.getNext(rid);
 		while ( temp != null ) {
 			t.tupleCopy(temp);
-			if ( table_attr_type[attr_number-1].attrType == AttrType.attrInteger ) {
+			KeyClass key = TupleUtils.get_key_from_tuple_attrtype(t, table_attr_type[attr_number-1], attr_number);
+			/*if ( table_attr_type[attr_number-1].attrType == AttrType.attrInteger ) {
 				key = new IntegerKey(t.getIntFld(attr_number));
 			}
 			else {
 				key = new StringKey(t.getStrFld(attr_number));
-			}
+			}*/
 			btf.insert(key, rid);
 			temp = scan.getNext(rid);
 		}
 		scan.closescan();
-
 		//BT.printBTree(btf.getHeaderPage());
 		//BT.printAllLeafPages(btf.getHeaderPage());
 		btf.close();
@@ -684,21 +726,19 @@ public class Table implements GlobalConst{
 		Tuple t = TupleUtils.getEmptyTuple(table_attr_type, table_attr_size);
 		Tuple temp = scan.getNext(rid);
 		while ( temp != null ) {
-			HashKey key;
 			t.tupleCopy(temp);
-			if ( table_attr_type[attr_number-1].attrType == AttrType.attrInteger ) {
+			HashKey key = TupleUtils.get_hashkey_from_tuple_attrtype(t, table_attr_type[attr_number-1], attr_number);
+			/*if ( table_attr_type[attr_number-1].attrType == AttrType.attrInteger ) {
 				key = new HashKey(t.getIntFld(attr_number));
 			}
 			else {
 				key = new HashKey(t.getStrFld(attr_number));
-			}
+			}*/
 			hasher.insert(key, rid);
 			temp = scan.getNext(rid);
 		}
 		scan.closescan();
-
 		//hasher.printBucketInfo();
-
 		hasher.close();
 		
 		/* mark the unclustered index exist key */
@@ -1017,11 +1057,9 @@ public class Table implements GlobalConst{
 	}
   }
   
-
   /* inserts a key,rid pair into an already existing
    * unclustered index
    */
-
   private void insert_into_unclustered_index( Tuple t, RID rid ) {
 	  // TBD/* update all the btree clustered indexes */
 	  
@@ -1375,7 +1413,6 @@ public class Table implements GlobalConst{
 			else {
 				key = new StringKey(t_s.getStrFld(this.clustered_btree_attr));
 			}
-
         	curr_rid = hf1.insertRecord(t_s.getTupleByteArray()/*, this.table_attr_type, this.table_attr_size*/);
         	System.out.println("BTREE clustered insert rid page "+ curr_rid.pageNo.pid+" slot "+curr_rid.slotNo);
         	if ( ( prev_rid.pageNo.pid != curr_rid.pageNo.pid ) && ( prev_rid.pageNo.pid != INVALID_PAGE ) ) {
@@ -1638,18 +1675,15 @@ public class Table implements GlobalConst{
 	  System.out.println("RID page no. "+rid.pageNo.pid);
 	  rid = hp.insertRecord(t3, this.table_attr_type, this.table_attr_size, this.clustered_btree_attr, get_clustered_index_filename(clustered_btree_attr, "btree"));
 	  System.out.println("RID page no. "+rid.pageNo.pid);*/
-
+    
 	  /*FldSpec[] projlist = new FldSpec[this.table_num_attr];
-
 	  RelSpec rel = new RelSpec(RelSpec.outer);
 	  for ( int i=0; i<this.table_num_attr; i++ ) {
 		  projlist[i] = new FldSpec(rel, i+1);
 	  }
-	  IndexScan iscan = new IndexScan(new IndexType(IndexType.Cl_B_Index_DESC), 
+	  IndexScan iscan = new IndexScan(new IndexType(IndexType.Cl_B_Index_ASC), 
 			   						  this.table_heapfile, 
-
-			   						  this.get_clustered_index_filename(2, "btree"), 
-
+			   						  this.get_clustered_index_filename(1, "btree"),
 			   						  this.table_attr_type, 
 			   						  this.table_attr_size, 
 			   						  this.table_num_attr, 
@@ -1689,7 +1723,6 @@ public class Table implements GlobalConst{
 	  return deleted;
   }
   
-
   /* removes list of rids from a table's unclustered indexes */
   private void delete_records_from_unclustered_indexes(List<RID> deleted, Tuple deleted_tuple) {
 	  // TBD/* update all the btree clustered indexes */
@@ -1801,7 +1834,6 @@ public class Table implements GlobalConst{
 		}
   }
   
-
   /* adds and delete data to unclustered indexes
    * from the global queue in DB
    */
@@ -1886,7 +1918,6 @@ public class Table implements GlobalConst{
 		  }
 	  }
   }
-
 
   /* adds table to global queue */
   public void add_table_to_global_queue() {

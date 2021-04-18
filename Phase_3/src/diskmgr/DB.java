@@ -84,7 +84,6 @@ public class DB implements GlobalConst {
 	public void read_table_relation() {
 		try {
 			//System.out.println("reading the tables in DB");
-			//System.out.println(table_relation);
 			Heapfile hf = new Heapfile(table_relation);
 			Scan relation_scan = hf.openScan();
 			//System.out.println("Number of tables in the DB "+hf.getRecCnt());
@@ -167,7 +166,6 @@ public class DB implements GlobalConst {
 					temp_t = relation_scan.getNext(rid);
 				}
 			}
-			hf.deleteFile();
 		} catch (HFException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -190,9 +188,6 @@ public class DB implements GlobalConst {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (InvalidSlotNumberException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (FileAlreadyDeletedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
@@ -253,7 +248,6 @@ public class DB implements GlobalConst {
     
     name = fname;
     table_relation = fname+"TRkhusmodi.in";
-    read_table_relation();
     
     // Create a random access file
     fp = new RandomAccessFile(fname, "rw");
@@ -272,6 +266,7 @@ public class DB implements GlobalConst {
     num_pages = firstpg.getNumDBPages();
     
     unpinPage(pageId, false /* undirty*/);
+    read_table_relation();
   }
   
   /** default constructor.
@@ -338,7 +333,7 @@ public class DB implements GlobalConst {
         set_bits(pageId, 1+num_map_pages, 1);
     }
     
-    read_table_relation();
+    //read_table_relation();
 
   }
   
@@ -351,9 +346,23 @@ public class DB implements GlobalConst {
   }
   
   public void add_all_table_to_relation() {
+	  try {
+		  Heapfile hf = new Heapfile(table_relation);
+		  hf.deleteFile();
+	  } catch (HFException | HFBufMgrException | HFDiskMgrException | IOException | InvalidTupleSizeException e) {
+		  // TODO Auto-generated catch block
+		  e.printStackTrace();
+	  } catch (InvalidSlotNumberException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (Exception e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	}
 	  java.util.Iterator<Table> it = tables.iterator();
 	  while ( it.hasNext() ) {
 		  Table temp_table = it.next();
+		  System.out.println("Flushing table "+temp_table.getTablename()+" to memory...");
 		  add_to_relation_tables(temp_table);
 	  }
   }

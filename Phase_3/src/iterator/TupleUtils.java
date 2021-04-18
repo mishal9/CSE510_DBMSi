@@ -2,10 +2,12 @@ package iterator;
 
 import heap.*;
 import global.*;
+import hashindex.*;
 import java.io.*;
 import java.lang.*;
 import java.util.Arrays;
 
+import btree.FloatKey;
 import btree.IntegerKey;
 import btree.KeyClass;
 import btree.StringKey;
@@ -401,8 +403,49 @@ public class TupleUtils {
 		if ( attrtype[key_index-1].attrType == AttrType.attrInteger ) {
 			key = new IntegerKey( tuple.getIntFld(key_index) );
 		}
+		if ( attrtype[key_index-1].attrType == AttrType.attrReal ) {
+			key = new FloatKey( tuple.getFloFld(key_index) );
+		}
 		else {
 			key = new StringKey( tuple.getStrFld(key_index) );
+		}
+		return key;
+	}
+	
+	public static KeyClass get_key_from_tuple_attrtype( Tuple t, AttrType attr_type, int attr_number) throws FieldNumberOutOfBoundException, IOException {
+		KeyClass key = null;
+		switch (attr_type.attrType) {
+			case AttrType.attrInteger:
+				key = new IntegerKey(t.getIntFld(attr_number));
+				break;
+			case AttrType.attrString:
+				key = new StringKey(t.getStrFld(attr_number));
+				break;
+			case AttrType.attrReal:
+				key = new FloatKey(t.getFloFld(attr_number));
+				break;
+			default:
+				System.out.println("Wrong key information");
+				break;
+		}
+		return key;
+	}
+	
+	public static HashKey get_hashkey_from_tuple_attrtype( Tuple t, AttrType attr_type, int attr_number) throws FieldNumberOutOfBoundException, IOException {
+		HashKey key = null;
+		switch (attr_type.attrType) {
+			case AttrType.attrInteger:
+				key = new HashKey(t.getIntFld(attr_number));
+				break;
+			case AttrType.attrString:
+				key = new HashKey(t.getStrFld(attr_number));
+				break;
+			case AttrType.attrReal:
+				key = new HashKey(t.getFloFld(attr_number));
+				break;
+			default:
+				System.out.println("Wrong key information");
+				break;
 		}
 		return key;
 	}
