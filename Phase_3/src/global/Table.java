@@ -276,11 +276,6 @@ public class Table implements GlobalConst{
 	  this.table_heapfile = tablename + heapfile_ext;
   }
   
-  public Table( String tablename, String mater ) {
-	  this.tablename = tablename;
-	  this.table_heapfile = tablename + heapfile_ext;
-  }
-  
   public Table( String tablename,
 		  		int table_num_attr,
 		  		AttrType[] table_attr_type,
