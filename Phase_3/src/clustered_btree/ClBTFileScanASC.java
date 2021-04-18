@@ -19,7 +19,7 @@ import heap.*;
  * index files (class BTreeFile).  It derives from abstract base
  * class IndexFileScan.  
  */
-public class ClBTFileScan  extends IndexFileScan
+public class ClBTFileScanASC  extends IndexFileScan
 implements  GlobalConst
 {
 
@@ -77,7 +77,7 @@ implements  GlobalConst
 			RID rid_data_page = ((LeafData)entry.data).getData();
 			datapage = new HFPage();
 			SystemDefs.JavabaseBM.pinPage(rid_data_page.pageNo, datapage, false);
-			next_data_scan = datapage.lastRecord();
+			next_data_scan = datapage.firstRecord();
 			if ( prev_page.pid == INVALID_PAGE ) {
 				prev_page = new PageId(rid_data_page.pageNo.pid);
 			}
@@ -87,7 +87,7 @@ implements  GlobalConst
 			}
 		}
 		Tuple ret_tuple = datapage.getRecord(next_data_scan);
-		next_data_scan = datapage.prevRecord(next_data_scan);
+		next_data_scan = datapage.nextRecord(next_data_scan);
 		return ret_tuple;
 	}
 
@@ -96,18 +96,8 @@ implements  GlobalConst
 		// TODO Auto-generated method stub
 		try {
 			if ( first_record ) {
-				while ( true ) {
-					PageId nextLeafPage = leafPage.getNextPage();
-					if ( (nextLeafPage).pid != INVALID_PAGE ) {
-						SystemDefs.JavabaseBM.unpinPage(leafPage.getCurPage(), false);
-						leafPage = new BTLeafPage(nextLeafPage, keyType);
-					}
-					else {
-						break;
-					}
-				}
 				first_record = false;
-				next_rid_scan = leafPage.lastRecord();
+				next_rid_scan = leafPage.firstRecord();
 				return next_data_record();
 			}
 			if ( next_data_scan != null ) {
@@ -116,16 +106,16 @@ implements  GlobalConst
 			else {
 				if ( next_rid_scan != null ) {
 					RID temp_rid = new RID();
-					next_rid_scan = leafPage.prevRecord(next_rid_scan);
+					next_rid_scan = leafPage.nextRecord(next_rid_scan);
 					if ( next_rid_scan != null ) {
 						return next_data_record();
 					}
 				}
-				PageId nextLeafPage = leafPage.getPrevPage();
+				PageId nextLeafPage = leafPage.getNextPage();
 				if ( (nextLeafPage).pid != INVALID_PAGE ) {
 					SystemDefs.JavabaseBM.unpinPage(leafPage.getCurPage(), false);
 					leafPage = new BTLeafPage(nextLeafPage, keyType);
-					next_rid_scan = leafPage.lastRecord();
+					next_rid_scan = leafPage.firstRecord();
 					return next_data_record();
 				}
 				else {
@@ -198,7 +188,8 @@ implements  GlobalConst
 		// TODO Auto-generated method stub
 		return null;
 	}
-  
+
+
 	@Override
 	public KeyDataEntry get_next_entry() {
 		// TODO Auto-generated method stub

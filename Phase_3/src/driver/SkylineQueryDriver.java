@@ -61,6 +61,14 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
         	skyouttable.setTable_num_attr(skytable.getTable_num_attr());
         	skyouttable.setTable_tuple_size(skytable.getTable_tuple_size());
         	skyouttable.setTable_attr_type(skytable.getTable_attr_type());
+          boolean[] bunc = new boolean[skyouttable.getTable_num_attr()];
+          boolean[] hunc = new boolean[skyouttable.getTable_num_attr()];
+          for ( int i=0; i<bunc.length; i++ ) {
+            hunc[i] = false;
+            bunc[i] = false;
+          }
+          skyouttable.setBtree_unclustered_attr(bunc);
+          skyouttable.setHash_unclustered_attr(hunc);
         }
         else {
         	skyouttable = null;
@@ -100,15 +108,7 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
 
     private void close() {
     	if ( skyouttable != null ) {
-    		boolean[] bunc = new boolean[skyouttable.getTable_num_attr()];
-    		boolean[] hunc = new boolean[skyouttable.getTable_num_attr()];
-    		for ( int i=0; i<bunc.length; i++ ) {
-    			hunc[i] = false;
-    			bunc[i] = false;
-    		}
-    		skyouttable.setBtree_unclustered_attr(bunc);
-    		skyouttable.setHash_unclustered_attr(hunc);
-    		skyouttable.add_table_to_global_queue();
+    	  skyouttable.add_table_to_global_queue();
     	}
     }
     
@@ -137,7 +137,7 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
 			Tuple skyEle = btreesky.get_next(); // first sky element
 			System.out.print("First Sky element is: ");
 			skyEle.print(skytable.getTable_attr_type());
-			add_to_mater_table(skyEle);
+			SystemDefs.JavabaseDB.add_to_mater_table(skyEle, this.skyouttable);
 			numSkyEle++;
 			while (skyEle != null) {
 				skyEle = btreesky.get_next(); // subsequent sky elements
@@ -145,7 +145,7 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
 					System.out.println("No more sky elements");
 					break;
 				}
-				add_to_mater_table(skyEle);
+				SystemDefs.JavabaseDB.add_to_mater_table(skyEle, this.skyouttable);
 				numSkyEle++;
 				System.out.print("Sky element is: ");
 				skyEle.print(skytable.getTable_attr_type());
@@ -273,7 +273,7 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
             while (temp!=null) {
             	numSkyEle++;
                 temp.print(table.getTable_attr_type());
-                add_to_mater_table(temp);
+                SystemDefs.JavabaseDB.add_to_mater_table(temp, this.skyouttable);
                 temp = nestedLoopsSky.get_next();
             }
         
@@ -315,7 +315,7 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
             try {
                 temp = blockNestedLoopsSky.get_next();
                 while (temp!=null) {
-                	add_to_mater_table(temp);
+                	SystemDefs.JavabaseDB.add_to_mater_table(temp, this.skyouttable);
                     temp.print(table.getTable_attr_type());
                     numSkyEle++;
                     temp = blockNestedLoopsSky.get_next();
@@ -364,42 +364,5 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
     	}
     	
     	return btreeFileArray;
-    }
-    
-    private void add_to_mater_table(Tuple temp) {
-    	try {
-    		if ( skyouttable == null ) {
-    			return;
-    		}
-			Tuple t = TupleUtils.getEmptyTuple(skyouttable.getTable_attr_type(), skyouttable.getTable_attr_size());
-			t.tupleCopy(temp);
-			Heapfile outheapfile = new Heapfile(skyouttable.getTable_heapfile());
-			RID newrid = outheapfile.insertRecord(t.getTupleByteArray());
-		} catch (InvalidTypeException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (InvalidTupleSizeException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (HFException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (HFBufMgrException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (HFDiskMgrException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (InvalidSlotNumberException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (SpaceNotAvailableException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-    	
     }
 }

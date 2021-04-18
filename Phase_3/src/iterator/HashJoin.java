@@ -12,7 +12,6 @@ import index.*;
 import iterator.*;
 import btree.*;
 
-import java.awt.*;
 import java.lang.*;
 import java.io.*;
 
@@ -52,12 +51,15 @@ public class HashJoin extends Iterator {
     private int inner_relation_attrType, outer_relation_attrType;
     private int key_size=10, target_utilization=50;
     private int n_win1, n_win2, n_current;
-    private HIndex outer_h, h;
+    private HIndex outer_h, inner_h;
     private HashIndexWindowedScan outer_hiws, inner_hiws;
     private FldSpec[] outer_projection, inner_projection;
     Iterator it=null, it_outer=null,it_inner=null;
     AttrType[] Jtypes;
     short[] t_size;
+    private String innertablename;
+    private String outertablename;
+    private Table inner_table, outer_table;
 
     /**
      * constructor
@@ -110,6 +112,12 @@ public class HashJoin extends Iterator {
         OutputFilter = outFilter;
         RightFilter = rightFilter;
 
+        String[] tokens = relationName.split("\\.");
+		this.innertablename = tokens[0];
+		this.outertablename = am1.tablename;
+		inner_table = SystemDefs.JavabaseDB.get_relation(innertablename);
+		outer_table = SystemDefs.JavabaseDB.get_relation(outertablename);
+		
         n_buf_pgs = amt_of_mem;
         inner = null;
         done = false;
@@ -148,8 +156,8 @@ public class HashJoin extends Iterator {
             throw new NestedLoopException(e,"TupleUtilsException is caught by NestedLoopsJoins.java");
         }
 
-        fld1 = OutputFilter[0].operand1.symbol.offset;
-        fld2 = OutputFilter[0].operand2.symbol.offset;
+        fld1 = OutputFilter[0].operand1.symbol.offset; // for outer relation
+        fld2 = OutputFilter[0].operand2.symbol.offset; // for inner relation
 
         index_found = false;
         // check if index exists on the inner relation
@@ -164,60 +172,94 @@ public class HashJoin extends Iterator {
         */
         index_found = false;
 
-        outer_relation_attrType = _in2[fld2-1].attrType;
-        inner_relation_attrType = _in1[fld1-1].attrType;
+        outer_relation_attrType = _in2[fld1-1].attrType;
+        inner_relation_attrType = _in1[fld2-1].attrType;
 
-        h = new HIndex(inner_hash_index_name, inner_relation_attrType, key_size,target_utilization);
         HashKey key=null;
-        Tuple tup;
         RID rid = new RID();
-        if(!index_found){
-            // will have to create hash index on inner.
-            // creating hash index on inner relation.
-            Scan s = (new Heapfile(relationName)).openScan();
-            while((tup=s.getNext(rid))!=null){
-                tup.setHdr((short)in2_len, _in2, t2_str_sizes);
-                switch(inner_relation_attrType) {
-                    case AttrType.attrInteger:
-                        key = new HashKey(tup.getIntFld(fld2));
-                        break;
-                    case AttrType.attrReal:
-                        key = new HashKey(tup.getFloFld(fld2));
-                        break;
-                    case AttrType.attrString:
-                        key = new HashKey(tup.getStrFld(fld2));
-                        break;
-                    default:
-                        System.out.println("Not supposted type for inner relation index.");
-                }
-                h.insert(key, rid);
-            }
-            System.out.println("Hindex on inner relation created.");
+        if ( inner_table == null ) {
+	        inner_h = new HIndex(inner_hash_index_name, inner_relation_attrType, key_size,target_utilization);
+	        Tuple tup;
+	        if(!index_found){
+	            // will have to create hash index on inner.
+	            // creating hash index on inner relation.
+	            Scan s = (new Heapfile(relationName)).openScan();
+	            while((tup=s.getNext(rid))!=null){
+	                tup.setHdr((short)in2_len, _in2, t2_str_sizes);
+	                switch(inner_relation_attrType) {
+	                    case AttrType.attrInteger:
+	                        key = new HashKey(tup.getIntFld(fld2));
+	                        break;
+	                    case AttrType.attrReal:
+	                        key = new HashKey(tup.getFloFld(fld2));
+	                        break;
+	                    case AttrType.attrString:
+	                        key = new HashKey(tup.getStrFld(fld2));
+	                        break;
+	                    default:
+	                        System.out.println("Not supposted type for inner relation index.");
+	                }
+	                inner_h.insert(key, rid);
+	            }
+	            System.out.println("Hindex on inner relation created.");
+	        }
         }
-        n_win1 = h.get_number_of_buckets();
+        else {
+        	if ( inner_table.unclustered_index_exist(fld2, "hash") ) {
+        		//unclustered hash already exist
+        	}
+        	else {
+        		//create and unclustered hash
+        		inner_table.create_unclustered_index(fld2, "hash");
+        	}
+        	inner_hash_index_name = inner_table.get_unclustered_index_filename(fld2, "hash");
+        	outer_temp_heap_name = outer_table.getTable_heapfile();
+        	inner_h = new HIndex(inner_hash_index_name);
+        }
+        n_win1 = inner_h.get_number_of_buckets();
+        inner_h.close();
+        
         // create heap file for outer relation and create hash index on it.
-        Heapfile temp_hf = new Heapfile(outer_temp_heap_name);
-        outer_h = new HIndex(outer_hash_index_name, outer_relation_attrType, key_size, target_utilization);
-        Tuple tup1 = null;
-        while((tup1= am1.get_next())!=null){
-            tup1.setHdr((short)len_in1, _in1, t1_str_sizes);
-            rid = temp_hf.insertRecord(tup1.getTupleByteArray());
-            switch(outer_relation_attrType) {
-                case AttrType.attrInteger:
-                    key = new HashKey(tup1.getIntFld(fld1));
-                    break;
-                case AttrType.attrReal:
-                    key = new HashKey(tup1.getFloFld(fld1));
-                    break;
-                case AttrType.attrString:
-                    key = new HashKey(tup1.getStrFld(fld1));
-                    break;
-                default:
-                    System.out.println("Not supposted type for inner relation index.");
-            }
-            outer_h.insert(key, rid);
+        if ( outer_table == null ) {
+        	Heapfile temp_hf = new Heapfile(outer_temp_heap_name);
+	        outer_h = new HIndex(outer_hash_index_name, outer_relation_attrType, key_size, target_utilization);
+	        Tuple tup1 = null;
+	        while((tup1= am1.get_next())!=null){
+	            tup1.setHdr((short)len_in1, _in1, t1_str_sizes);
+	            rid = temp_hf.insertRecord(tup1.getTupleByteArray());
+	            switch(outer_relation_attrType) {
+	                case AttrType.attrInteger:
+	                    key = new HashKey(tup1.getIntFld(fld1));
+	                    break;
+	                case AttrType.attrReal:
+	                    key = new HashKey(tup1.getFloFld(fld1));
+	                    break;
+	                case AttrType.attrString:
+	                    key = new HashKey(tup1.getStrFld(fld1));
+	                    break;
+	                default:
+	                    System.out.println("Not supposted type for inner relation index.");
+	            }
+	            outer_h.insert(key, rid);
+	        }
+        }
+        else {
+        	if ( outer_table.unclustered_index_exist(fld1, "hash") ) {
+        		//unclustered hash already exist
+        	}
+        	else {
+        		System.out.println("A clustered hash index does not exist on the table\nCreating one....");
+        		//create and unclustered hash
+        		outer_table.create_unclustered_index(fld1, "hash");
+        		
+        	}
+        	outer_hash_index_name = outer_table.get_unclustered_index_filename(fld1, "hash");
+    		outer_temp_heap_name = outer_table.getTable_heapfile();
+        	outer_h = new HIndex(outer_hash_index_name);
         }
         n_win2 = outer_h.get_number_of_buckets();
+        outer_h.close();
+        
         n_current = 0;
         outer_hiws = new HashIndexWindowedScan(new IndexType(IndexType.Hash), outer_temp_heap_name, outer_hash_index_name,
                                                 _in1, t1_str_sizes, in1_len, outer_projection.length, outer_projection,
@@ -409,6 +451,8 @@ public class HashJoin extends Iterator {
                 if(index_found){
 //                    btreefile.close();
                 }
+                outer_hiws.close();
+                inner_hiws.close();
             } catch (Exception e) {
                 throw new JoinsException(e, "NestedLoopsJoin.java: error in closing iterator.");
             }
