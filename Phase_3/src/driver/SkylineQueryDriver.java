@@ -61,15 +61,14 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
         	skyouttable.setTable_num_attr(skytable.getTable_num_attr());
         	skyouttable.setTable_tuple_size(skytable.getTable_tuple_size());
         	skyouttable.setTable_attr_type(skytable.getTable_attr_type());
-        	
-        	boolean[] bunc = new boolean[skyouttable.getTable_num_attr()];
-    		boolean[] hunc = new boolean[skyouttable.getTable_num_attr()];
-    		for ( int i=0; i<bunc.length; i++ ) {
-    			hunc[i] = false;
-    			bunc[i] = false;
-    		}
-    		skyouttable.setBtree_unclustered_attr(bunc);
-    		skyouttable.setHash_unclustered_attr(hunc);
+          boolean[] bunc = new boolean[skyouttable.getTable_num_attr()];
+          boolean[] hunc = new boolean[skyouttable.getTable_num_attr()];
+          for ( int i=0; i<bunc.length; i++ ) {
+            hunc[i] = false;
+            bunc[i] = false;
+          }
+          skyouttable.setBtree_unclustered_attr(bunc);
+          skyouttable.setHash_unclustered_attr(hunc);
         }
         else {
         	skyouttable = null;
@@ -109,7 +108,7 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
 
     private void close() {
     	if ( skyouttable != null ) {
-    		skyouttable.add_table_to_global_queue();
+    	  skyouttable.add_table_to_global_queue();
     	}
     }
     
@@ -366,5 +365,4 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
     	
     	return btreeFileArray;
     }
-
 }

@@ -276,6 +276,11 @@ public class Table implements GlobalConst{
 	  this.table_heapfile = tablename + heapfile_ext;
   }
   
+  public Table( String tablename, String mater ) {
+	  this.tablename = tablename;
+	  this.table_heapfile = tablename + heapfile_ext;
+  }
+  
   public Table( String tablename,
 		  		int table_num_attr,
 		  		AttrType[] table_attr_type,
@@ -599,7 +604,6 @@ public class Table implements GlobalConst{
 			temp = scan.getNext(rid);
 		}
 		scan.closescan();
-
 		//BT.printBTree(btf.getHeaderPage());
 		//BT.printAllLeafPages(btf.getHeaderPage());
 		btf.close();
@@ -720,9 +724,7 @@ public class Table implements GlobalConst{
 			temp = scan.getNext(rid);
 		}
 		scan.closescan();
-
 		//hasher.printBucketInfo();
-
 		hasher.close();
 		
 		/* mark the unclustered index exist key */
@@ -1041,11 +1043,9 @@ public class Table implements GlobalConst{
 	}
   }
   
-
   /* inserts a key,rid pair into an already existing
    * unclustered index
    */
-
   private void insert_into_unclustered_index( Tuple t, RID rid ) {
 	  // TBD/* update all the btree clustered indexes */
 	  
@@ -1399,7 +1399,6 @@ public class Table implements GlobalConst{
 			else {
 				key = new StringKey(t_s.getStrFld(this.clustered_btree_attr));
 			}
-
         	curr_rid = hf1.insertRecord(t_s.getTupleByteArray()/*, this.table_attr_type, this.table_attr_size*/);
         	System.out.println("BTREE clustered insert rid page "+ curr_rid.pageNo.pid+" slot "+curr_rid.slotNo);
         	if ( ( prev_rid.pageNo.pid != curr_rid.pageNo.pid ) && ( prev_rid.pageNo.pid != INVALID_PAGE ) ) {
@@ -1662,9 +1661,8 @@ public class Table implements GlobalConst{
 	  System.out.println("RID page no. "+rid.pageNo.pid);
 	  rid = hp.insertRecord(t3, this.table_attr_type, this.table_attr_size, this.clustered_btree_attr, get_clustered_index_filename(clustered_btree_attr, "btree"));
 	  System.out.println("RID page no. "+rid.pageNo.pid);*/
-
-	  FldSpec[] projlist = new FldSpec[this.table_num_attr];
-
+    
+	  /*FldSpec[] projlist = new FldSpec[this.table_num_attr];
 	  RelSpec rel = new RelSpec(RelSpec.outer);
 	  for ( int i=0; i<this.table_num_attr; i++ ) {
 		  projlist[i] = new FldSpec(rel, i+1);
@@ -1685,7 +1683,7 @@ public class Table implements GlobalConst{
 		  temper.print(table_attr_type);
 		  temper = iscan.get_next();
 	  }
-	  iscan.close();
+	  iscan.close();*/
 	  print_table_attr();
   }
   
@@ -1711,7 +1709,6 @@ public class Table implements GlobalConst{
 	  return deleted;
   }
   
-
   /* removes list of rids from a table's unclustered indexes */
   private void delete_records_from_unclustered_indexes(List<RID> deleted, Tuple deleted_tuple) {
 	  // TBD/* update all the btree clustered indexes */
@@ -1823,7 +1820,6 @@ public class Table implements GlobalConst{
 		}
   }
   
-
   /* adds and delete data to unclustered indexes
    * from the global queue in DB
    */
@@ -1908,7 +1904,6 @@ public class Table implements GlobalConst{
 		  }
 	  }
   }
-
 
   /* adds table to global queue */
   public void add_table_to_global_queue() {

@@ -900,8 +900,8 @@ class DriverPhase3 extends TestDriver implements GlobalConst
      * part of task
      * structure: topkjoin HASH/NRA K OTABLENAME O_J_ATT_NO O_M_ATT_NO ITABLENAME I_J_ATT_NO I_M_ATT_NO NPAGES [MATER OUTTABLENAME]
      * */
-    public void parse_topkjoin() {
-    	try {
+    public void parse_topkjoin() throws JoinsException, PageNotReadException, TupleUtilsException, PredEvalException, SortException, LowMemException, UnknowAttrType, UnknownKeyTypeException, Exception {
+//    	try {
 	    	/* ----------------------which join needs to be calculated ------------------------------------*/
 	    	String join_algo = tokens[1]; //HASH/NRA
 	    	
@@ -948,17 +948,106 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    	switch ( join_algo ) {
 	    		case "HASH":
 	    			//TBD run top-K-join HASH with proper params
+	    			FldSpec joinAttr1_Hash = new FldSpec(new RelSpec(RelSpec.outer), outer_join_attribute);
+	    	        FldSpec mergeAttr1_Hash = new FldSpec(new RelSpec(RelSpec.outer), outer_merge_attribute);
+	    	        
+	    	        FldSpec joinAttr2_Hash = new FldSpec(new RelSpec(RelSpec.innerRel), innerr_join_attribute);
+	    	        FldSpec mergeAttr2_Hash = new FldSpec(new RelSpec(RelSpec.innerRel), inner_merge_attribute);
+	    	        
+	    	        AttrType[] attrTypeHash = new AttrType[2];
+	    	        attrTypeHash[0] = new AttrType(AttrType.attrInteger);
+	    	        attrTypeHash[1] = new AttrType(AttrType.attrInteger);
+	    	        
+	    	        short[] attrSizeHash = new short[2];
+
+	                for(int i=0; i<2; i++){
+	                	attrSizeHash[i] = 32;
+	                }
+				
+	                TopK_HashJoin tjhj = new TopK_HashJoin(
+							attrTypeHash, attrTypeHash.length, attrSizeHash,
+	    	        		joinAttr1_Hash,
+	    	    			mergeAttr1_Hash,
+	    	    			attrTypeHash, attrTypeHash.length, attrSizeHash,
+	    	    			joinAttr2_Hash,
+	    	    			mergeAttr2_Hash,
+	    	    			outer_table_name,
+	    	    			inner_table_name,
+	    	    			join_k,
+						    join_n_pages
+	    	    		);
+	                
+	                AttrType[] temp = new AttrType[2 * attrTypeHash.length+1];
+	                for(int i = 0; i < temp.length; i++) {
+	                	if(i == temp.length-1) {
+	                		temp[i] = new AttrType(AttrType.attrReal);
+	                	}
+	                	else {
+	                		temp[i] = new AttrType(AttrType.attrInteger);
+	                	}
+	                }
+	                
+	                Tuple t = tjhj.get_next();
+	                
+	                System.out.println("STARTS HERE -----");
+	                while(t != null) {
+	                	t.print(temp);
+	                	t = tjhj.get_next();
+	                }
+	                System.out.println("ENDS HERE -----");
+	    	        
 	    			break;
 	    		case "NRA":
 	    			//TBD run top-K-join NRA with proper params
+	    			FldSpec joinAttr1 = new FldSpec(new RelSpec(RelSpec.outer), outer_join_attribute);
+	    	        FldSpec mergeAttr1 = new FldSpec(new RelSpec(RelSpec.outer), outer_merge_attribute);
+	    	        
+	    	        FldSpec joinAttr2 = new FldSpec(new RelSpec(RelSpec.outer), innerr_join_attribute);
+	    	        FldSpec mergeAttr2 = new FldSpec(new RelSpec(RelSpec.outer), inner_merge_attribute);
+	    	        
+	    	        AttrType[] attrType = new AttrType[6];
+	    	        attrType[0] = new AttrType(AttrType.attrString);
+	    	        attrType[1] = new AttrType(AttrType.attrInteger);
+	    	        attrType[2] = new AttrType(AttrType.attrInteger);
+	    	        attrType[3] = new AttrType(AttrType.attrInteger);
+	    	        attrType[4] = new AttrType(AttrType.attrInteger);
+	    	        attrType[5] = new AttrType(AttrType.attrString);
+	    	        
+	    	        short[] attrSizetemp = new short[6];
+
+	                for(int i=0; i<6; i++){
+	                	if(i == 0 || i == 5 ) {
+	                		attrSizetemp[i] = 32;
+	                	}
+	                }
+	    	        		
+	    			TopK_NRAJoin tknj = new TopK_NRAJoin(
+					        attrType, attrType.length, attrSizetemp,
+					        joinAttr1,
+					        mergeAttr1,
+					        attrType, attrType.length, attrSizetemp,
+					        joinAttr2,
+					        mergeAttr2,
+					        outer_table_name,
+					        inner_table_name,
+					        join_k, 
+					        join_n_pages
+	    			);
+	    			
+				try {
+					tknj.calculateTopKJoins();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
 	    			break;
 	    		default:
 	    			validate_token_length(0, "topkjoin");
 	    			break;
 	    	}
-    	}catch (ArrayIndexOutOfBoundsException e){
-	        validate_token_length(0, "topkjoin");
-	    }
+//    	}catch (ArrayIndexOutOfBoundsException e){
+//    		System.out.println("OUT OF BOUNDS");
+//	        validate_token_length(0, "topkjoin");
+//	    }
     }
     
     public void run_test_query() {
@@ -1009,7 +1098,6 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}*/
-    	
     	Table table = SystemDefs.JavabaseDB.get_relation("subset1");
     	try {
 			table.test();

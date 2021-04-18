@@ -21,6 +21,8 @@ public abstract class IndexFileScan
    * @return the KeyDataEntry, which contains the key and data
    */
   abstract public Tuple get_next_tuple();
+  
+  abstract public KeyDataEntry get_next_entry();
 
   abstract public KeyDataEntry get_next_entry();
 
