@@ -372,7 +372,16 @@ public class Table implements GlobalConst{
 	    	//String[] tokens_next_line = next_line.split("\\s+");
 	    	String[] tokens_next_line = next_line.split(this.data_file_delimiter);
 	    	table_attr_name[counter] = tokens_next_line[0];
-	    	table_attr_type[counter] = new AttrType(tokens_next_line[1].equals("STR") ? AttrType.attrString : AttrType.attrInteger);
+	    	if ( tokens_next_line[1].equals("STR") ) {
+	    		table_attr_type[counter] = new AttrType(AttrType.attrString);
+	    	}
+	    	else if ( tokens_next_line[1].equals("INT") ) {
+	    		table_attr_type[counter] = new AttrType(AttrType.attrInteger);
+	    	}
+	    	else {
+	    		table_attr_type[counter] = new AttrType(AttrType.attrReal);
+	    	}
+	    	//table_attr_type[counter] = new AttrType(tokens_next_line[1].equals("STR") ? AttrType.attrString : AttrType.attrInteger);
 	    	counter++;
 	    }
 	    
@@ -405,6 +414,9 @@ public class Table implements GlobalConst{
 		    				break;
 		    			case AttrType.attrInteger:
 		    				t.setIntFld(i+1, Integer.parseInt(token_next_line[i]));
+		    				break;
+		    			case AttrType.attrReal:
+		    				t.setFloFld(i+1, Float.parseFloat(token_next_line[i]));
 		    				break;
 		    			default:
 		    				break;	    			
@@ -477,6 +489,9 @@ public class Table implements GlobalConst{
         				st.addRow(t.getStrFld(i+1));
         				//System.out.print(t.getStrFld(i+1) + table_sep);
         				break;
+        			case AttrType.attrReal:
+        				st.addRow(Float.toString(t.getFloFld(i+1)));
+        				break;
         			default:
         				System.out.println("Error in the system");
         				System.exit(0);
@@ -538,6 +553,9 @@ public class Table implements GlobalConst{
         			case AttrType.attrString:
         				System.out.print(t.getStrFld(i+1) + table_sep);
         				break;
+        			case AttrType.attrReal:
+        				System.out.println(t.getFloFld(i+1) + table_sep);
+        				break;
         			default:
         				System.out.println("Error in the system");
         				System.exit(0);
@@ -575,7 +593,7 @@ public class Table implements GlobalConst{
 		Scan scan = hf.openScan();
 		
 		/* keep the key ready for insertion */
-		KeyClass key;
+		//KeyClass key;
 		
 		// create the index file
 		BTreeFile btf  = new BTreeFile(this.get_unclustered_index_filename(attr_number, "btree"),
@@ -589,12 +607,13 @@ public class Table implements GlobalConst{
 		Tuple temp = scan.getNext(rid);
 		while ( temp != null ) {
 			t.tupleCopy(temp);
-			if ( table_attr_type[attr_number-1].attrType == AttrType.attrInteger ) {
+			KeyClass key = TupleUtils.get_key_from_tuple_attrtype(t, table_attr_type[attr_number-1], attr_number);
+			/*if ( table_attr_type[attr_number-1].attrType == AttrType.attrInteger ) {
 				key = new IntegerKey(t.getIntFld(attr_number));
 			}
 			else {
 				key = new StringKey(t.getStrFld(attr_number));
-			}
+			}*/
 			btf.insert(key, rid);
 			temp = scan.getNext(rid);
 		}
@@ -707,14 +726,14 @@ public class Table implements GlobalConst{
 		Tuple t = TupleUtils.getEmptyTuple(table_attr_type, table_attr_size);
 		Tuple temp = scan.getNext(rid);
 		while ( temp != null ) {
-			HashKey key;
 			t.tupleCopy(temp);
-			if ( table_attr_type[attr_number-1].attrType == AttrType.attrInteger ) {
+			HashKey key = TupleUtils.get_hashkey_from_tuple_attrtype(t, table_attr_type[attr_number-1], attr_number);
+			/*if ( table_attr_type[attr_number-1].attrType == AttrType.attrInteger ) {
 				key = new HashKey(t.getIntFld(attr_number));
 			}
 			else {
 				key = new HashKey(t.getStrFld(attr_number));
-			}
+			}*/
 			hasher.insert(key, rid);
 			temp = scan.getNext(rid);
 		}

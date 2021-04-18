@@ -152,7 +152,7 @@ public class GroupByWithSort extends Iterator{
         }
     }
 
-    public List<Tuple> get_next_aggr() throws IOException, FieldNumberOutOfBoundException {
+    public List<Tuple> get_next_aggr() throws Exception {
         _result = new ArrayList<>(_window_size);
         Tuple result = new Tuple(this._tuple_size);
         try {

@@ -585,6 +585,8 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    			break;
 	    		case "SORT":
 	    			//TBD run SORT hash with proper params
+	    			System.out.println("Attribute type "+Arrays.toString(groupby_table.getTable_attr_type()));
+	    			System.out.println("");
 	    			System.out.println("Running groupby sort algorithm");
 	    			groupby = new GroupByWithSort(groupby_table.getTable_attr_type(),
 	    										  groupby_table.getTable_num_attr(),
@@ -601,13 +603,33 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    			validate_token_length(0, "groupby");
 	    			break;
 	    	}
-	    	Tuple temp = groupby.get_next();
-	    	while ( temp!= null ) {
-	    		System.out.print("Next element: ");
-	    		temp.print(groupby_table.getTable_attr_type());
-	    		temp = groupby.get_next();
-	    	}
-	    	groupby.close();
+	    	List<Tuple> result = new ArrayList<>();
+			try {
+                result = groupby.get_next_aggr();
+            }
+            catch (Exception e) {
+                status = false;
+                e.printStackTrace();
+            }
+
+            while(result != null) {
+                result.forEach((tuple) -> {
+                    try {
+                        tuple.print(groupby_table.getTable_attr_type());
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                });
+
+                try {
+                    result = groupby.get_next_aggr();
+                }
+                catch (Exception e) {
+                    status = false;
+                    e.printStackTrace();
+                }
+            }
+            groupby.close();
     	}catch (ArrayIndexOutOfBoundsException e){
 	        validate_token_length(0, "groupby");
 	    }catch (NegativeArraySizeException e) {
