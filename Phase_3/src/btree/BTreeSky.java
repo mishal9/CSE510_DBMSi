@@ -181,7 +181,6 @@ public class BTreeSky extends Iterator implements GlobalConst {
 			KeyDataEntry scannedVal = bla.get_next();
 			if (scannedVal == null) {
 				//System.out.println("got null");
-				bla.DestroyBTreeFileScan();
 				flag = true;
 				break;
 			}
@@ -196,6 +195,7 @@ public class BTreeSky extends Iterator implements GlobalConst {
 				flag = true;
 			}
 		}
+		bla.DestroyBTreeFileScan();
 		//create a heapfile which will store the pruned data
 		Heapfile prunedDataFile = new Heapfile(prunedHeapFileName );
 
