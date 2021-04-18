@@ -31,7 +31,7 @@ public class TopK_NRAJoin extends Iterator implements GlobalConst {
 	int n_pages;
 	
     HashMap<String, NRABounds> map = new HashMap<>();
-
+    PriorityQueue<NRABounds> pq = null;
 	
 	public TopK_NRAJoin(
 			AttrType[] in1, int len_in1, short[] t1_str_sizes,
@@ -178,22 +178,13 @@ public class TopK_NRAJoin extends Iterator implements GlobalConst {
     		temp1 = iscan1.get_next();
     		temp2 = iscan2.get_next();
     	}
-    	
-    	System.out.println("===================================");
-    	
-    	PriorityQueue<NRABounds> pq = new 
+    	    	
+    	pq = new 
                 PriorityQueue<NRABounds>(k, new NRABoundsComparator());
     	
     	for (Map.Entry<String,NRABounds> entry : map.entrySet()) {
     		pq.add(entry.getValue());
         }
-    	
-    	while(k > 0) {
-    		System.out.println(pq.poll().toString());
-    		k--;
-    	}
-//    	
-//    	System.out.println(pq.poll().toString());
 
 	}
 	
@@ -214,6 +205,11 @@ public class TopK_NRAJoin extends Iterator implements GlobalConst {
 			InvalidTypeException, PageNotReadException, TupleUtilsException, PredEvalException, SortException,
 			LowMemException, UnknowAttrType, UnknownKeyTypeException, Exception {
 		// TODO Auto-generated method stub
+		while(k > 0) {
+    		System.out.println(pq.poll().toString());
+    		k--;
+    	}
+		
 		return null;
 	}
 
