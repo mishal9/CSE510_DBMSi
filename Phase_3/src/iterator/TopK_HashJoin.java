@@ -103,7 +103,7 @@ public class TopK_HashJoin extends Iterator implements GlobalConst {
 	    short[] table2_attr_size = table2.getTable_attr_size();
 
 		
-	    FldSpec[] projlist = new FldSpec[this.len_in1];
+	    FldSpec[] projlist = new FldSpec[table1_len];
 		RelSpec rel = new RelSpec(RelSpec.outer);
 		
 		for (int i=0; i<table1_len; i++ ) {
