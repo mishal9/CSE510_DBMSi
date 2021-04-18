@@ -690,7 +690,25 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    	    			join_k,
 						    join_n_pages
 	    	    		);
-				
+	                
+	                AttrType[] temp = new AttrType[2 * attrTypeHash.length+1];
+	                for(int i = 0; i < temp.length; i++) {
+	                	if(i == temp.length-1) {
+	                		temp[i] = new AttrType(AttrType.attrReal);
+	                	}
+	                	else {
+	                		temp[i] = new AttrType(AttrType.attrInteger);
+	                	}
+	                }
+	                
+	                Tuple t = tjhj.get_next();
+	                
+	                System.out.println("STARTS HERE -----");
+	                while(t != null) {
+	                	t.print(temp);
+	                	t = tjhj.get_next();
+	                }
+	                System.out.println("ENDS HERE -----");
 	    	        
 	    			break;
 	    		case "NRA":

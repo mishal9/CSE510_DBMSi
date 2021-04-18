@@ -45,7 +45,7 @@ public class NRABounds {
 	
 }
 
-class TupleComparator implements Comparator<NRABounds>{
+class NRABoundsComparator implements Comparator<NRABounds>{
  
     public int compare(NRABounds s1, NRABounds s2) {
         if (s1.getLowerBoundVal() < s2.getLowerBoundVal())

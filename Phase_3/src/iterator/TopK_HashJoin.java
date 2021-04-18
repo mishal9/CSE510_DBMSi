@@ -22,6 +22,25 @@ class Test {
     }
 }
 
+class TupleComparator implements Comparator<Tuple>{
+
+	@Override
+	public int compare(Tuple o1, Tuple o2) {
+		try {
+			if (o1.getFloFld( o1.noOfFlds() ) < o2.getFloFld( o2.noOfFlds() ) )
+			  return 1;
+			else if (o1.getFloFld( o1.noOfFlds() ) > o2.getFloFld( o2.noOfFlds() ))
+			  return -1;
+			else return 0;
+		} catch (FieldNumberOutOfBoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return 0;
+	}
+}
+
 public class TopK_HashJoin extends Iterator implements GlobalConst {
 	
 	AttrType[] in1; 
@@ -38,6 +57,11 @@ public class TopK_HashJoin extends Iterator implements GlobalConst {
 	java.lang.String relationName2;
 	int k;
 	int n_pages;
+	
+	PriorityQueue<Tuple> pq = null;
+	HashJoin hj = null;
+	
+	AttrType[] newAttrType = null;
 
 	public TopK_HashJoin(
 			AttrType[] in1, int len_in1, short[] t1_str_sizes,
@@ -95,12 +119,6 @@ public class TopK_HashJoin extends Iterator implements GlobalConst {
 				  table1.getTable_num_attr(), 
 				  false);
 	    
-//	    Tuple t = am.get_next();
-//	    
-//	    while(t!= null) {
-//	    	t.print(table1.getTable_attr_type());
-//	    	t = am.get_next();
-//	    }
 	    
 	    FldSpec []  proj1 = {
 	    	       new FldSpec(new RelSpec(RelSpec.outer), 1),
@@ -120,9 +138,7 @@ public class TopK_HashJoin extends Iterator implements GlobalConst {
 	    outFilter[0].type2 = new AttrType(AttrType.attrSymbol);
 	    outFilter[0].operand2.symbol = new FldSpec (new RelSpec(RelSpec.innerRel),1);
 	    outFilter[1] = null;
-	    
-	    System.out.println("" + this.relationName2);
-	    
+	    	    
 	    AttrType[] Rtypes = new AttrType[2];
         Rtypes[0] = new AttrType(AttrType.attrInteger);
         Rtypes[1] = new AttrType(AttrType.attrInteger);
@@ -134,7 +150,7 @@ public class TopK_HashJoin extends Iterator implements GlobalConst {
 	    Heapfile f = new Heapfile(this.relationName2+".txt");
 	    
 	    Tuple t = new Tuple();
-	    t.setHdr((short) 2, Rtypes, Rsizes);
+	    t.setHdr((short) len_in2, Rtypes, Rsizes);
 	    int size = t.size();
 	    
 	    Test[] test = {
@@ -145,7 +161,7 @@ public class TopK_HashJoin extends Iterator implements GlobalConst {
 	    };
 	    
 	    t = new Tuple(size);
-	    t.setHdr((short) 2, Rtypes, Rsizes);
+	    t.setHdr((short) len_in2, Rtypes, Rsizes);
 	    
 	    for(int i = 0; i< test.length; i++) {
 	    	t.setIntFld(1, test[i].first);
@@ -153,43 +169,80 @@ public class TopK_HashJoin extends Iterator implements GlobalConst {
             RID rid = f.insertRecord(t.returnTupleByteArray());
 	    }
 	    
-	    HashJoin nlj = null;
-	    
-	    nlj = new HashJoin(
+	    hj = new HashJoin(
     		  table1.getTable_attr_type(), table1.getTable_attr_type().length, table1.getTable_attr_size(),
     		  table1.getTable_attr_type(), table1.getTable_attr_type().length, table1.getTable_attr_size(),
     		  100,
     		  am, this.relationName2+".txt",
     		  outFilter, null, proj1, 4);
 	    
+	    int newLength = table1.getTable_attr_type().length + len_in2 + 1;
+    	newAttrType = new AttrType[newLength];
+        short[] newAttrSize = new short[newLength];
+        
+        int pointer = 0;
+        
+        for(int i = 0; i < table1.getTable_attr_type().length; i++) {
+        	newAttrType[pointer] = table1.getTable_attr_type()[i];
+        	newAttrSize[pointer] = table1.getTable_attr_size()[i];
+        	pointer++;
+        }
+        for(int i = 0; i < len_in2; i++) {
+        	newAttrType[pointer] = in2[i];
+        	newAttrSize[pointer] = t2_str_sizes[i];
+        	pointer++;
+        }
+        
+        newAttrType[pointer] = new AttrType(AttrType.attrReal); 
+    	newAttrSize[pointer] = 32;
+    	
+	    t = hj.get_next();
 	    
-	    AttrType[] temp = new AttrType[4];
-	    temp[0] = new AttrType (AttrType.attrInteger);
-	    temp[1] = new AttrType (AttrType.attrInteger);
-	    temp[2] = new AttrType (AttrType.attrInteger);
-	    temp[3] = new AttrType (AttrType.attrInteger);
+	    pq = new 
+                PriorityQueue<Tuple>(new TupleComparator());
 	    
-	    System.out.println("============================");
-	    nlj.get_next().print(temp);
-	    nlj.get_next().print(temp);
-	    nlj.get_next().print(temp);
-//	    nlj.get_next().print(temp);
-	    System.out.println("============================");
+	    while(t != null) { 
+
+	    	Tuple newTuple = new Tuple();
+	    	newTuple.setHdr((short) newLength, newAttrType, newAttrSize);
+	    	int newSize = newTuple.size();
+	    	newTuple = new Tuple(newSize);
+	    	newTuple.setHdr((short) newLength, newAttrType, newAttrSize);
+	    	
+	    	int curr = 1;
+	    	for(int i = 1; i < newLength; i++) {
+	    		newTuple.setIntFld(curr, t.getIntFld(i));
+	    		curr++;
+	        }
+	    	newTuple.setFloFld(curr, (float) ( t.getIntFld(mergeAttr1.offset) + 
+	    			 t.getIntFld( table1.getTable_attr_type().length + mergeAttr2.offset)) / (float) 2.0
+	    	);
+	    	
+	    	pq.add(newTuple);
+	    	
+	    	t = hj.get_next();
+	    }
 	    
 	}
 
 	@Override
 	public Tuple get_next() throws IOException, JoinsException, IndexException, InvalidTupleSizeException,
 			InvalidTypeException, PageNotReadException, TupleUtilsException, PredEvalException, SortException,
-			LowMemException, UnknowAttrType, UnknownKeyTypeException, Exception {
-		// TODO Auto-generated method stub
-		return null;
+			LowMemException, UnknowAttrType, UnknownKeyTypeException, Exception {		
+		
+		if(k > 0) {
+			Tuple t = pq.poll();
+			k--;
+			return t;
+		}
+		else {
+			return null;
+		}
 	}
 
 	@Override
 	public void close() throws IOException, JoinsException, SortException, IndexException {
 		// TODO Auto-generated method stub
-		
 	}
 
 }
