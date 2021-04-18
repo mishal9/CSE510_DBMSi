@@ -1,18 +1,13 @@
 package iterator;
 
 import bufmgr.PageNotReadException;
-import global.AggType;
-import global.AttrType;
-import global.RID;
-import global.TupleOrder;
+import global.*;
 import heap.*;
 import index.IndexException;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
-import static global.GlobalConst.MINIBASE_PAGESIZE;
 
 public class GroupByWithSort extends Iterator{
     public static List<Tuple> _result;
@@ -24,10 +19,6 @@ public class GroupByWithSort extends Iterator{
     private static short[] _attr_sizes;
     private static AggType _agg_type;
     private static FldSpec[] _agg_list;
-    private static int idx;
-
-    // number of tuples the queue can hold
-    private int          _window_size;
 
     // heap file containing our data on which skyline is computed
     private Heapfile _skyline_grp_heap;
@@ -47,6 +38,7 @@ public class GroupByWithSort extends Iterator{
     private static float _aggr_val;
     private static int _group_size;
     private static float _grp_result;
+    private static Iterator _am;
 
     public GroupByWithSort(
             AttrType[] in1, int len_in1, short[] t1_str_sizes,
@@ -66,12 +58,11 @@ public class GroupByWithSort extends Iterator{
         _n_pages = n_pages;
         _agg_list = agg_list;
         _group_by_attr = group_by_attr;
+        _am = am1;
 
         _aggr_val = _agg_type.aggType == AggType.AVG ? 0.0f : _agg_type.aggType == AggType.MIN ? Float.MAX_VALUE : -Float.MIN_VALUE;
         _group_size = 0;
         _grp_result = 0.0f;
-
-        int buffer_pages = _n_pages/2;
 
         /* initialise tuple size */
         try {
@@ -89,7 +80,6 @@ public class GroupByWithSort extends Iterator{
             e.printStackTrace();
         }
 
-        _window_size = ((int)(MINIBASE_PAGESIZE/this._tuple_size))*(_n_pages - buffer_pages);
         _result = new ArrayList<>();
 
         try {
@@ -101,7 +91,7 @@ public class GroupByWithSort extends Iterator{
         }
 
         try {
-            _sort = new Sort(_attrType, (short) _len_in, _attr_sizes, am1, group_by_attr.offset, new TupleOrder(TupleOrder.Descending), 32, buffer_pages);
+            _sort = new Sort(_attrType, (short) _len_in, _attr_sizes, _am, group_by_attr.offset, new TupleOrder(TupleOrder.Descending), 32, 3);
         }
         catch (Exception e) {
             status = false;
@@ -153,7 +143,8 @@ public class GroupByWithSort extends Iterator{
     }
 
     public List<Tuple> get_next_aggr() throws IOException, FieldNumberOutOfBoundException {
-        _result = new ArrayList<>(_window_size);
+        System.out.println("Allocated n_pages to grpBySort: "+(_n_pages - 3));
+        _result = new ArrayList<>();
         Tuple result = new Tuple(this._tuple_size);
         try {
             result.setHdr((short) _len_in, _attrType, _attr_sizes);
@@ -232,7 +223,7 @@ public class GroupByWithSort extends Iterator{
 
         // Compute Skyline here
         if(_agg_type.aggType == AggType.SKYLINE) {
-            skyline_Aggregation("skyline_group_by.in", _agg_list, _attrType, _attr_sizes, 20);
+            skyline_Aggregation("skyline_group_by.in", _agg_list, _attrType, _attr_sizes, _n_pages - 3);
             recreateSkyLineHeap();
             // Reset aggregation
             resetAggregation();
@@ -284,7 +275,10 @@ public class GroupByWithSort extends Iterator{
     }
 
     @Override
-    public void close() throws IOException, SortException {
-        _sort.close();
+    public void close() throws IOException, SortException, JoinsException, IndexException {
+            _am.close();
+            _sort.close();
+            _sort = null;
+            _am = null;
     }
 }

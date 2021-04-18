@@ -711,10 +711,12 @@ public class Sort extends Iterator implements GlobalConst
         // clean up
         if (!closeFlag) {
 
+
             try {
                 _am.close();
             }
             catch (Exception e) {
+                System.out.println("Error: "+e);
                 throw new SortException(e, "Sort.java: error in closing iterator.");
             }
 

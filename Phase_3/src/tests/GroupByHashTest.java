@@ -297,7 +297,7 @@ class GroupByHashDriver extends TestDriver
                     aggType[0],
                     projlist,
                     3,
-                    20);
+                    5);
 
 
             try {
@@ -459,7 +459,7 @@ class GroupByHashDriver extends TestDriver
                     aggType[1],
                     projlist,
                     3,
-                    20);
+                    5);
 
 
             try {
@@ -619,7 +619,7 @@ class GroupByHashDriver extends TestDriver
                     aggType[2],
                     projlist,
                     3,
-                    20);
+                    5);
 
 
             try {
@@ -779,7 +779,7 @@ class GroupByHashDriver extends TestDriver
                     aggType[3],
                     projlist,
                     3,
-                    50);
+                    5);
 
 
             try {

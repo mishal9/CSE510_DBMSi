@@ -28,11 +28,11 @@ class GroupBySortDriver extends TestDriver
             {2, 7, 8},
             {2, 3, 4},
             {3, 5, 10},
+            {3, 100, 20},
             {1, 4, 3},
             {4, 5, 8},
             {4, 8, 9},
             {1, 2, 3},
-            {3, 100, 20}
     };
 
     private static int COLS;
@@ -131,7 +131,7 @@ class GroupBySortDriver extends TestDriver
         System.out.println ("\n" + "Running " + testName() + " tests...." + "\n");
         dbpath = "task3-grpBySort.minibase-db";
 
-        SystemDefs sysdef = new SystemDefs( dbpath, 3000, 100, "Clock" );
+        SystemDefs sysdef = new SystemDefs( dbpath, 3000, 10, "Clock" );
 
         // Kill anything that might be hanging around
         String newdbpath;
@@ -271,7 +271,7 @@ class GroupBySortDriver extends TestDriver
                     aggType[0],
                     projlist,
                     3,
-                    20);
+                    5);
 
             try {
                 result = grpSort.get_next_aggr();
@@ -301,7 +301,7 @@ class GroupBySortDriver extends TestDriver
         } finally {
             try {
                 grpSort.close();
-            } catch (IOException e) {
+            } catch (IOException | JoinsException | IndexException e) {
                 e.printStackTrace();
             } catch (SortException e) {
                 e.printStackTrace();
@@ -400,7 +400,7 @@ class GroupBySortDriver extends TestDriver
                     aggType[1],
                     projlist,
                     3,
-                    20);
+                    5);
 
             try {
                 result = grpSort.get_next_aggr();
@@ -432,7 +432,7 @@ class GroupBySortDriver extends TestDriver
                 grpSort.close();
             } catch (IOException e) {
                 e.printStackTrace();
-            } catch (SortException e) {
+            } catch (SortException | JoinsException | IndexException e) {
                 e.printStackTrace();
             }
         }
@@ -527,7 +527,7 @@ class GroupBySortDriver extends TestDriver
                     aggType[2],
                     projlist,
                     3,
-                    20);
+                    5);
 
             try {
                 result = grpSort.get_next_aggr();
@@ -559,7 +559,7 @@ class GroupBySortDriver extends TestDriver
                 grpSort.close();
             } catch (IOException e) {
                 e.printStackTrace();
-            } catch (SortException e) {
+            } catch (SortException | JoinsException | IndexException e) {
                 e.printStackTrace();
             }
         }
@@ -655,7 +655,7 @@ class GroupBySortDriver extends TestDriver
                     aggType[3],
                     projlist,
                     3,
-                    20);
+                    5);
 
             try {
                 result = grpSort.get_next_aggr();
@@ -687,7 +687,7 @@ class GroupBySortDriver extends TestDriver
                 grpSort.close();
             } catch (IOException e) {
                 e.printStackTrace();
-            } catch (SortException e) {
+            } catch (SortException | JoinsException | IndexException e) {
                 e.printStackTrace();
             }
         }
