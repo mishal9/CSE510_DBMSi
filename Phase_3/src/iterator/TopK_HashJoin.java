@@ -165,6 +165,8 @@ public class TopK_HashJoin extends Iterator implements GlobalConst {
 //            RID rid = f.insertRecord(t.returnTupleByteArray());
 //	    }
 	    
+//	    System.out.println("table2.getTable_heapfile(): " + table2.getTable_heapfile());
+	    
 	    hj = new HashJoin(
     		  table1_attr, table1_len, table1_attr_size,
     		  table2_attr, table2_len, table2_attr_size,
@@ -197,6 +199,8 @@ public class TopK_HashJoin extends Iterator implements GlobalConst {
 	    Tuple t = hj.get_next();
 	    pq = new 
                 PriorityQueue<Tuple>(new TupleComparator());
+	    
+//	    t.print(newAttrType);
 	    
 	    while(t != null) { 
 
