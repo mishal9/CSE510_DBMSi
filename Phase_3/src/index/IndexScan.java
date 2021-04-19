@@ -7,6 +7,7 @@ import btree.*;
 import iterator.*;
 import heap.*; 
 import java.io.*;
+import java.util.List;
 
 
 /**
@@ -390,6 +391,11 @@ public class IndexScan extends Iterator {
 	private int           _fldNum;       
 	private boolean       index_only;
 	private IndexType     _index_type;
+	@Override
+	public List<Tuple> get_next_aggr() throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
 }
 

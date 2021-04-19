@@ -249,4 +249,11 @@ public class TopK_NRAJoin extends Iterator implements GlobalConst {
 		
 	}
 
+
+	@Override
+	public List<Tuple> get_next_aggr() throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }

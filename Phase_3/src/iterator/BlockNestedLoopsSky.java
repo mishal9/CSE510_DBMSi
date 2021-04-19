@@ -11,6 +11,7 @@ import java.lang.*;
 import java.io.*;
 import java.util.Arrays;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Queue;
 import java.util.Stack;
 
@@ -567,6 +568,13 @@ public class BlockNestedLoopsSky extends Iterator implements GlobalConst
 		this._temp_heap_file.deleteFile();
 		//SystemDefs.JavabaseBM.limit_memory_usage(false, this._n_pages);
 		System.out.println("No more records in skyline. All records already scanned.");
+		return null;
+	}
+
+
+	@Override
+	public List<Tuple> get_next_aggr() throws Exception {
+		// TODO Auto-generated method stub
 		return null;
 	}
 

@@ -9,6 +9,7 @@ import heap.Heapfile;
 import heap.Tuple;
 
 import java.io.IOException;
+import java.util.List;
 
 /**
  * The SortPref class sorts a file. All necessary information are passed as
@@ -734,6 +735,12 @@ public class SortPref extends Iterator implements GlobalConst {
             closeFlag = true;
         }
     }
+
+	@Override
+	public List<Tuple> get_next_aggr() throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
 }
 

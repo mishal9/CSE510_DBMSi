@@ -80,15 +80,17 @@ public class ClusteredBTSortedPage  extends HFPage{
 	     t_i_hdr.tupleCopy(t_i);
 	     t_iplus1_hdr.tupleCopy(t_iplus1);
 	     
-	     if ( attrtype[key_index-1].attrType == AttrType.attrInteger ) {
+	     key_i = TupleUtils.get_key_from_tuple_attrtype(t_i_hdr, attrtype[key_index-1], key_index);
+	     key_iplus1 = TupleUtils.get_key_from_tuple_attrtype(t_iplus1_hdr, attrtype[key_index-1], key_index);
+	     /*if ( attrtype[key_index-1].attrType == AttrType.attrInteger ) {
 	    	 key_i = new IntegerKey(t_i_hdr.getIntFld(key_index));
 	    	 key_iplus1 = new IntegerKey(t_iplus1_hdr.getIntFld(key_index));
 	     }
 	     else {
 	    	 key_i = new StringKey(t_i_hdr.getStrFld(key_index));
 	    	 key_iplus1 = new StringKey(t_iplus1_hdr.getStrFld(key_index));
-	     }
-	     System.out.println("Comparig keys "+key_i.toString()+" and "+key_iplus1.toString());
+	     }*/
+	     System.out.println("Comparing keys "+key_i.toString()+" and "+key_iplus1.toString());
 	     if (BT.keyCompare(key_i, key_iplus1) < 0)
 	       {
 		       // switch slots:

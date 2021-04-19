@@ -1,15 +1,12 @@
 package iterator;
 
-import bufmgr.PageNotReadException;
 import global.AggType;
 import global.AttrType;
 
-import global.SystemDefs;
 import hashindex.HashIndexWindowedScan;
 import heap.InvalidTupleSizeException;
 import heap.InvalidTypeException;
 import heap.Tuple;
-import index.IndexException;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -32,8 +29,8 @@ public class GroupByWithHash extends Iterator{
     int _n_out_flds;
     int fld;
 
-    HashIndexWindowedScan _hiwfs;
-    GroupByWithSort grpSort;
+    private HashIndexWindowedScan _hiwfs;
+    private GroupByWithSort grpSort;
 
     public GroupByWithHash(
             AttrType[] in1, int len_in1, short[] t1_str_sizes,
@@ -91,23 +88,21 @@ public class GroupByWithHash extends Iterator{
                     _result.add(tuple);
                 });
             }
-
         }else{
             return null;
         }
-
-        // TODO: find a way to claim back allocated n_pages
 
         return _result;
     }
 
     @Override
-    public Tuple get_next() throws IOException, JoinsException, IndexException, InvalidTupleSizeException, InvalidTypeException, PageNotReadException, TupleUtilsException, PredEvalException, SortException, LowMemException, UnknowAttrType, UnknownKeyTypeException, Exception {
+    public Tuple get_next() throws Exception {
         return null;
     }
 
     @Override
     public void close() throws IOException, SortException {
         _hiwfs.close();
+        _hiwfs = null;
     }
 }

@@ -965,11 +965,12 @@ public class ClusteredHeapfile extends Heapfile implements GlobalConst {
 	 KeyDataEntry nextentry = null;
 	 KeyDataEntry preventry = null;
 	 
-	 if ( attrType[key_index-1].attrType == AttrType.attrInteger )
+	 key = TupleUtils.get_key_from_tuple_attrtype(insert_tuple, attrType[key_index-1], key_index);
+	 /*if ( attrType[key_index-1].attrType == AttrType.attrInteger )
 		 key = new IntegerKey(insert_tuple.getIntFld(key_index));
 	 else
 		 key = new StringKey(insert_tuple.getStrFld(key_index));
-	 
+	 */
 	 ClusteredBTreeFile btf  = new ClusteredBTreeFile(btsfilename);
 	 BTFileScan indScan = ((ClusteredBTreeFile)btf).new_scan(key, null);
 	 nextentry = indScan.get_next();
@@ -1017,10 +1018,12 @@ public class ClusteredHeapfile extends Heapfile implements GlobalConst {
 	    	  lasttuple.tupleCopy(lasttuplebytes);
 	    	  lasttuple.print(attrType);
 	    	  KeyClass key_to_delete = null;
-	    	  if ( attrType[key_index-1].attrType == AttrType.attrInteger )
+	    	  key_to_delete = TupleUtils.get_key_from_tuple_attrtype(lasttuple, attrType[key_index-1], key_index);
+	    	  /*if ( attrType[key_index-1].attrType == AttrType.attrInteger )
     			 key_to_delete = new IntegerKey(lasttuple.getIntFld(key_index));
 	    	  else
 	    		  key_to_delete = new StringKey(lasttuple.getStrFld(key_index));
+	    	  */
 	    	  btf.Delete(key_to_delete, lookup_rid);
 	    	  
 	    	  /* insert the record on the last data page */
@@ -1573,14 +1576,16 @@ throws InvalidSlotNumberException,
 		    dpinfo_nextentry = new DataPageInfo(atuple_nextentry);
 			
 			KeyClass key_nextentry = null;
-			if ( attrtype[key_index-1].attrType == AttrType.attrInteger ) {
+			key_nextentry = TupleUtils.get_key_from_key(nextentry.key, attrtype[key_index-1]);
+			key_entry = TupleUtils.get_key_from_key(entry.key, attrtype[key_index-1]);
+			/*if ( attrtype[key_index-1].attrType == AttrType.attrInteger ) {
 				key_entry = ((IntegerKey)entry.key);
 				key_nextentry = ((IntegerKey)nextentry.key);
 			}
 			else {
 				key_nextentry = ((StringKey)nextentry.key);
 				key_entry = ((StringKey)entry.key);
-			}
+			}*/
 			if ( ( dpinfo_entry.recct ) > ( (int)( ( MAX_SPACE - HFPage.DPFIXED )/(2*table_tuple_size) ) ) )
 		    {
 				unpinPage(lookup_currentDirPageId, true);
@@ -1654,12 +1659,13 @@ throws InvalidSlotNumberException,
 			itr_hdr.tupleCopy(itr);
 			
 			KeyClass key_new;
-			if ( attrtype[key_index-1].attrType == AttrType.attrInteger ) {
+			key_new = TupleUtils.get_key_from_tuple_attrtype(itr_hdr, attrtype[key_index-1], key_index);
+			/*if ( attrtype[key_index-1].attrType == AttrType.attrInteger ) {
 				key_new = new IntegerKey(itr_hdr.getIntFld(key_index));
 			}
 			else {
 				key_new = new StringKey(itr_hdr.getStrFld(key_index));
-			}
+			}*/
 			
 			indScan.DestroyBTreeFileScan();
 		  	btf.Delete(key_entry, rid_entry);
@@ -1719,12 +1725,13 @@ throws InvalidSlotNumberException,
 	  RID nelookup_currentDataPageRid = new RID();
       
 	  KeyClass key = null;
-	  if ( attrtype[key_index-1].attrType == AttrType.attrInteger ) {
+	  key = TupleUtils.get_key_from_tuple_attrtype(delete_tuple, attrtype[key_index-1], key_index);
+	  /*if ( attrtype[key_index-1].attrType == AttrType.attrInteger ) {
 		  key = new IntegerKey(delete_tuple.getIntFld(key_index));
 	  }
 	  else {
 		  key = new StringKey(delete_tuple.getStrFld(key_index));
-	  }
+	  }*/
 	  
       ClusteredBTreeFile btf  = new ClusteredBTreeFile(btsfilename);
       BTFileScan indScan = ((ClusteredBTreeFile)btf).new_scan(key, null);
@@ -1738,12 +1745,13 @@ throws InvalidSlotNumberException,
     	  indScan.DestroyBTreeFileScan();
     	  RID rid_nextentry = ((LeafData)nextentry.data).getData();
     	  KeyClass key_nextentry = null;
-    	  if ( attrtype[key_index-1].attrType == AttrType.attrInteger ) {
+    	  key_nextentry = TupleUtils.get_key_from_key(nextentry.key, attrtype[key_index-1]);
+    	  /*if ( attrtype[key_index-1].attrType == AttrType.attrInteger ) {
     		  key_nextentry = ((IntegerKey)nextentry.key);
     	  }
     	  else {
     		  key_nextentry = ((StringKey)nextentry.key);
-    	  }
+    	  }*/
     	  boolean status_nextentry = _findDataPage(rid_nextentry.pageNo,
 				     nelookup_currentDirPageId, nelookup_dirPage, 
 				     nelookup_currentDataPageId, nelookup_dataPage,
@@ -1762,12 +1770,13 @@ throws InvalidSlotNumberException,
     		  atuple_entry = nelookup_dataPage.getRecord(lookup_rid);
     		  atuple_hdr_entry.tupleCopy(atuple_entry);
     		  KeyClass key_lowest = null;
-    		  if ( key instanceof IntegerKey ) {
+    		  key_lowest = TupleUtils.get_key_from_key_type(key,  atuple_hdr_entry, key_index);
+    		  /*if ( key instanceof IntegerKey ) {
     			  key_lowest = new IntegerKey(atuple_hdr_entry.getIntFld(key_index));
     		  }
     		  else {
     			  key_lowest = new StringKey(atuple_hdr_entry.getStrFld(key_index));
-    		  }
+    		  }*/
     		  if ( BT.keyCompare(key_lowest, key) > 0 ) {
     			  btf.close();
     			  unpinPage(nelookup_currentDirPageId, false);
@@ -1828,12 +1837,13 @@ throws InvalidSlotNumberException,
   		      atuple_entry = nelookup_dataPage.getRecord(lookup_rid);
   		      atuple_hdr_entry.tupleCopy(atuple_entry);
   		      KeyClass key_new = null;
-  		      if ( key instanceof IntegerKey ) {
+  		      key_new = TupleUtils.get_key_from_key_type(key,  atuple_hdr_entry, key_index);
+  		      /*if ( key instanceof IntegerKey ) {
   		    	  key_new = new IntegerKey( atuple_hdr_entry.getIntFld(key_index) );
   		      }
   		      else {
   		    	  key_new = new StringKey( atuple_hdr_entry.getStrFld(key_index) );
-  		      }
+  		      }*/
   		      btf.insert(key_new, lookup_rid);
   		      btf.close();
   		      

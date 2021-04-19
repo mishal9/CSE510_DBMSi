@@ -250,7 +250,7 @@ implements GlobalConst {
 		}
 
 		ClusteredBTreeFile btf;
-		try {
+		/*try {
 			btf = new ClusteredBTreeFile(dbname);
 			BTFileScan indScan = ((ClusteredBTreeFile)btf).new_scan(key, null);
 			KeyDataEntry entry = indScan.get_next();
@@ -277,6 +277,18 @@ implements GlobalConst {
 						//System.out.println("String entry key "+((StringKey)entry.key).getKey());
 						//System.out.println("String entry key* "+((StringKey)key).getKey());
 						if ( (((StringKey)key).getKey()).equals(((StringKey)entry.key).getKey()) ) {
+							maxPageId = rid.pageNo;
+							max_page_needs_update = true;
+							//System.out.println("Max Page updated\n");
+						}
+						else {
+							break;
+						}
+					}
+					else if ( key instanceof FloatKey ) {
+						//System.out.println("String entry key "+((StringKey)entry.key).getKey());
+						//System.out.println("String entry key* "+((StringKey)key).getKey());
+						if ( (((FloatKey)key).getKey()).equals(((FloatKey)entry.key).getKey()) ) {
 							maxPageId = rid.pageNo;
 							max_page_needs_update = true;
 							//System.out.println("Max Page updated\n");
@@ -318,7 +330,7 @@ implements GlobalConst {
 		} catch (ReplacerException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}
+		}*/
 		newRootEntry= _insert(key, rid, headerPage.get_rootId());
 
 		// TWO CASES:

@@ -5,6 +5,7 @@ import diskmgr.*;
 import bufmgr.*;
 import index.*;
 import java.io.*;
+import java.util.List;
 
 /**
  *All the relational operators and access methods are iterators.
@@ -57,6 +58,7 @@ public abstract class Iterator implements Flags {
 	   UnknownKeyTypeException,
 	   Exception;
 
+  public abstract List<Tuple> get_next_aggr() throws Exception;
   /**
    *@exception IOException I/O errors
    *@exception JoinsException some join exception
