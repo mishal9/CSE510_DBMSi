@@ -92,40 +92,43 @@ public class TopK_HashJoin extends Iterator implements GlobalConst {
 		this.n_pages = n_pages;
 			    
 	    Table table1 = SystemDefs.JavabaseDB.get_relation(this.relationName1);
-//		Table table2 = SystemDefs.JavabaseDB.get_relation(this.relationName2);
+		Table table2 = SystemDefs.JavabaseDB.get_relation(this.relationName2);
+		
+		AttrType[] table1_attr = table1.getTable_attr_type();
+		int table1_len = table1.getTable_attr_type().length;
+	    short[] table1_attr_size = table1.getTable_attr_size();
+		
+		AttrType[] table2_attr = table2.getTable_attr_type();
+		int table2_len = table2.getTable_attr_type().length;
+	    short[] table2_attr_size = table2.getTable_attr_size();
 
-	    FldSpec [] Sprojection = {
-	    	       new FldSpec(new RelSpec(RelSpec.outer), 1),
-	    	       new FldSpec(new RelSpec(RelSpec.outer), 2),
-	    };
-	    
-	    FldSpec[] projlist = new FldSpec[this.len_in1];
+		
+	    FldSpec[] projlist = new FldSpec[table1_len];
 		RelSpec rel = new RelSpec(RelSpec.outer);
 		
-		for (int i=0; i<this.len_in1; i++ ) {
+		for (int i=0; i<table1_len; i++ ) {
 			projlist[i] = new FldSpec(rel, i+1);
 		}
 		
+		FileScan am =  new FileScan(table1.getTable_heapfile(), 
+				table1_attr,
+				table1.getTable_attr_size(),
+				   (short) table1.getTable_num_attr(),
+				   (short) table1.getTable_num_attr(),
+				   projlist, 
+				   null);
 
-	    IndexScan am = new IndexScan(new IndexType(IndexType.Cl_B_Index_DESC), 
-				  this.relationName1, 
-				  table1.get_clustered_index_filename(this.mergeAttr1.offset, "btree"), 
-				  table1.getTable_attr_type(), 
-				  table1.getTable_attr_size(), 
-				  table1.getTable_num_attr(), 
-				  table1.getTable_num_attr(), 
-				  projlist, 
-				  null,
-				  table1.getTable_num_attr(), 
-				  false);
-	    
-	    
-	    FldSpec []  proj1 = {
-	    	       new FldSpec(new RelSpec(RelSpec.outer), 1),
-	    	       new FldSpec(new RelSpec(RelSpec.outer), 2),
-	    	       new FldSpec(new RelSpec(RelSpec.innerRel), 1),
-	    	       new FldSpec(new RelSpec(RelSpec.innerRel), 2)
-	    };
+	    FldSpec[] proj1 = new FldSpec[table1_len + table2_len];
+	    	
+	    int c = 0;
+	    for(int i = 0; i < table1_len; i++) {
+	    	proj1[c] =  new FldSpec(new RelSpec(RelSpec.outer), i+1);
+	    	c++;
+	    }
+	    for(int i = 0; i < table2_len; i++) {
+	    	proj1[c] =  new FldSpec(new RelSpec(RelSpec.innerRel), i+1);
+	    	c++;
+	    }
 	    
 	    CondExpr [] outFilter = new CondExpr[2];
 	    outFilter[0] = new CondExpr();
@@ -134,72 +137,70 @@ public class TopK_HashJoin extends Iterator implements GlobalConst {
 	    outFilter[0].next  = null;
 	    outFilter[0].op    = new AttrOperator(AttrOperator.aopEQ);
 	    outFilter[0].type1 = new AttrType(AttrType.attrSymbol);
-	    outFilter[0].operand1.symbol = new FldSpec (new RelSpec(RelSpec.outer), 1);
+	    outFilter[0].operand1.symbol = new FldSpec (new RelSpec(RelSpec.outer), joinAttr1.offset);
 	    outFilter[0].type2 = new AttrType(AttrType.attrSymbol);
-	    outFilter[0].operand2.symbol = new FldSpec (new RelSpec(RelSpec.innerRel),1);
+	    outFilter[0].operand2.symbol = new FldSpec (new RelSpec(RelSpec.innerRel),joinAttr2.offset);
 	    outFilter[1] = null;
 	    	    
-	    AttrType[] Rtypes = new AttrType[2];
-        Rtypes[0] = new AttrType(AttrType.attrInteger);
-        Rtypes[1] = new AttrType(AttrType.attrInteger);
-
-        short[] Rsizes = new short[2];
-        Rsizes[0] = 15;
-        Rsizes[1] = 15;
+//	    AttrType[] Rtypes = new AttrType[2];
+//        Rtypes[0] = new AttrType(AttrType.attrInteger);
+//        Rtypes[1] = new AttrType(AttrType.attrInteger);
+//
+//        short[] Rsizes = new short[2];
+//        Rsizes[0] = 15;
+//        Rsizes[1] = 15;
+//	    
+//	    Heapfile f = new Heapfile(this.relationName2+".txt");
+//	    
+//	    Tuple t = new Tuple();
+//	    t.setHdr((short) table2_len, table2.getTable_attr_type(), table2.getTable_attr_size());
+//	    int size = t.size();
+//	    
+//	    t = new Tuple(size);
+//	    t.setHdr((short) table2_len, table2.getTable_attr_type(), table2.getTable_attr_size());
+//	    
+//	    for(int i = 0; i< test.length; i++) {
+//	    	t.setIntFld(1, test[i].first);
+//	    	t.setIntFld(2, test[i].second);
+//            RID rid = f.insertRecord(t.returnTupleByteArray());
+//	    }
 	    
-	    Heapfile f = new Heapfile(this.relationName2+".txt");
-	    
-	    Tuple t = new Tuple();
-	    t.setHdr((short) len_in2, Rtypes, Rsizes);
-	    int size = t.size();
-	    
-	    Test[] test = {
-	    		new Test(4,4),
-	    		new Test(1,6),
-	    		new Test(6,9),
-	    		new Test(3,1),
-	    };
-	    
-	    t = new Tuple(size);
-	    t.setHdr((short) len_in2, Rtypes, Rsizes);
-	    
-	    for(int i = 0; i< test.length; i++) {
-	    	t.setIntFld(1, test[i].first);
-	    	t.setIntFld(2, test[i].second);
-            RID rid = f.insertRecord(t.returnTupleByteArray());
-	    }
+//	    System.out.println("table2.getTable_heapfile(): " + table2.getTable_heapfile());
 	    
 	    hj = new HashJoin(
-    		  table1.getTable_attr_type(), table1.getTable_attr_type().length, table1.getTable_attr_size(),
-    		  table1.getTable_attr_type(), table1.getTable_attr_type().length, table1.getTable_attr_size(),
+    		  table1_attr, table1_len, table1_attr_size,
+    		  table2_attr, table2_len, table2_attr_size,
     		  100,
-    		  am, this.relationName2+".txt",
-    		  outFilter, null, proj1, 4);
+    		  am, table2.getTable_heapfile(),
+    		  outFilter, null, proj1, table1_len + table2_len);
 	    
-	    int newLength = table1.getTable_attr_type().length + len_in2 + 1;
+	    
+	    
+	    int newLength = table1_len + table2_len + 1;
     	newAttrType = new AttrType[newLength];
         short[] newAttrSize = new short[newLength];
         
         int pointer = 0;
         
-        for(int i = 0; i < table1.getTable_attr_type().length; i++) {
-        	newAttrType[pointer] = table1.getTable_attr_type()[i];
-        	newAttrSize[pointer] = table1.getTable_attr_size()[i];
+        for(int i = 0; i < table1_len; i++) {
+        	newAttrType[pointer] = table1_attr[i];
+        	newAttrSize[pointer] = table1_attr_size[i];
         	pointer++;
         }
-        for(int i = 0; i < len_in2; i++) {
-        	newAttrType[pointer] = in2[i];
-        	newAttrSize[pointer] = t2_str_sizes[i];
+        for(int i = 0; i < table2_len; i++) {
+        	newAttrType[pointer] = table2_attr[i];
+        	newAttrSize[pointer] = table2_attr_size[i];
         	pointer++;
         }
         
         newAttrType[pointer] = new AttrType(AttrType.attrReal); 
     	newAttrSize[pointer] = 32;
     	
-	    t = hj.get_next();
-	    
+	    Tuple t = hj.get_next();
 	    pq = new 
                 PriorityQueue<Tuple>(new TupleComparator());
+	    
+//	    t.print(newAttrType);
 	    
 	    while(t != null) { 
 
@@ -215,14 +216,11 @@ public class TopK_HashJoin extends Iterator implements GlobalConst {
 	    		curr++;
 	        }
 	    	newTuple.setFloFld(curr, (float) ( t.getIntFld(mergeAttr1.offset) + 
-	    			 t.getIntFld( table1.getTable_attr_type().length + mergeAttr2.offset)) / (float) 2.0
+	    			 t.getIntFld( table1_len + mergeAttr2.offset)) / (float) 2.0
 	    	);
-	    	
 	    	pq.add(newTuple);
-	    	
 	    	t = hj.get_next();
 	    }
-	    
 	}
 
 	@Override

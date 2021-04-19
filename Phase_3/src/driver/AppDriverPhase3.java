@@ -1095,21 +1095,32 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 						    join_n_pages
 	    	    		);
 	                
-	                AttrType[] temp = new AttrType[2 * attrTypeHash.length+1];
-	                for(int i = 0; i < temp.length; i++) {
-	                	if(i == temp.length-1) {
-	                		temp[i] = new AttrType(AttrType.attrReal);
-	                	}
-	                	else {
-	                		temp[i] = new AttrType(AttrType.attrInteger);
-	                	}
+	                Table table1 = SystemDefs.JavabaseDB.get_relation(outer_table_name);
+	        		Table table2 = SystemDefs.JavabaseDB.get_relation(inner_table_name); 
+	                
+	        		AttrType[] newAttrType = new AttrType[table1.getTable_attr_type().length + 1 + table2.getTable_attr_type().length];
+	        		short[] newAttrSize = new short[table1.getTable_attr_type().length + 1 + table2.getTable_attr_type().length];		
+	        		
+	        		int pointer = 0;
+	        		for(int i = 0; i < table1.getTable_attr_type().length; i++) {
+	                	newAttrType[pointer] = table1.getTable_attr_type()[i];
+	                	newAttrSize[pointer] = table1.getTable_attr_size()[i];
+	                	pointer++;
+	                }
+	                for(int i = 0; i < table2.getTable_attr_type().length; i++) {
+	                	newAttrType[pointer] = table2.getTable_attr_type()[i];
+	                	newAttrSize[pointer] = table2.getTable_attr_size()[i];
+	                	pointer++;
 	                }
 	                
+	                newAttrType[pointer] = new AttrType(AttrType.attrReal); 
+	            	newAttrSize[pointer] = 32;
+	        		
 	                Tuple t = tjhj.get_next();
 	                
 	                System.out.println("STARTS HERE -----");
 	                while(t != null) {
-	                	t.print(temp);
+	                	t.print(newAttrType);
 	                	t = tjhj.get_next();
 	                }
 	                System.out.println("ENDS HERE -----");
@@ -1120,30 +1131,32 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    			FldSpec joinAttr1 = new FldSpec(new RelSpec(RelSpec.outer), outer_join_attribute);
 	    	        FldSpec mergeAttr1 = new FldSpec(new RelSpec(RelSpec.outer), outer_merge_attribute);
 	    	        
-	    	        FldSpec joinAttr2 = new FldSpec(new RelSpec(RelSpec.outer), innerr_join_attribute);
-	    	        FldSpec mergeAttr2 = new FldSpec(new RelSpec(RelSpec.outer), inner_merge_attribute);
+	    	        FldSpec joinAttr2 = new FldSpec(new RelSpec(RelSpec.innerRel), innerr_join_attribute);
+	    	        FldSpec mergeAttr2 = new FldSpec(new RelSpec(RelSpec.innerRel), inner_merge_attribute);
 	    	        
-	    	        AttrType[] attrType = new AttrType[6];
-	    	        attrType[0] = new AttrType(AttrType.attrString);
-	    	        attrType[1] = new AttrType(AttrType.attrInteger);
-	    	        attrType[2] = new AttrType(AttrType.attrInteger);
-	    	        attrType[3] = new AttrType(AttrType.attrInteger);
-	    	        attrType[4] = new AttrType(AttrType.attrInteger);
-	    	        attrType[5] = new AttrType(AttrType.attrString);
-	    	        
-	    	        short[] attrSizetemp = new short[6];
-
-	                for(int i=0; i<6; i++){
-	                	if(i == 0 || i == 5 ) {
-	                		attrSizetemp[i] = 32;
-	                	}
-	                }
+	    	        Table t1 = SystemDefs.JavabaseDB.get_relation(outer_table_name);
+	        		Table t2 = SystemDefs.JavabaseDB.get_relation(inner_table_name); 
+	        		
+//	        		AttrType[] newAttrType1 = new AttrType[t1.getTable_attr_type().length + 1 + t2.getTable_attr_type().length];
+//	        		short[] newAttrSize1 = new short[t1.getTable_attr_type().length + 1 + t2.getTable_attr_type().length];		
+//	        		
+//	        		int pointer1 = 0;
+//	        		for(int i = 0; i < t1.getTable_attr_type().length; i++) {
+//	        			newAttrType1[pointer1] = t1.getTable_attr_type()[i];
+//	        			newAttrSize1[pointer1] = t2.getTable_attr_size()[i];
+//	        			pointer1++;
+//	                }
+//	                for(int i = 0; i < t2.getTable_attr_type().length; i++) {
+//	                	newAttrType1[pointer1] = t1.getTable_attr_type()[i];
+//	                	newAttrSize1[pointer1] = t2.getTable_attr_size()[i];
+//	                	pointer1++;
+//	                }
 	    	        		
 	    			TopK_NRAJoin tknj = new TopK_NRAJoin(
-					        attrType, attrType.length, attrSizetemp,
+	    					t1.getTable_attr_type(), t1.getTable_attr_type().length, t1.getTable_attr_size(),
 					        joinAttr1,
 					        mergeAttr1,
-					        attrType, attrType.length, attrSizetemp,
+	    					t2.getTable_attr_type(), t2.getTable_attr_type().length, t2.getTable_attr_size(),
 					        joinAttr2,
 					        mergeAttr2,
 					        outer_table_name,
@@ -1151,6 +1164,12 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 					        join_k, 
 					        join_n_pages
 	    			);
+	    			
+	    			tknj.calculateTopKJoins();
+
+	    			System.out.println("****************");
+	    			tknj.get_next();
+	    			System.out.println("****************");
 	    			
 				try {
 					tknj.calculateTopKJoins();

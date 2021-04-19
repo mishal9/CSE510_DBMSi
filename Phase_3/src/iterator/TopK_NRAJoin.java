@@ -31,7 +31,7 @@ public class TopK_NRAJoin extends Iterator implements GlobalConst {
 	int n_pages;
 	
     HashMap<String, NRABounds> map = new HashMap<>();
-
+    PriorityQueue<NRABounds> pq = null;
 	
 	public TopK_NRAJoin(
 			AttrType[] in1, int len_in1, short[] t1_str_sizes,
@@ -85,33 +85,63 @@ public class TopK_NRAJoin extends Iterator implements GlobalConst {
 		for (int i=0; i<this.len_in1; i++ ) {
 			projlist[i] = new FldSpec(rel, i+1);
 		}
-				
-		IndexScan iscan1 = new IndexScan(new IndexType(IndexType.Cl_B_Index_DESC), 
-					  this.relationName1, 
-					  table1.get_clustered_index_filename(this.mergeAttr1.offset, "btree"), 
-					  table1.getTable_attr_type(), 
-					  table1.getTable_attr_size(), 
-					  table1.getTable_num_attr(), 
-					  table1.getTable_num_attr(), 
-					  projlist, 
-					  null,
-					  table1.getTable_num_attr(), 
-					  false);
 		
-		IndexScan iscan2 = new IndexScan(new IndexType(IndexType.Cl_B_Index_DESC), 
-				  this.relationName1, 
-				  table2.get_clustered_index_filename(this.mergeAttr2.offset, "btree"), 
-				  table2.getTable_attr_type(), 
-				  table2.getTable_attr_size(), 
-				  table2.getTable_num_attr(), 
-				  table2.getTable_num_attr(), 
-				  projlist, 
-				  null,
-				  table2.getTable_num_attr(), 
-				  false);
+		AttrType[] table1_attr = table1.getTable_attr_type();
+		int table1_len = table1.getTable_attr_type().length;
+	    short[] table1_attr_size = table1.getTable_attr_size();
+		
+		AttrType[] table2_attr = table2.getTable_attr_type();
+		int table2_len = table2.getTable_attr_type().length;
+	    short[] table2_attr_size = table2.getTable_attr_size();
+
+				
+//		IndexScan iscan1 = new IndexScan(new IndexType(IndexType.Cl_B_Index_DESC), 
+//					  this.relationName2, 
+//					  table1.get_clustered_index_filename(this.mergeAttr1.offset, "btree"), 
+//					  table1.getTable_attr_type(), 
+//					  table1.getTable_attr_size(), 
+//					  table1.getTable_num_attr(), 
+//					  table1.getTable_num_attr(), 
+//					  projlist, 
+//					  null,
+//					  table1.getTable_num_attr(), 
+//					  false);
+		
+		FileScan iscan1 =  new FileScan(table1.getTable_heapfile(), 
+				table1_attr,
+				table1.getTable_attr_size(),
+				   (short) table1.getTable_num_attr(),
+				   (short) table1.getTable_num_attr(),
+				   projlist, 
+				   null);
+		
+		FileScan iscan2 =  new FileScan(table2.getTable_heapfile(), 
+				table2_attr,
+				table2.getTable_attr_size(),
+				   (short) table2.getTable_num_attr(),
+				   (short) table2.getTable_num_attr(),
+				   projlist, 
+				   null);
+		
+//		IndexScan iscan2 = new IndexScan(new IndexType(IndexType.Cl_B_Index_DESC), 
+//				  this.relationName2, 
+//				  table2.get_clustered_index_filename(this.mergeAttr2.offset, "btree"), 
+//				  table2.getTable_attr_type(), 
+//				  table2.getTable_attr_size(), 
+//				  table2.getTable_num_attr(), 
+//				  table2.getTable_num_attr(), 
+//				  projlist, 
+//				  null,
+//				  table2.getTable_num_attr(), 
+//				  false);
 		
 		Tuple temp1 = iscan1.get_next();
 		Tuple temp2 = iscan2.get_next();
+		
+//		while(temp1 != null) {
+//			temp1.print(table1_attr);
+//			temp1 = iscan1.get_next();
+//		}
  
         int objectsSeen = 0;
     	float currDepthScore = 0.0f;
@@ -132,11 +162,11 @@ public class TopK_NRAJoin extends Iterator implements GlobalConst {
     		
     		currDepthScore = merge1 + merge2;
     		
-    		System.out.println("***********************************");
-    		System.out.println("objectsSeen: " + objectsSeen);
-    		System.out.println("currDepthScore: " + currDepthScore);
-    		System.out.println("minLowerBound: " + minLowerBound);
-        	System.out.println("***********************************");
+//    		System.out.println("***********************************");
+//    		System.out.println("objectsSeen: " + objectsSeen);
+//    		System.out.println("currDepthScore: " + currDepthScore);
+//    		System.out.println("minLowerBound: " + minLowerBound);
+//        	System.out.println("***********************************");
         	
     		if(objectsSeen >= k && currDepthScore < minLowerBound) break;
     		
@@ -178,22 +208,13 @@ public class TopK_NRAJoin extends Iterator implements GlobalConst {
     		temp1 = iscan1.get_next();
     		temp2 = iscan2.get_next();
     	}
-    	
-    	System.out.println("===================================");
-    	
-    	PriorityQueue<NRABounds> pq = new 
+    	    	
+    	pq = new 
                 PriorityQueue<NRABounds>(k, new NRABoundsComparator());
     	
     	for (Map.Entry<String,NRABounds> entry : map.entrySet()) {
     		pq.add(entry.getValue());
         }
-    	
-    	while(k > 0) {
-    		System.out.println(pq.poll().toString());
-    		k--;
-    	}
-//    	
-//    	System.out.println(pq.poll().toString());
 
 	}
 	
@@ -214,6 +235,11 @@ public class TopK_NRAJoin extends Iterator implements GlobalConst {
 			InvalidTypeException, PageNotReadException, TupleUtilsException, PredEvalException, SortException,
 			LowMemException, UnknowAttrType, UnknownKeyTypeException, Exception {
 		// TODO Auto-generated method stub
+		while(k > 0) {
+    		System.out.println(pq.poll().toString());
+    		k--;
+    	}
+		
 		return null;
 	}
 
