@@ -455,7 +455,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    	temp_query = temp_query.replaceAll("[^\\d]", " ");
 	    	temp_query = temp_query.trim();
 	    	temp_query = temp_query.replaceAll(" +", " ");
-	    	System.out.println(temp_query);
+	    	//System.out.println(temp_query);
 	    	String[] temp_tokens = temp_query.split(" ");
 	    	
 	    	/* -----------------------extract the preference list form the token array------------- */
@@ -755,9 +755,20 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    	short[] outer_str_sizes = outer_table.getTable_attr_size();
 	    	short[] inner_str_sizes = inner_table.getTable_attr_size();
 	    	FldSpec[] outer_projection = get_projection_for_table(outer_table, "outer", -1);
-	    	FldSpec[] inner_complete_projection = get_projection_for_table(inner_table, "outer", -1);
+	    	FldSpec[] inner_complete_projection = get_projection_for_table(inner_table, "inner", -1);
 			FldSpec[] inner_projection = get_projection_for_table(inner_table, "inner", inner_table_attribute);
+			inner_table.inner_projection = inner_complete_projection;
+			outer_table.inner_projection = outer_projection;
 			FldSpec[] join_projection = get_projection_for_join_table(outer_projection, inner_projection);
+//			for ( int i=0; i<join_projection.length; i++ ) {
+//				if ( join_projection[i].relation.key == RelSpec.outer ) {
+//					System.out.println(join_projection[i].relation.key + " offset "+join_projection[i].offset);
+//				}
+//				else {
+//					System.out.println(join_projection[i].relation.key + " offset "+join_projection[i].offset);
+//				}
+//				
+//			}
 			FileScan outer_table_file_scan =  new FileScan(outer_table.getTable_heapfile(), 
 										   				   outer_table.getTable_attr_type(),
 										   				   outer_table.getTable_attr_size(),
@@ -866,7 +877,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    		mater_table.setTable_tuple_size(temp.size());
 	    	}
 			while ( temp != null ) {
-				//temp.print(join_attr_type);
+				temp.print(join_attr_type);
 				SystemDefs.JavabaseDB.add_to_mater_table(temp, mater_table);
 				temp = joiner.get_next();
 			}
@@ -1002,14 +1013,23 @@ class DriverPhase3 extends TestDriver implements GlobalConst
         	}
     	}
     	else if ( table_type.equals("inner") ) {
-    		proj = new FldSpec[proj_table.getTable_num_attr()-1];
-        	RelSpec rel = new RelSpec(RelSpec.innerRel);
-        	for ( int i=0; i<(join_attr - 1); i++ ) {
-        		proj[i] = new FldSpec(rel, i+1);
-        	}
-        	for ( int i=join_attr; i<proj_table.getTable_num_attr(); i++ ) {
-        		proj[i-1] = new FldSpec(rel, i+1);
-        	}
+    		if ( join_attr != -1 ) {
+	    		proj = new FldSpec[proj_table.getTable_num_attr()-1];
+	        	RelSpec rel = new RelSpec(RelSpec.innerRel);
+	        	for ( int i=0; i<(join_attr - 1); i++ ) {
+	        		proj[i] = new FldSpec(rel, i+1);
+	        	}
+	        	for ( int i=join_attr; i<proj_table.getTable_num_attr(); i++ ) {
+	        		proj[i-1] = new FldSpec(rel, i+1);
+	        	}
+    		}
+    		else {
+    			proj = new FldSpec[proj_table.getTable_num_attr()];
+            	RelSpec rel = new RelSpec(RelSpec.outer);
+            	for ( int i=0; i<proj_table.getTable_num_attr(); i++ ) {
+            		proj[i] = new FldSpec(rel, i+1);
+            	}
+    		}
     	}
     	else {
     		proj = null;

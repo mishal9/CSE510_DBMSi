@@ -111,6 +111,9 @@ public class Table implements GlobalConst{
 	/* extension for clustered index */
 	private static String hash_unclustered_file_ext = ".hashunclustered";
 	
+	/* projection for the table used for INLJ */
+	public FldSpec[] inner_projection; 
+	
 	/* Delimiter used to read the data file */
 	private static String data_file_delimiter = ",";
 	

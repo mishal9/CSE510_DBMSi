@@ -10,6 +10,7 @@ import iterator.*;
 import btree.*;
 
 import java.lang.*;
+import java.util.Arrays;
 import java.util.List;
 import java.io.*;
 
@@ -32,7 +33,7 @@ public class IndexNestedLoopJoin extends Iterator {
 	private int n_buf_pgs;        // # of buffer pages available.
 	private boolean done,         // Is the join complete
 	get_from_outer;                 // if TRUE, a tuple is got from outer
-	private Tuple outer_tuple, inner_tuple;
+	private Tuple outer_tuple, inner_tuple, temp_tuple;
 	private Tuple Jtuple;           // Joined tuple
 	private FldSpec perm_mat[];
 	private int nOutFlds;
@@ -92,6 +93,8 @@ public class IndexNestedLoopJoin extends Iterator {
 		_in2 = new AttrType[in2.length];
 		System.arraycopy(in1, 0, _in1, 0, in1.length);
 		System.arraycopy(in2, 0, _in2, 0, in2.length);
+//		System.out.println("In1: " + Arrays.toString(_in1));
+//		System.out.println("In2: " + Arrays.toString(_in2));
 		in1_len = len_in1;
 		in2_len = len_in2;
 
@@ -109,7 +112,7 @@ public class IndexNestedLoopJoin extends Iterator {
 
 		AttrType[] Jtypes = new AttrType[n_out_flds];
 		short[] t_size;
-		RelationName = relationName;
+		RelationName = new String(relationName);
 		this.innertablename = (relationName.split("\\."))[0];
 		perm_mat = proj_list;
 		nOutFlds = n_out_flds;
@@ -125,19 +128,27 @@ public class IndexNestedLoopJoin extends Iterator {
 		try{
 			fld2 = OutputFilter[0].operand2.symbol.offset;
 
-			inner_proj_count = 0;
-			for (FldSpec fldSpec : proj_list) {
-				if (fldSpec.relation.key == RelSpec.innerRel) {
-					inner_proj_count += 1;
-				}
-			}
+//			inner_proj_count = 0;
+//			for (FldSpec fldSpec : proj_list) {
+//				if (fldSpec.relation.key == RelSpec.innerRel) {
+//					inner_proj_count += 1;
+//				}
+//			}
 
-			inner_proj = new FldSpec[inner_proj_count];
+			Table table = SystemDefs.JavabaseDB.get_relation(this.innertablename);
+			if ( table == null) {       // TODO: removing extra booleans after integreating with task6
+				System.err.println("ERROR: Table does not exist**");
+				return;
+			}
+			
+//			inner_proj = new FldSpec[inner_proj_count];
+			inner_proj = table.inner_projection;
 			outer_proj = new FldSpec[proj_list.length - inner_proj_count];
+			inner_proj_count = inner_proj.length;
 			int j = 0, k = 0;
 			for (FldSpec fldSpec : proj_list) {
 				if (fldSpec.relation.key == RelSpec.innerRel) {
-					inner_proj[j] = new FldSpec(new RelSpec(RelSpec.outer), fldSpec.offset);
+//					inner_proj[j] = new FldSpec(new RelSpec(RelSpec.outer), fldSpec.offset);
 					j += 1;
 				} else {
 					outer_proj[k] = fldSpec;
@@ -145,16 +156,13 @@ public class IndexNestedLoopJoin extends Iterator {
 				}
 			}
 
-			Table table = SystemDefs.JavabaseDB.get_relation(this.innertablename);
-			if ( table == null) {       // TODO: removing extra booleans after integreating with task6
-				System.err.println("ERROR: Table does not exist**");
-				return;
-			}
+			
 			if ( table.getBtree_unclustered_attr()[fld2-1] ) {  // TODO: removing extra booleans after integreating with task6
 				// unclustered btree exists on fld2
 				indexType = IndexType.B_Index;
 				index_name = table.get_unclustered_index_filename(fld2, "btree");
 				index_found = true;
+//				System.out.println("Unclustered btree found");
 			}
 			else if( table.getHash_unclustered_attr()[fld2-1] ) {
 				// unclustered hash exist on fld2
@@ -176,9 +184,10 @@ public class IndexNestedLoopJoin extends Iterator {
 			}
 			else{
 				index_found = false;
-				hf = new Heapfile(relationName);
+				hf = new Heapfile(table.getTable_heapfile());
+				inner = hf.openScan();
 			}
-			System.out.println(fld2+" "+index_found);
+//			System.out.println(fld2+" "+index_found);
 		}catch (Exception e){
 			e.printStackTrace();
 		}
@@ -228,23 +237,41 @@ public class IndexNestedLoopJoin extends Iterator {
 
 			if (get_from_outer == true) {
 				get_from_outer = false;
-				if (inner != null)     // If this not the first time,
-				{
-					// close scan
-					inner = null;
+				if ( index_found != true ) {
+					inner = hf.openScan();
 				}
+//				if (inner != null)     // If this not the first time,
+//				{
+//					// close scan
+//					inner.closescan();
+//					inner = null;
+//				}
 				if ((outer_tuple = outer.get_next()) == null) {
 					done = true;
 					if (inner != null) {
+						inner.closescan();
 						inner = null;
 					}
 					return null;
 				}
 				if (index_found == true) {
+//					System.out.print("Outer tuple ");
+//					outer_tuple.print(_in1);
+					
 					set_keys(outer_tuple);
 					switch(indexType) {
 					case IndexType.B_Index:
-						iscan = new IndexScan(new IndexType(IndexType.B_Index), RelationName, index_name, _in2, t2_str_sizescopy, in2_len, inner_proj_count, inner_proj, outFilter, fld2, false);
+						iscan = new IndexScan(new IndexType(IndexType.B_Index),
+												RelationName, 
+												index_name, 
+												_in2, 
+												t2_str_sizescopy, 
+												in2_len, 
+												inner_proj_count, 
+												inner_proj, 
+												outFilter, 
+												fld2, 
+												false);
 						break;
 					case IndexType.Cl_B_Index_ASC:
 						iscan = new IndexScan(new IndexType(IndexType.Cl_B_Index_ASC), RelationName, index_name, _in2, t2_str_sizescopy, in2_len, inner_proj_count, inner_proj, outFilter, fld2, false);
@@ -263,12 +290,25 @@ public class IndexNestedLoopJoin extends Iterator {
 			RID rid = null;
 			if (index_found) {
 				inner_tuple = iscan.get_next();
+				
 			} else {
 				rid = new RID();
-				inner_tuple = inner.getNext(rid);
+				Tuple temp_tuple = inner.getNext(rid);
+				if ( temp_tuple != null ) {
+					inner_tuple = new Tuple();
+					inner_tuple.setHdr((short) in2_len, _in2, t2_str_sizescopy);
+					inner_tuple.tupleCopy(temp_tuple);
+				}
+				else {
+					inner_tuple = null;
+				}
 			}
 			while (inner_tuple != null) {
-				inner_tuple.setHdr((short) in2_len, _in2, t2_str_sizescopy);
+//				System.out.println("Inside the while ");
+//				System.out.print("Inner tuple ");
+//				inner_tuple.print(_in2);
+//				System.out.println(Arrays.toString(perm_mat));
+				//inner_tuple.setHdr((short) in2_len, _in2, t2_str_sizescopy);
 				// these inner checks makes sure of conditions other than the index attribute => having or not having index doesnot matter
 				if (PredEval.Eval(RightFilter, inner_tuple, null, _in2, null)) {
 					if (PredEval.Eval(OutputFilter, outer_tuple, inner_tuple, _in1, _in2)) {
@@ -276,20 +316,36 @@ public class IndexNestedLoopJoin extends Iterator {
 						Projection.Join(outer_tuple, _in1,
 								inner_tuple, _in2,
 								Jtuple, perm_mat, nOutFlds);
+//						System.out.print("Jtuple " + Jtuple.size());
 						return Jtuple;
 					}
 				}
 				if (index_found) {
 					inner_tuple = iscan.get_next();
-				} else {
+				}
+				else {
 					rid = new RID();
-					inner_tuple = inner.getNext(rid);
+					Tuple temp_tuple = inner.getNext(rid);
+					if ( temp_tuple != null ) {
+						inner_tuple = new Tuple();
+						inner_tuple.setHdr((short) in2_len, _in2, t2_str_sizescopy);
+						inner_tuple.tupleCopy(temp_tuple);
+					}
+					else {
+						inner_tuple = null;
+					}
 				}
 			}
 			// There has been no match. (otherwise, we would have
 			//returned from t//he while loop. Hence, inner is
 			//exhausted, => set get_from_outer = TRUE, go to top of loop
-
+			if ( iscan != null ) {
+				iscan.close();
+			}
+			if ( inner != null ) {
+				inner.closescan();
+			}
+			inner = null;
 			get_from_outer = true; // Loop back to top and get next outer tuple.
 		} while (true);
 	}

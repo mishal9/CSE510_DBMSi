@@ -349,7 +349,9 @@ public class IndexUtils {
 					indScan = ((BTreeFile)indFile).new_scan(key, key);
 				}
 				else {
+					
 					key = getValue(selects[0], selects[0].type2, 2);
+//					System.out.println("Inside te equiscan " + key.toString());
 					indScan = ((BTreeFile)indFile).new_scan(key, key);
 				}
 				return indScan;
