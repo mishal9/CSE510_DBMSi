@@ -578,6 +578,16 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 														   	 null);
 			FldSpec[] agg_fldspc = get_aggregation_list(agg_attributes);
 			FldSpec groupByAttr = new FldSpec(new RelSpec(RelSpec.outer), groupby_attribute);
+			
+			/* keep the output attrtype ready */
+			AttrType[] agg_attrtype = new AttrType[groupby_table.getTable_num_attr()];
+			for ( int i=0; i<agg_attrtype.length; i++ ) {
+				agg_attrtype[i] = new AttrType( (groupby_table.getTable_attr_type())[i].attrType );
+			}
+			
+			for (int i=0; i<agg_attributes.length; i++ ) {
+				agg_attrtype[agg_attributes[i] - 1] = new AttrType(AttrType.attrReal);
+			}
 	    	/* run the appropriate groupby algorithm */
 	    	switch ( group_algo ) {
 	    		case "HASH":
@@ -615,7 +625,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
             while(result != null) {
                 result.forEach((tuple) -> {
                     try {
-                        tuple.print(groupby_table.getTable_attr_type());
+                        tuple.print(agg_attrtype);
                     } catch (IOException e) {
                         e.printStackTrace();
                     }

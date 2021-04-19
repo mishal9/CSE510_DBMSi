@@ -431,6 +431,42 @@ public class TupleUtils {
 		return key;
 	}
 	
+	public static KeyClass get_key_from_key( KeyClass orig_key, AttrType attr_type) throws FieldNumberOutOfBoundException, IOException {
+		KeyClass key = null;
+		switch (attr_type.attrType) {
+			case AttrType.attrInteger:
+				key = new IntegerKey( ((IntegerKey)orig_key).getKey() );
+				break;
+			case AttrType.attrString:
+				key = new StringKey( ((StringKey)orig_key).getKey() );
+				break;
+			case AttrType.attrReal:
+				key = new FloatKey( ((FloatKey)orig_key).getKey() );
+				break;
+			default:
+				System.out.println("Wrong key information");
+				break;
+		}
+		return key;
+	}
+	
+	public static KeyClass get_key_from_key_type( KeyClass orig_key, Tuple t, int attr_number) throws FieldNumberOutOfBoundException, IOException {
+		KeyClass key = null;
+		if ( orig_key instanceof IntegerKey ) {
+			key = new IntegerKey(t.getIntFld(attr_number));
+		}
+		else if ( orig_key instanceof FloatKey ) {
+			key = new FloatKey(t.getFloFld(attr_number));
+		}
+		else if ( orig_key instanceof StringKey ) {
+			key = new StringKey(t.getStrFld(attr_number));
+		}
+		else {
+			System.out.println("Something is wrong in get key from key type");
+		}
+		return key;
+	}
+	
 	public static HashKey get_hashkey_from_tuple_attrtype( Tuple t, AttrType attr_type, int attr_number) throws FieldNumberOutOfBoundException, IOException {
 		HashKey key = null;
 		switch (attr_type.attrType) {
