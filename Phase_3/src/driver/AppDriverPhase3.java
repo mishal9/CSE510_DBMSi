@@ -13,7 +13,7 @@ import diskmgr.InvalidPageNumberException;
 import diskmgr.PCounter;
 import heap.*;
 import global.*;
-
+import hashindex.HashIndexWindowedScan;
 import index.IndexException;
 import iterator.*;
 import iterator.Iterator;
@@ -588,10 +588,36 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 			for (int i=0; i<agg_attributes.length; i++ ) {
 				agg_attrtype[agg_attributes[i] - 1] = new AttrType(AttrType.attrReal);
 			}
+			
+			HashIndexWindowedScan hiwfs = null;
 	    	/* run the appropriate groupby algorithm */
 	    	switch ( group_algo ) {
 	    		case "HASH":
 	    			//TBD run HASH groupby with proper params
+	    			if ( groupby_table.unclustered_index_exist(groupby_attribute, "hash") == false ) {
+	    				groupby_table.create_unclustered_index(groupby_attribute, "hash");
+	    			}
+	    			hiwfs = new HashIndexWindowedScan(new IndexType(IndexType.Hash),
+	    											  groupby_table.getTable_heapfile(), 
+	    											  groupby_table.get_unclustered_index_filename(groupby_attribute, "hash"), 
+	    											  groupby_table.getTable_attr_type(),
+	    											  groupby_table.getTable_attr_size(), 
+	    											  groupby_table.getTable_num_attr(), 
+	    											  groupby_projection.length,
+	    											  groupby_projection, 
+	    											  null, 
+	    											  groupby_attribute,//confirm that this is groupby attr
+	    											  false);
+	    			groupby = new GroupByWithHash(groupby_table.getTable_attr_type(),
+												  groupby_table.getTable_num_attr(),
+												  groupby_table.getTable_attr_size(),
+												  hiwfs,
+												  groupByAttr,
+												  agg_fldspc,
+												  agg,
+												  groupby_projection,
+												  groupby_projection.length,
+												  groupby_n_pages);
 	    			break;
 	    		case "SORT":
 	    			//TBD run SORT hash with proper params
@@ -625,7 +651,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
             while(result != null) {
                 result.forEach((tuple) -> {
                     try {
-                        tuple.print(agg_attrtype);
+                        tuple.print(groupby_table.getTable_attr_type());
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
