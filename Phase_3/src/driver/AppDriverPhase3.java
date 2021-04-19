@@ -873,6 +873,8 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    			break;
 	    	}
 	    	Tuple temp = joiner.get_next();
+	    	System.out.println("Tup");
+	    	temp.printTuple(join_attr_type);
 	    	if ( mater_table != null ) {
 	    		mater_table.setTable_tuple_size(temp.size());
 	    	}

@@ -394,7 +394,7 @@ class JoinsDriver implements GlobalConst {
     private void Query7_CondExpr(CondExpr[] expr) {
 
         expr[0].next = null;
-        expr[0].op = new AttrOperator(AttrOperator.aopGE);
+        expr[0].op = new AttrOperator(AttrOperator.aopEQ);
 
         expr[0].type1 = new AttrType(AttrType.attrSymbol);
         expr[0].operand1.symbol = new FldSpec(new RelSpec(RelSpec.outer), 1);
@@ -467,7 +467,7 @@ class JoinsDriver implements GlobalConst {
                     Rtypes, 3, Rsizes,
                     5,
                     am, "reserves.in",
-                    outFilter, null, proj1, 6);
+                    outFilter, null, proj1, proj1.length);
 
             AttrType [] JJtype = {
                     new AttrType(AttrType.attrInteger),
