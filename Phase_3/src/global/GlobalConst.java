@@ -30,7 +30,7 @@ public interface GlobalConst {
   public static final int MAX_NAME = 50;
   
   /* max size of the string attributes in a tuple */
-  public static final int STRSIZE = 150;
+  public static final int STRSIZE = 50;
   
   /* number of pages in the DB */
   public static final int NUMDBPAGES = 7000;

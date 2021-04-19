@@ -59,7 +59,8 @@ public class TopK_HashJoin extends Iterator implements GlobalConst {
 	int n_pages;
 	
 	PriorityQueue<Tuple> pq = null;
-	HashJoin hj = null;
+//	HashJoin hj = null;
+	NestedLoopsJoins hj = null;
 	
 	AttrType[] newAttrType = null;
 
@@ -167,7 +168,7 @@ public class TopK_HashJoin extends Iterator implements GlobalConst {
 	    
 //	    System.out.println("table2.getTable_heapfile(): " + table2.getTable_heapfile());
 	    
-	    hj = new HashJoin(
+	    hj = new NestedLoopsJoins(
     		  table1_attr, table1_len, table1_attr_size,
     		  table2_attr, table2_len, table2_attr_size,
     		  100,

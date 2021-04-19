@@ -1044,12 +1044,14 @@ public class Table implements GlobalConst{
 		    				key = new HashKey(t.getStrFld(this.clustered_hash_attr));
 		    			}*/
 		    			rid = hasher.insert(key, t);
+		    			insert_into_unclustered_index(t, new RID(rid.pageNo, rid.slotNo));
 		    		}
 		    		else {
 		    			rid = hf.insertRecord(t.returnTupleByteArray());
+		    			insert_into_unclustered_index(t, new RID(rid.pageNo, rid.slotNo));
 		    		}
 		    		
-		    		insert_into_unclustered_index(t, new RID(rid.pageNo, rid.slotNo));
+		    		
 				} catch (InvalidSlotNumberException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -1328,6 +1330,8 @@ public class Table implements GlobalConst{
 	  System.out.println("Table attrypes: "+ Arrays.toString(this.table_attr_type));
 	  System.out.println("Table strsizes: "+Arrays.toString(this.table_attr_size));
 	  System.out.println("Table tuple size: "+this.table_tuple_size);
+	  System.out.println("Clustered btree index on attr: "+Arrays.toString(btree_unclustered_attr));
+	  System.out.println("Clustered hash index on attr: "+Arrays.toString(hash_unclustered_attr));
 	  System.out.println("\n");
   }
   
@@ -1745,7 +1749,13 @@ public class Table implements GlobalConst{
 		  temper = iscan.get_next();
 	  }
 	  iscan.close();*/
-	  print_table_attr();
+//	  print_table_attr();
+	  ClusteredBTreeFile btf  = new ClusteredBTreeFile(this.get_clustered_index_filename(this.clustered_btree_attr, "btree"));
+	  KeyClass key = new StringKey("Pooja");
+	  PageId p = new PageId(108);
+	  RID rid = new RID(p, 4);
+	  btf.Delete(key, rid);
+	  btf.close();
   }
   
   /* removes a tuple from the table heapfile */
@@ -1964,6 +1974,10 @@ public class Table implements GlobalConst{
 			  }
 		  }
 	  }
+	  SystemDefs.JavabaseDB.db_deleted_rids.clear();
+	  SystemDefs.JavabaseDB.db_deleted_tuples.clear();
+	  SystemDefs.JavabaseDB.db_inserted_rids.clear();
+	  SystemDefs.JavabaseDB.db_inserted_tuples.clear();
   }
 
   /* adds table to global queue */

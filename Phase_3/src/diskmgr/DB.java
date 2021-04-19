@@ -44,6 +44,15 @@ public class DB implements GlobalConst {
 	/* name of the heapfile in the current contaning the tables relation */
 	private String table_relation;
 	
+	/* name of the heapfile containing the names of the cols in table */
+	private String table_col_names;
+	
+	/* for storing the headers of the tables */
+	AttrType[] names_cols_attr = {new AttrType(AttrType.attrString)};
+	
+	/* for storing str sizes of the table */
+	short[] names_strsizes = {(short) STRSIZE};
+	
 	/* attrtype of the table relation 
 	 * TBD update the relation once we have the clustered and unclustered btree and hash indices
 	   * table structure -->
@@ -85,7 +94,9 @@ public class DB implements GlobalConst {
 		try {
 			//System.out.println("reading the tables in DB");
 			Heapfile hf = new Heapfile(table_relation);
+			Heapfile hf1 = new Heapfile(table_col_names);
 			Scan relation_scan = hf.openScan();
+			Scan tcn_scan = hf1.openScan();
 			//System.out.println("Number of tables in the DB "+hf.getRecCnt());
 			Tuple t1 = new Tuple();
 			t1.setHdr( (short)tables_attr.length, tables_attr, tables_strsize);
@@ -115,8 +126,18 @@ public class DB implements GlobalConst {
 					//System.out.println("Size of the tuple in the table is "+tsize);
 					
 					/* get the column names from the table */
-					String col_string = t.getStrFld(4);
-					String[] col_token = col_string.split(",");
+//					String col_string = t.getStrFld(4);
+//					String[] col_token = col_string.split(",");
+					String[] col_token = new String[num_attr];
+					
+					RID temp_rid = new RID();
+					Tuple temp1 = new Tuple(), temp2 = new Tuple();
+					temp1.setHdr((short)names_cols_attr.length, names_cols_attr, names_strsizes);
+					for ( int i=0; i<num_attr; i++ ) {
+						temp2 = tcn_scan.getNext(temp_rid);
+						temp1.tupleCopy(temp2);
+						col_token[i] = new String(temp1.getStrFld(1));
+					}
 					//System.out.println(Arrays.toString(col_token));
 					
 					/* get the column types */
@@ -165,6 +186,8 @@ public class DB implements GlobalConst {
 					
 					temp_t = relation_scan.getNext(rid);
 				}
+				relation_scan.closescan();
+				tcn_scan.closescan();
 			}
 		} catch (HFException e) {
 			// TODO Auto-generated catch block
@@ -248,6 +271,7 @@ public class DB implements GlobalConst {
     
     name = fname;
     table_relation = fname+"TRkhusmodi.in";
+    table_col_names = fname+"TCNkhusmodi.in";
     
     // Create a random access file
     fp = new RandomAccessFile(fname, "rw");
@@ -300,6 +324,7 @@ public class DB implements GlobalConst {
     name = new String(fname);
     num_pages = (num_pgs > 2) ? num_pgs : 2;
     table_relation = fname+"TRkhusmodi.in";
+    table_col_names = fname+"TCNkhusmodi.in";
     
     
     File DBfile = new File(name);
@@ -349,6 +374,8 @@ public class DB implements GlobalConst {
 	  try {
 		  Heapfile hf = new Heapfile(table_relation);
 		  hf.deleteFile();
+		  Heapfile hf1 = new Heapfile(table_col_names);
+		  hf1.deleteFile();
 	  } catch (HFException | HFBufMgrException | HFDiskMgrException | IOException | InvalidTupleSizeException e) {
 		  // TODO Auto-generated catch block
 		  e.printStackTrace();
@@ -407,15 +434,15 @@ public class DB implements GlobalConst {
 		
 		/* make a combined attr of all the cols */
 		String s = "";
-		String[] names_cols = relation.getTable_attr_name();
-		for ( int i=0; i<names_cols.length; i++ ) {
-			if ( i==0) {
-				s = names_cols[i];
-			}
-			else {
-				s = s + "," + names_cols[i];
-			}
-		}
+//		String[] names_cols = relation.getTable_attr_name();
+//		for ( int i=0; i<names_cols.length; i++ ) {
+//			if ( i==0) {
+//				s = names_cols[i];
+//			}
+//			else {
+//				s = s + "," + names_cols[i];
+//			}
+//		}
 		//System.out.println("columns: "+ s);
 		t.setStrFld(4, s);
 		
@@ -486,6 +513,17 @@ public class DB implements GlobalConst {
 		Heapfile hf = new Heapfile(table_relation);
 		RID rid = new RID();
 		rid = hf.insertRecord(t.getTupleByteArray());
+		
+		Heapfile hf1 = new Heapfile(table_col_names);
+		String[] names_cols1 = relation.getTable_attr_name();
+		Tuple t1 = new Tuple();
+		t1.setHdr((short)1, names_cols_attr, names_strsizes);
+		
+		for ( int i=0; i<names_cols1.length; i++ ) {
+			t1.setStrFld(1, names_cols1[i]);
+			rid = hf1.insertRecord(t1.getTupleByteArray());
+		}
+		
 		
 	} catch (InvalidTypeException e) {
 		// TODO Auto-generated catch block
