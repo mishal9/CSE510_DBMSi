@@ -212,12 +212,40 @@ public class TopK_HashJoin extends Iterator implements GlobalConst {
 	    	
 	    	int curr = 1;
 	    	for(int i = 1; i < newLength; i++) {
-	    		newTuple.setIntFld(curr, t.getIntFld(i));
+	    		if(newAttrType[i-1].attrType == AttrType.attrString) {
+	    			newTuple.setStrFld(curr, t.getStrFld(i));
+	    		}
+	    		else if (newAttrType[i-1].attrType == AttrType.attrInteger) {
+	    			newTuple.setIntFld(curr, t.getIntFld(i));
+	    		}
+	    		else if(newAttrType[i-1].attrType == AttrType.attrReal) {
+	    			newTuple.setFloFld(curr, t.getFloFld(i));
+	    		}
 	    		curr++;
 	        }
-	    	newTuple.setFloFld(curr, (float) ( t.getIntFld(mergeAttr1.offset) + 
-	    			 t.getIntFld( table1_len + mergeAttr2.offset)) / (float) 2.0
-	    	);
+	    	
+	    	if(table1_attr[mergeAttr1.offset-1].attrType == AttrType.attrReal && table2_attr[mergeAttr2.offset-1].attrType == AttrType.attrReal) {
+	    		newTuple.setFloFld(curr, (float) (t.getFloFld(mergeAttr1.offset) + 
+		    			 t.getFloFld( table1_len + mergeAttr2.offset) / (float) 2.0)
+		    	);
+	    	}
+	    	else if(table1_attr[mergeAttr1.offset-1].attrType == AttrType.attrInteger && table2_attr[mergeAttr2.offset-1].attrType == AttrType.attrInteger) {
+	    		newTuple.setFloFld(curr, (float) ( t.getIntFld(mergeAttr1.offset) + 
+		    			 t.getIntFld( table1_len + mergeAttr2.offset)) / (float) 2.0
+		    	);
+	    	}
+	    	else if(table1_attr[mergeAttr1.offset-1].attrType == AttrType.attrInteger && table2_attr[mergeAttr2.offset-1].attrType == AttrType.attrReal) {
+	    		newTuple.setFloFld(curr, (float) ( t.getIntFld(mergeAttr1.offset) + 
+		    			 t.getFloFld( table1_len + mergeAttr2.offset)) / (float) 2.0
+		    	);
+	    	}
+	    	else if(table1_attr[mergeAttr1.offset-1].attrType == AttrType.attrReal && table2_attr[mergeAttr2.offset-1].attrType == AttrType.attrInteger) {
+	    		newTuple.setFloFld(curr, (float) ( t.getFloFld(mergeAttr1.offset) + 
+		    			 t.getIntFld( table1_len + mergeAttr2.offset)) / (float) 2.0
+		    	);
+	    	}
+	    	
+	    	
 	    	pq.add(newTuple);
 	    	t = hj.get_next();
 	    }
