@@ -114,7 +114,7 @@ public class ClusteredBTSortedPage  extends HFPage{
 	 // - slot directory compacted
 	 
 	 rid.slotNo = i;
-	 System.out.println("Sorteg page rid page "+rid.pageNo.pid+" slot "+rid.slotNo);
+	 //System.out.println("Sorteg page rid page "+rid.pageNo.pid+" slot "+rid.slotNo);
 	 return rid;
      }
      catch (Exception e ) { 

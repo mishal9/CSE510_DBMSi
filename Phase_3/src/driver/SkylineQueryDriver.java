@@ -128,34 +128,35 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
 			//get only the btree indexes specified by the the pref_list array
 			//IndexFile[] index_file_list = BtreeGeneratorUtil.getBtreeSubset(this.pref_list);
 			IndexFile[] index_file_list = get_btree_index_files();
-			System.out.println("Btree DATABASE CREATED");
-			PCounter.initialize();
+			//System.out.println("Btree DATABASE CREATED");
+			//PCounter.initialize();
 			BTreeSky btreesky = new BTreeSky(skytable.getTable_attr_type(), skytable.getTable_num_attr(), skytable.getTable_attr_size(), amt_of_mem, am1, relationName, this.pref_list,
 											 this.pref_list.length, index_file_list, this.n_pages);
 			btreesky.debug = false;
 			int numSkyEle = 0;
 			Tuple skyEle = btreesky.get_next(); // first sky element
-			System.out.print("First Sky element is: ");
+			System.out.println("Nested Loop Skyline elements -->");
+			//System.out.print("First Sky element is: ");
 			skyEle.print(skytable.getTable_attr_type());
 			SystemDefs.JavabaseDB.add_to_mater_table(skyEle, this.skyouttable);
 			numSkyEle++;
 			while (skyEle != null) {
 				skyEle = btreesky.get_next(); // subsequent sky elements
 				if (skyEle == null) {
-					System.out.println("No more sky elements");
+					//System.out.println("No more sky elements");
 					break;
 				}
 				SystemDefs.JavabaseDB.add_to_mater_table(skyEle, this.skyouttable);
 				numSkyEle++;
-				System.out.print("Sky element is: ");
+				//System.out.print("Sky element is: ");
 				skyEle.print(skytable.getTable_attr_type());
 			}
 			System.out.println("Skyline Length: "+numSkyEle);
 			btreesky.close();
-			System.out.println("End of runBtreeSky");
-			System.out.println("Number of Disk reads: "+ PCounter.get_rcounter());
-			System.out.println("Number of Disk writes: "+ PCounter.get_wcounter());
-			PCounter.initialize();
+			//System.out.println("End of runBtreeSky");
+			//System.out.println("Number of Disk reads: "+ PCounter.get_rcounter());
+			//System.out.println("Number of Disk writes: "+ PCounter.get_wcounter());
+			//PCounter.initialize();
     	} catch ( Exception e ) {
     		e.printStackTrace();
     	}
@@ -199,7 +200,7 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
 
         Sort sort = null;
         try {
-            sort = new Sort(attrType_for_sort, (short) (COLS+1), skytable.getTable_attr_size(), fscan, (COLS+1), new TupleOrder(TupleOrder.Descending), 32, this.n_pages);
+            sort = new Sort(attrType_for_sort, (short) (COLS+1), skytable.getTable_attr_size(), fscan, (COLS+1), new TupleOrder(TupleOrder.Descending), 4, 5);
         }
         catch (Exception e) {
             e.printStackTrace();
@@ -210,7 +211,7 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
         SortFirstSky sortFirstSky = null;
         try {
             sortFirstSky = new SortFirstSky(attrType_for_sort,
-						                    (short) COLS,
+						                    (short) (COLS),
 						                    null,
 						                    sort,
 						                    (short)skytable.getTable_tuple_size(),
@@ -220,12 +221,14 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
 						                    this.n_pages);
             fscan.close();
             sort.close();
-            System.out.println("Skyline object: ");
+            System.out.println("Sort First Sky Skyline elements -->");
             Tuple temp;
             try {
                 temp = sortFirstSky.get_next();
                 while (temp!=null) {
-                    temp.printTuple(attrType_for_proj);
+                	System.out.println("Size of temp: "+temp.size());
+                	SystemDefs.JavabaseDB.add_to_mater_table(temp, this.skyouttable);
+                    temp.printTuple(attrType_for_sort);
                     numSkyEle++;
                     temp = sortFirstSky.get_next();
                 }
@@ -246,10 +249,10 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
                 e.printStackTrace();
             }
         }
-        System.out.println("Skyline Length: "+numSkyEle);
-        System.out.println("Number of Disk reads: "+ PCounter.get_rcounter());
-        System.out.println("Number of Disk writes: "+ PCounter.get_wcounter());
-        PCounter.initialize();
+        System.out.println("\nSkyline Length: "+numSkyEle);
+        //System.out.println("Number of Disk reads: "+ PCounter.get_rcounter());
+        //System.out.println("Number of Disk writes: "+ PCounter.get_wcounter());
+        //PCounter.initialize();
 
     }
 
@@ -258,7 +261,7 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
         int numSkyEle =0;
         try {
         	Table table = SystemDefs.JavabaseDB.get_relation(tablename);
-        	System.out.println("Printint the attrtype in table "+Arrays.toString(table.getTable_attr_type()));
+        	//System.out.println("Printint the attrtype in table "+Arrays.toString(table.getTable_attr_type()));
             nestedLoopsSky = new NestedLoopsSky(table.getTable_attr_type(),
 							                    (short)table.getTable_num_attr(),
 							                    table.getTable_attr_size(),
@@ -268,7 +271,8 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
 							                    this.pref_list.length,
 							                    this.n_pages);
 
-            System.out.println("Printing the Nested Loop Skyline");
+            //System.out.println("Printing the Nested Loop Skyline");
+            System.out.println("Nested Loop Skyline elements -->");
             Tuple temp = nestedLoopsSky.get_next();
             while (temp!=null) {
             	numSkyEle++;
@@ -291,9 +295,9 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
             }
         }
         System.out.println("Skyline Length: "+numSkyEle);
-        System.out.println("Number of Disk reads: "+ PCounter.get_rcounter());
-        System.out.println("Number of Disk writes: "+ PCounter.get_wcounter());
-        PCounter.initialize();
+        //System.out.println("Number of Disk reads: "+ PCounter.get_rcounter());
+        //System.out.println("Number of Disk writes: "+ PCounter.get_wcounter());
+        //PCounter.initialize();
     }
 
     private void runblockNestedSky(){
@@ -310,7 +314,7 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
 									                    this.pref_list.length,
 									                    this.n_pages);
 
-            System.out.println("Printing the Block Nested Loop Skyline");
+            System.out.println("Block Nested Loop Skyline elements -->");
             Tuple temp;
             try {
                 temp = blockNestedLoopsSky.get_next();
@@ -331,9 +335,9 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
             blockNestedLoopsSky.close();
         }
         System.out.println("Skyline Length: "+numSkyEle);
-        System.out.println("Number of Disk reads: "+ PCounter.get_rcounter());
-        System.out.println("Number of Disk writes: "+ PCounter.get_wcounter());
-        PCounter.initialize();
+        //System.out.println("Number of Disk reads: "+ PCounter.get_rcounter());
+        //System.out.println("Number of Disk writes: "+ PCounter.get_wcounter());
+        //PCounter.initialize();
     }
 
     public void print_attr() {
@@ -344,8 +348,8 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
         System.out.println("Pref list: "+Arrays.toString(pref_list));
         System.out.println("Pref list length: "+pref_list.length);
         System.out.println("Tablename: "+tablename);
-        System.out.println("Outtablename: "+ outtablename);
-        System.out.println("\n");
+        System.out.println("Output tablename: "+ outtablename);
+        System.out.println();
     }
     
     private BTreeFile[] get_btree_index_files() throws GetFileEntryException, PinPageException, ConstructPageException {

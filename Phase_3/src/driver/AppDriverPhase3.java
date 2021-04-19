@@ -473,8 +473,19 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    				" with buffer pages: "+skyline_n_pages);
 	    	}
 	    	
+	    	/* initialising the pcounter and limiting system pages */
+	    	SystemDefs.JavabaseBM.limit_memory_usage(true, skyline_n_pages);
+	    	PCounter.initialize();
+	    	
+	    	
 	    	/* run the appropriate skyline algorithm */
 	    	SkylineQueryDriver skyd = new SkylineQueryDriver(skyline_preference_list, skyline_tablename, skyline_n_pages, out_tablename, skyline_algo);
+	    	
+	    	/*printing the reads and writes and closing pcounter and also free the BM from the limit */
+	    	System.out.println("Number of Page reads: "+PCounter.get_rcounter());
+	    	System.out.println("Number of Page Writes: "+PCounter.get_wcounter());
+	    	SystemDefs.JavabaseBM.limit_memory_usage(false, skyline_n_pages);
+	    	PCounter.initialize();
 	    	
     	}catch (ArrayIndexOutOfBoundsException e){
 	        validate_token_length(0, "skyline");

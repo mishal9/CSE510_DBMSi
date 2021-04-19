@@ -201,6 +201,7 @@ abstract class Replacer implements GlobalConst
   public static final int Available = 12;
   public static final int Referenced = 13;
   public static final int Pinned = 14;  
+  public static final int INVALID_FRAME = -1;
 }
 
 

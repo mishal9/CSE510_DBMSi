@@ -942,7 +942,7 @@ public class ClusteredHeapfile extends Heapfile implements GlobalConst {
 	 if ( btsfilename == null ) {
 		 insertRecord(insert_tuple.getTupleByteArray());
 	 }
-	 System.out.println("Into te new insert method");
+	 //System.out.println("Into te new insert method");
 	 //t1.print(attrType);
 	 RID currentDataPageRid = new RID();
 	 RID data_inserted_rid = new RID();
@@ -1051,7 +1051,7 @@ public class ClusteredHeapfile extends Heapfile implements GlobalConst {
 	      {
 	    	  if ( lookup_dirPage.available_space() >= dpinfo.size ) 
 	    	  {
-	    		  System.out.println("Case where we need to insert new data page at the end and no new dir page");
+	    		  //System.out.println("Case where we need to insert new data page at the end and no new dir page");
 	    		  currentDataPage = _newDatapage(dpinfo);
 	    		  
 	    		  
@@ -1119,7 +1119,7 @@ public class ClusteredHeapfile extends Heapfile implements GlobalConst {
 		  * 3. Splitting dir page, splitting data page
 		  */
 		 unpinPage(currentDirPageId, false);
-		 System.out.println("We are in the next entry != null scnenario");
+		 //System.out.println("We are in the next entry != null scnenario");
 		 data_inserted_rid = handle_splitting_cases(insert_tuple, attrType, strsizes, key, nextentry, btf, key_index);
 	 }
 	 indScan.DestroyBTreeFileScan();
@@ -1143,14 +1143,14 @@ public class ClusteredHeapfile extends Heapfile implements GlobalConst {
 	 KeyClass key_bt = null;
 	 if ( key instanceof IntegerKey ) {
 		 key_bt = ((IntegerKey)nextentry.key);
-		 System.out.println("current key value of that page "+((IntegerKey)nextentry.key).getKey());
+		 //System.out.println("current key value of that page "+((IntegerKey)nextentry.key).getKey());
 	 }
 	 else {
 		 key_bt = ((StringKey)nextentry.key);
-		 System.out.println("current key value of that page "+((StringKey)nextentry.key).getKey());
+		 //System.out.println("current key value of that page "+((StringKey)nextentry.key).getKey());
 	 }
 	 RID rid_bt = ((LeafData)nextentry.data).getData();
-	 System.out.println("Key to be inserted onto page rid"+rid_bt.slotNo+" "+rid_bt.pageNo.pid);
+	 //System.out.println("Key to be inserted onto page rid"+rid_bt.slotNo+" "+rid_bt.pageNo.pid);
 	 RID inserted_rid = new RID();
 	 
 	 //look for the page with rid_bt
@@ -1182,7 +1182,7 @@ public class ClusteredHeapfile extends Heapfile implements GlobalConst {
 	     //no splitting dir page case
 	     if ( lookup_dataPage.available_space() >= insert_tuple.getTupleByteArray().length )
 	     {
-	    	 System.out.println("Case splitting: No new data page, No new dir page");
+	    	 //System.out.println("Case splitting: No new data page, No new dir page");
     		 //TBD case 2: No splitting dir page, No splitting data page
     		 //btf.Delete(key_bt, rid_bt);
     		 inserted_rid = lookup_dataPage.insertRecord(insert_tuple.getTupleByteArray(), attrtype, strsizes, key_index);
@@ -1196,12 +1196,12 @@ public class ClusteredHeapfile extends Heapfile implements GlobalConst {
     	     RID tmprid = lookup_dataPage.lastRecord();
     	     if ( ( tmprid.pageNo.pid == rid_bt.pageNo.pid ) && ( tmprid.slotNo == rid_bt.slotNo ) )
     	     {
-    	    	 System.out.println("Case 2.1");
+    	    	 //System.out.println("Case 2.1");
     	    	 //do nothing
     	     }
     	     else
     	     {
-    	    	 System.out.println("Case 2.2");
+    	    	 //System.out.println("Case 2.2");
     	    	 btf.Delete(key_bt, rid_bt);
 	    	     Tuple itr_tuple = lookup_dataPage.getRecord(tmprid);
 	    	     Tuple itr_hdr_tuple = TupleUtils.getEmptyTuple(attrtype, strsizes);
@@ -1222,7 +1222,7 @@ public class ClusteredHeapfile extends Heapfile implements GlobalConst {
 	     {
 	    	 if ( lookup_dirPage.available_space() >= dpinfo.size )
 	    	 {
-	    		 System.out.println("Case splitting: Insert a new data page and no new dir page");
+	    		 //System.out.println("Case splitting: Insert a new data page and no new dir page");
 	    		 // case 1: Data page splits but dir page remains same
 	    		 //delete the record for splitting apge from the btree first
 	    		 btf.Delete(key_bt, rid_bt);
@@ -1248,12 +1248,12 @@ public class ClusteredHeapfile extends Heapfile implements GlobalConst {
 	    			 else
 	    				 itr_key = new StringKey(itr_hdr_tuple.getStrFld(key_index));
 	    			 if ( BT.keyCompare(key, itr_key) > 0 ) {
-	    				 System.out.println("Key greater");
+	    				 //System.out.println("Key greater");
 	    				 itr_rid = lookup_dataPage.nextRecord(itr_rid);
 	    				 i++;
 	    				 continue;
 	    			 }
-	    			 itr_hdr_tuple.print(attrtype);
+	    			 //itr_hdr_tuple.print(attrtype);
 	    			 break;
 	    		 }
 	    		 
@@ -1311,7 +1311,7 @@ public class ClusteredHeapfile extends Heapfile implements GlobalConst {
 	    	 }
 	    	 else
 	    	 {
-	    		 System.out.println("Case splitting: Insert a new data page and a new dir page");
+	    		 //System.out.println("Case splitting: Insert a new data page and a new dir page");
 	    		 unpinPage(lookup_currentDirPageId, false);
 	    		 unpinPage(lookup_currentDataPageId, false);
 

@@ -174,7 +174,7 @@ public class BTreeHeaderPage extends HFPage {
   public void set_maxPageno(PageId pageno ) 
     throws IOException
     {
-	  System.out.println("Updating the max key's header page in btree "+ pageno.pid);
+	  //System.out.println("Updating the max key's header page in btree "+ pageno.pid);
       setSlot(4, pageno.pid, 0); 
     }
   
