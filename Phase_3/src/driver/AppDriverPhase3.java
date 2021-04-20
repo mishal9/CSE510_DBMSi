@@ -1203,17 +1203,23 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 					        join_n_pages
 	    			);
 	    			
-	    			tknj.calculateTopKJoins();
+//	    			tknj.calculateTopKJoins();
 
-	    			System.out.println("****************");
-	    			tknj.get_next();
-	    			System.out.println("****************");
+//	    			System.out.println("****************");
+//	    			tknj.get_next();
+//	    			System.out.println("****************");
 	    			
-				try {
-					tknj.calculateTopKJoins();
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
+					try {
+						tknj.calculateTopKJoins();
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+					Tuple r = tknj.get_next();
+				
+//					while(r != null) {
+//						r.print(tknj.joinAttrType);
+//						r = tknj.get_next();
+//					}
 	    			break;
 	    		default:
 	    			validate_token_length(0, "topkjoin");

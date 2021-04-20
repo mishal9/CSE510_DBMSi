@@ -2,30 +2,32 @@ package iterator;
 
 import java.util.Comparator;
 
+import heap.Tuple;
+
 public class NRABounds {
 
-	public int lVal1;
-	public int lVal2;
+	public int lVal1 = 0;
+	public int lVal2 = 0;
 	
-	public int uVal1;
-	public int uVal2;
+	public int uVal1 = 500;
+	public int uVal2 = 500;
 	
 	public boolean isFullySeen = false;
 
 	public String createBy; //REL1 or REL2
+	
+	Tuple t1 = null;
+	Tuple t2 = null;
 
 	public NRABounds(int val, String createBy) {
 		this.lVal1 = val;
-		this.uVal1 = val;	
-		this.lVal2 = 0;
-		this.uVal2 = 1;
+		this.uVal1 = val;
 		this.createBy = createBy;
 	}
 	
 	public void updateBounds(int newVal) {
 		this.lVal2 = newVal;
 		this.uVal2 = newVal;
-		this.isFullySeen = true;
 	}
 	
 	public float getLowerBoundVal() {
