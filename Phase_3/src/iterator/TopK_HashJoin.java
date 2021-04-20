@@ -62,8 +62,9 @@ public class TopK_HashJoin extends Iterator implements GlobalConst {
 //	HashJoin hj = null;
 	NestedLoopsJoins hj = null;
 	
-	AttrType[] newAttrType = null;
-
+	public AttrType[] newAttrType = null;
+	public short[] newAttrSize = null;
+	
 	public TopK_HashJoin(
 			AttrType[] in1, int len_in1, short[] t1_str_sizes,
 			FldSpec joinAttr1,
@@ -176,10 +177,9 @@ public class TopK_HashJoin extends Iterator implements GlobalConst {
     		  outFilter, null, proj1, table1_len + table2_len);
 	    
 	    
-	    
-	    int newLength = table1_len + table2_len + 1;
+	    int newLength = table1_len + table2_len;
     	newAttrType = new AttrType[newLength];
-        short[] newAttrSize = new short[newLength];
+        newAttrSize = new short[newLength];
         
         int pointer = 0;
         
@@ -189,19 +189,28 @@ public class TopK_HashJoin extends Iterator implements GlobalConst {
         	pointer++;
         }
         for(int i = 0; i < table2_len; i++) {
+        	if(i+1 == joinAttr2.offset) continue;
         	newAttrType[pointer] = table2_attr[i];
         	newAttrSize[pointer] = table2_attr_size[i];
         	pointer++;
         }
         
         newAttrType[pointer] = new AttrType(AttrType.attrReal); 
-    	newAttrSize[pointer] = 32;
+    	newAttrSize[pointer] = STRSIZE;
+    	
+    	System.out.println("newAttrType" + Arrays.toString(newAttrType));
+		System.out.println("newAttrSize" + Arrays.toString(newAttrSize));
+
     	
 	    Tuple t = hj.get_next();
+	    
+//	    while(t != null) {
+//	    	t.print(newAttrType);
+//	    	t = hj.get_next();
+//	    }
+	    
 	    pq = new 
                 PriorityQueue<Tuple>(new TupleComparator());
-	    
-//	    t.print(newAttrType);
 	    
 	    while(t != null) { 
 
@@ -212,7 +221,11 @@ public class TopK_HashJoin extends Iterator implements GlobalConst {
 	    	newTuple.setHdr((short) newLength, newAttrType, newAttrSize);
 	    	
 	    	int curr = 1;
-	    	for(int i = 1; i < newLength; i++) {
+	    	for(int i = 1; i <= newLength; i++) {
+	    		if(i == table1_len + joinAttr2.offset) {
+	    			continue;
+	    		}
+
 	    		if(newAttrType[i-1].attrType == AttrType.attrString) {
 	    			newTuple.setStrFld(curr, t.getStrFld(i));
 	    		}
@@ -234,6 +247,7 @@ public class TopK_HashJoin extends Iterator implements GlobalConst {
 	    		newTuple.setFloFld(curr, (float) ( t.getIntFld(mergeAttr1.offset) + 
 		    			 t.getIntFld( table1_len + mergeAttr2.offset)) / (float) 2.0
 		    	);
+	    		
 	    	}
 	    	else if(table1_attr[mergeAttr1.offset-1].attrType == AttrType.attrInteger && table2_attr[mergeAttr2.offset-1].attrType == AttrType.attrReal) {
 	    		newTuple.setFloFld(curr, (float) ( t.getIntFld(mergeAttr1.offset) + 
@@ -245,7 +259,6 @@ public class TopK_HashJoin extends Iterator implements GlobalConst {
 		    			 t.getIntFld( table1_len + mergeAttr2.offset)) / (float) 2.0
 		    	);
 	    	}
-	    	
 	    	
 	    	pq.add(newTuple);
 	    	t = hj.get_next();

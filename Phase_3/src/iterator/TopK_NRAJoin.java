@@ -179,7 +179,6 @@ public class TopK_NRAJoin extends Iterator implements GlobalConst {
 		
 		joinAttrType[count] = new AttrType(AttrType.attrReal);
 		joinAttrSize[count] = STRSIZE;
-
     	
     	while(true) {
     		depth += 1;
@@ -208,10 +207,6 @@ public class TopK_NRAJoin extends Iterator implements GlobalConst {
     			NRABounds temp = map.get(joinKey1);
     			if(temp.createBy == "REL2") {
     				temp.t2 = temp1;
-//    				System.out.println("These tuples will be merged");
-//    				temp.t1.print(table1_attr);
-//    				temp.t2.print(table2_attr);
-//    				System.out.println("************ END *************");
     				
     				Tuple mergedTuple = new Tuple();
     				mergedTuple.setHdr((short) newLength, joinAttrType, joinAttrSize);

@@ -1132,33 +1132,12 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    	    			join_k,
 						    join_n_pages
 	    	    		);
-	                
-	                Table table1 = SystemDefs.JavabaseDB.get_relation(outer_table_name);
-	        		Table table2 = SystemDefs.JavabaseDB.get_relation(inner_table_name); 
-	                
-	        		AttrType[] newAttrType = new AttrType[table1.getTable_attr_type().length + 1 + table2.getTable_attr_type().length];
-	        		short[] newAttrSize = new short[table1.getTable_attr_type().length + 1 + table2.getTable_attr_type().length];		
-	        		
-	        		int pointer = 0;
-	        		for(int i = 0; i < table1.getTable_attr_type().length; i++) {
-	                	newAttrType[pointer] = table1.getTable_attr_type()[i];
-	                	newAttrSize[pointer] = table1.getTable_attr_size()[i];
-	                	pointer++;
-	                }
-	                for(int i = 0; i < table2.getTable_attr_type().length; i++) {
-	                	newAttrType[pointer] = table2.getTable_attr_type()[i];
-	                	newAttrSize[pointer] = table2.getTable_attr_size()[i];
-	                	pointer++;
-	                }
-	                
-	                newAttrType[pointer] = new AttrType(AttrType.attrReal); 
-	            	newAttrSize[pointer] = 32;
 	        		
 	                Tuple t = tjhj.get_next();
 	                
 	                System.out.println("STARTS HERE -----");
 	                while(t != null) {
-	                	t.print(newAttrType);
+	                	t.print(tjhj.newAttrType);
 	                	t = tjhj.get_next();
 	                }
 	                System.out.println("ENDS HERE -----");
