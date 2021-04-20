@@ -226,7 +226,7 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
 			try {
 				temp = sortFirstSky.get_next();
 				while (temp!=null) {
-					System.out.println("Size of temp: "+temp.size());
+//					System.out.println("Size of temp: "+temp.size());
 					SystemDefs.JavabaseDB.add_to_mater_table(temp, this.skyouttable);
 					temp.printTuple(attrType_for_sort);
 					numSkyEle++;
