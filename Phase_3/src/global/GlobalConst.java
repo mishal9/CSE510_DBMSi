@@ -30,13 +30,13 @@ public interface GlobalConst {
   public static final int MAX_NAME = 50;
   
   /* max size of the string attributes in a tuple */
-  public static final int STRSIZE = 150;
+  public static final int STRSIZE = 50;
   
   /* number of pages in the DB */
-  public static final int NUMDBPAGES = 160000;
+  public static final int NUMDBPAGES = 7000;
   
   /* number of BM pages in any DB */
-  public static final int NUMBFPAGES = 3000;
+  public static final int NUMBFPAGES = 500;
   
   /* replacer algorithm in the DB */
   public static final String DBREPLACER = "Clock";

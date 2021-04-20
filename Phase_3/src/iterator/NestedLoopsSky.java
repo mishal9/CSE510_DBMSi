@@ -171,7 +171,8 @@ public class NestedLoopsSky extends Iterator
             this.outer_candidate_temp = this._outer_scan.getNext(temp);
             if (this.outer_candidate_temp == null)
             {
-                System.out.println("No more records in skyline. All records already scanned.");
+                //System.out.println("No more records in skyline. All records already scanned.");
+            	System.out.println();
                 this._outer_scan.closescan();
                 //SystemDefs.JavabaseBM.limit_memory_usage(false, this._n_pages);
                 return null;

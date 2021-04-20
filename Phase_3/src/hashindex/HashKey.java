@@ -112,12 +112,6 @@ public class HashKey extends KeyClass {
 
 		case AttrType.attrString:
 			int bla = ((String) value).hashCode();
-//			System.out.println("hhhhhhhhhhhhhhhhhhhhhhhhhhh "+bla);
-//			byte[] s = ((String) value).getBytes();
-//			int bitsOfStr = 0;
-//			for (int i = 0; i < s.length; i++) {
-//				bitsOfStr |= (s[i] << (i * Byte.SIZE));
-//			}
 			return bla & bitMask;
 			
 
