@@ -19,19 +19,13 @@ public class SortFirstSky extends Iterator implements GlobalConst {
     private static String _relationName;
     private static int[] _pref_list;
     private static int _pref_list_length;
-    private Iterator am1;
     private Sort _sort;
     private static AttrType[] _in;
     private static short _len_in;
     private static short[] _str_sizes;
     private static Heapfile temp;
-    private static FileScan _tscan; // for scanning the temp heap file
     boolean status = OK;
-    private static short REC_LEN = 32;
     private static AttrType[] _attrType;
-    private static short[] _attrSize;
-    private static FldSpec[] _projlist;
-    //private static LinkedHashSet<Tuple> _window;
     private static Tuple[] _window;
     private static short _tuple_size;
     private int counter;
@@ -50,7 +44,6 @@ public class SortFirstSky extends Iterator implements GlobalConst {
         this.counter = 0;
 
         _attrType = new AttrType[_len_in];
-        _attrSize = new short[_len_in];
 
         for(int i=0; i<_attrType.length; i++){
             _attrType[i] = new AttrType(AttrType.attrReal);
@@ -59,17 +52,14 @@ public class SortFirstSky extends Iterator implements GlobalConst {
         _relationName = relationName;
         _pref_list = pref_list;
         _pref_list_length = pref_list_length;
-        _n_pages = n_pages; // (let one out for spare in case of temp heap)
-        // _window = new LinkedHashSet<Tuple>(_n_pages);
+        _n_pages = n_pages;
         _window = new Tuple[(MINIBASE_PAGESIZE / _tuple_size) * (_n_pages)];
-        //_window = new Tuple[1];
-        // Sort "test1sortPref.in"
 
         _sort = (Sort)am1;
 
         try {
             // temp heap file to store overflown skyline objects
-            temp = new Heapfile("sortFirstSkyTemp.in");
+            temp = new Heapfile(_relationName);
         }
         catch (Exception e) {
             status = FAIL;
@@ -176,7 +166,6 @@ public class SortFirstSky extends Iterator implements GlobalConst {
         RID rid = null;
 
         while (t != null) {
-//        	System.out.println("size of t "+t.size());
             Tuple outer_tuple = new Tuple(t);
             boolean isDominatedBy = false;
 
@@ -223,14 +212,12 @@ public class SortFirstSky extends Iterator implements GlobalConst {
         // TODO: Run the bnl algorithm on the temp heap tuples
         SystemDefs.JavabaseBM.flushAllPages();
 
-//        System.out.println("Unpinned buffers available for next run"+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
-
         bnls = new BlockNestedLoopsSky(
                 _in,
                 _in.length,
                 null,
                 null,
-                "sortFirstSkyTemp.in",
+                _relationName,
                 _pref_list,
                 _pref_list_length,
                 _n_pages

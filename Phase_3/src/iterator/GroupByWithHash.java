@@ -4,8 +4,6 @@ import global.AggType;
 import global.AttrType;
 
 import hashindex.HashIndexWindowedScan;
-import heap.InvalidTupleSizeException;
-import heap.InvalidTypeException;
 import heap.Tuple;
 
 import java.io.IOException;
@@ -21,7 +19,6 @@ public class GroupByWithHash extends Iterator{
     private static AggType _agg_type;
     // number of tuples the queue can hold
     private int _n_pages;
-    private int          _tuple_size;
     FldSpec[] _agg_list, _proj_list;
     int _n_out_flds;
     int fld;
@@ -46,22 +43,6 @@ public class GroupByWithHash extends Iterator{
         _n_pages = n_pages;
         _agg_list = agg_list;
         _proj_list = proj_list;
-
-        /* initialise tuple size */
-        try {
-            Tuple tuple_candidate = new Tuple();
-            tuple_candidate.setHdr((short) this._len_in, this._attrType, this._attr_sizes);
-            this._tuple_size = tuple_candidate.size();
-        } catch (InvalidTypeException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (InvalidTupleSizeException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
 
         _result = new ArrayList<>();
 
