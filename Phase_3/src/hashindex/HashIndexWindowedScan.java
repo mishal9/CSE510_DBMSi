@@ -85,7 +85,7 @@ public class HashIndexWindowedScan {
                 current_window = 0;
                 break;
             default:
-                throw new UnknownIndexTypeException("Only BTree index is supported so far");
+                throw new UnknownIndexTypeException("Only hash index is supported so far");
         }
     }
 
