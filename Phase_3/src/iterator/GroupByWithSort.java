@@ -114,7 +114,7 @@ public class GroupByWithSort extends Iterator{
 
         try {
             blockNestedLoopsSky = new BlockNestedLoopsSky(attrType,
-                    (short)3,
+                    (short)attrType.length,
                     attrSize,
                     null,
                     skyline_grp_heap,
@@ -125,9 +125,11 @@ public class GroupByWithSort extends Iterator{
             System.out.println("Printing the Block Nested Loop Skyline");
             Tuple temp;
             try {
+            	Tuple tup = TupleUtils.getEmptyTuple(attrType, attrSize);
                 temp = blockNestedLoopsSky.get_next();
+                tup.tupleCopy(temp);
                 while (temp!=null) {
-                    _result.add(temp);
+                    _result.add(tup);
                     temp = blockNestedLoopsSky.get_next();
                 }
 

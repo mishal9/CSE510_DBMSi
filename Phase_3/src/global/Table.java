@@ -1323,7 +1323,7 @@ public class Table implements GlobalConst{
   }
   
   /* prints table properties */
-  private void print_table_attr() {
+  public void print_table_attr() {
 	  System.out.println("Tablename: "+this.tablename);
 	  System.out.println("Table col names: "+Arrays.toString(table_attr_name));
 	  System.out.println("Table num attr: "+ Integer.toString(table_num_attr));

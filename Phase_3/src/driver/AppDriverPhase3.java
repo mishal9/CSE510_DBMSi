@@ -631,10 +631,13 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 												  groupby_n_pages);
 	    			break;
 	    		case "SORT":
-	    			//TBD run SORT hash with proper params
-	    			System.out.println("Attribute type "+Arrays.toString(groupby_table.getTable_attr_type()));
-	    			System.out.println("");
-	    			System.out.println("Running groupby sort algorithm");
+//	    			//TBD run SORT hash with proper params
+//	    			System.out.println("Attribute type "+Arrays.toString(groupby_table.getTable_attr_type()));
+//	    			System.out.println("Attribute number "+groupby_table.getTable_num_attr());
+//	    			System.out.println("Attribute type "+Arrays.toString(groupby_table.getTable_attr_type()));
+//	    			groupby_table.print_table_attr();
+//	    			System.out.println("");
+//	    			System.out.println("Running groupby sort algorithm");
 	    			groupby = new GroupByWithSort(groupby_table.getTable_attr_type(),
 	    										  groupby_table.getTable_num_attr(),
 	    										  groupby_table.getTable_attr_size(),
@@ -663,7 +666,9 @@ class DriverPhase3 extends TestDriver implements GlobalConst
                 result.forEach((tuple) -> {
                     try {
                         tuple.print(groupby_table.getTable_attr_type());
+                        
                     } catch (IOException e) {
+                    	
                         e.printStackTrace();
                     }
                 });
