@@ -122,7 +122,6 @@ public class GroupByWithSort extends Iterator{
                     preference_list.length,
                     buffer);
 
-            System.out.println("Printing the Block Nested Loop Skyline");
             Tuple temp;
             try {
             	Tuple tup = TupleUtils.getEmptyTuple(attrType, attrSize);

@@ -176,7 +176,7 @@ public class SortFirstSky extends Iterator implements GlobalConst {
         RID rid = null;
 
         while (t != null) {
-        	System.out.println("size of t "+t.size());
+//        	System.out.println("size of t "+t.size());
             Tuple outer_tuple = new Tuple(t);
             boolean isDominatedBy = false;
 
@@ -223,7 +223,7 @@ public class SortFirstSky extends Iterator implements GlobalConst {
         // TODO: Run the bnl algorithm on the temp heap tuples
         SystemDefs.JavabaseBM.flushAllPages();
 
-        System.out.println("Unpinned buffers available for next run"+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
+//        System.out.println("Unpinned buffers available for next run"+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
 
         bnls = new BlockNestedLoopsSky(
                 _in,
