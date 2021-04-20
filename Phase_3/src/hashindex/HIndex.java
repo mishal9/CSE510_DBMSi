@@ -18,7 +18,7 @@ import java.io.IOException;
  */
 public class HIndex implements GlobalConst {
 
-	HIndexHeaderPage headerPage;
+	public HIndexHeaderPage headerPage;
 	PageId headerPageId;
 	
 	
