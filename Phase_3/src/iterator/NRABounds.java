@@ -14,7 +14,7 @@ public class NRABounds {
 	
 	public boolean isFullySeen = false;
 
-	public String createBy; //REL1 or REL2
+	public String createBy = null; //REL1 or REL2
 	
 	Tuple t1 = null;
 	Tuple t2 = null;
@@ -23,6 +23,7 @@ public class NRABounds {
 		this.lVal1 = val;
 		this.uVal1 = val;
 		this.createBy = createBy;
+	
 	}
 	
 	public void updateBounds(int newVal) {
