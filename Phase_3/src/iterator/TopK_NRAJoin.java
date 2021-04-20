@@ -6,12 +6,32 @@ import index.IndexScan;
 import iterator.Iterator;
 import global.*;
 import bufmgr.*;
+import clustered_btree.ClusteredBTreeFile;
 
 import java.lang.*;
 import java.io.*;
 import java.util.*;
 
 import btree.*;
+
+class TupleComparatorNRA implements Comparator<Tuple>{
+
+	@Override
+	public int compare(Tuple o1, Tuple o2) {
+			try {
+				if (o1.getFloFld( o1.noOfFlds() ) < o2.getFloFld( o2.noOfFlds() ) )
+				  return 1;
+				else if (o1.getFloFld( o1.noOfFlds() ) > o2.getFloFld( o2.noOfFlds() ))
+				  return -1;
+				else return 0;
+			} catch (FieldNumberOutOfBoundException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			return 0;
+	}
+}
 
 public class TopK_NRAJoin extends Iterator implements GlobalConst {
 	
@@ -30,9 +50,16 @@ public class TopK_NRAJoin extends Iterator implements GlobalConst {
 	int k;
 	int n_pages;
 	
-    HashMap<String, NRABounds> map = new HashMap<>();
-    PriorityQueue<NRABounds> pq = null;
+	boolean firstEntry = true;
 	
+    HashMap<String, NRABounds> map = new HashMap<>();
+    PriorityQueue<Tuple> pq = null;
+    
+    IndexScan scan = null;
+    
+    public AttrType joinAttrType[];
+    public short[] joinAttrSize;
+    
 	public TopK_NRAJoin(
 			AttrType[] in1, int len_in1, short[] t1_str_sizes,
 			FldSpec joinAttr1,
@@ -60,12 +87,11 @@ public class TopK_NRAJoin extends Iterator implements GlobalConst {
 		this.k = k;
 		this.n_pages = n_pages;
 		
+		pq = new PriorityQueue<Tuple>(new TupleComparatorNRA());
 	}
 	
 	
 	public void calculateTopKJoins() throws Exception {
-//		Heapfile hf1 = new Heapfile(this.relationName1);
-//		Heapfile hf2 = new Heapfile(this.relationName2);
 		
 		Table table1 = SystemDefs.JavabaseDB.get_relation(this.relationName1);
 		Table table2 = SystemDefs.JavabaseDB.get_relation(this.relationName2);
@@ -79,13 +105,6 @@ public class TopK_NRAJoin extends Iterator implements GlobalConst {
 			return;
 		}
 		
-		FldSpec[] projlist = new FldSpec[this.len_in1];
-		RelSpec rel = new RelSpec(RelSpec.outer);
-		
-		for (int i=0; i<this.len_in1; i++ ) {
-			projlist[i] = new FldSpec(rel, i+1);
-		}
-		
 		AttrType[] table1_attr = table1.getTable_attr_type();
 		int table1_len = table1.getTable_attr_type().length;
 	    short[] table1_attr_size = table1.getTable_attr_size();
@@ -93,61 +112,73 @@ public class TopK_NRAJoin extends Iterator implements GlobalConst {
 		AttrType[] table2_attr = table2.getTable_attr_type();
 		int table2_len = table2.getTable_attr_type().length;
 	    short[] table2_attr_size = table2.getTable_attr_size();
-
-				
-//		IndexScan iscan1 = new IndexScan(new IndexType(IndexType.Cl_B_Index_DESC), 
-//					  this.relationName2, 
-//					  table1.get_clustered_index_filename(this.mergeAttr1.offset, "btree"), 
-//					  table1.getTable_attr_type(), 
-//					  table1.getTable_attr_size(), 
-//					  table1.getTable_num_attr(), 
-//					  table1.getTable_num_attr(), 
-//					  projlist, 
-//					  null,
-//					  table1.getTable_num_attr(), 
-//					  false);
+	    
+	    FldSpec[] projlist1 = new FldSpec[table1_len];
+		RelSpec rel1 = new RelSpec(RelSpec.outer);
 		
-		FileScan iscan1 =  new FileScan(table1.getTable_heapfile(), 
-				table1_attr,
-				table1.getTable_attr_size(),
-				   (short) table1.getTable_num_attr(),
-				   (short) table1.getTable_num_attr(),
-				   projlist, 
-				   null);
+	    for (int i=0; i<table1_len; i++ ) {
+			projlist1[i] = new FldSpec(rel1, i+1);
+		}
+	    
+	    FldSpec[] projlist2 = new FldSpec[table2_len];
+		RelSpec rel2 = new RelSpec(RelSpec.outer);
 		
-		FileScan iscan2 =  new FileScan(table2.getTable_heapfile(), 
-				table2_attr,
-				table2.getTable_attr_size(),
-				   (short) table2.getTable_num_attr(),
-				   (short) table2.getTable_num_attr(),
-				   projlist, 
-				   null);
+	    for (int i=0; i<table2_len; i++ ) {
+			projlist2[i] = new FldSpec(rel2, i+1);
+		}
 		
-//		IndexScan iscan2 = new IndexScan(new IndexType(IndexType.Cl_B_Index_DESC), 
-//				  this.relationName2, 
-//				  table2.get_clustered_index_filename(this.mergeAttr2.offset, "btree"), 
-//				  table2.getTable_attr_type(), 
-//				  table2.getTable_attr_size(), 
-//				  table2.getTable_num_attr(), 
-//				  table2.getTable_num_attr(), 
-//				  projlist, 
-//				  null,
-//				  table2.getTable_num_attr(), 
-//				  false);
+		IndexScan iscan1 = new IndexScan(new IndexType(IndexType.Cl_B_Index_DESC), 
+					  this.relationName1, 
+					  table1.get_clustered_index_filename(this.mergeAttr1.offset, "btree"), 
+					  table1_attr, 
+					  table1_attr_size, 
+					  table1.getTable_num_attr(), 
+					  table1.getTable_num_attr(), 
+					  projlist1, 
+					  null,
+					  table1.getTable_num_attr(), 
+					  false);
+		
+		IndexScan iscan2 = new IndexScan(new IndexType(IndexType.Cl_B_Index_DESC), 
+		  this.relationName2, 
+		  table2.get_clustered_index_filename(this.mergeAttr2.offset, "btree"), 
+		  table2_attr, 
+		  table2_attr_size, 
+		  table2.getTable_num_attr(), 
+		  table2.getTable_num_attr(), 
+		  projlist2, 
+		  null,
+		  table2.getTable_num_attr(), 
+		  false);
 		
 		Tuple temp1 = iscan1.get_next();
 		Tuple temp2 = iscan2.get_next();
-		
-//		while(temp1 != null) {
-//			temp1.print(table1_attr);
-//			temp1 = iscan1.get_next();
-//		}
  
         int objectsSeen = 0;
     	float currDepthScore = 0.0f;
     	float minLowerBound = 0.0f;
     	
     	int depth = 0;
+    	
+    	int newLength = table1_len + table2_len;
+		joinAttrType = new AttrType[newLength];
+		joinAttrSize = new short[newLength];
+
+		int count = 0;
+		for(int i = 0; i < table1_len; i++) {
+			joinAttrType[count] = table1_attr[i];
+			joinAttrSize[count] = table1_attr_size[i];
+			count++;
+		}
+		for(int i = 0; i < table2_len; i++) {
+			if(i+1 == joinAttr2.offset) continue;
+			joinAttrType[count] = table2_attr[i];
+			joinAttrSize[count] = table2_attr_size[i];
+			count++;
+		}
+		
+		joinAttrType[count] = new AttrType(AttrType.attrReal);
+		joinAttrSize[count] = STRSIZE;
     	
     	while(true) {
     		depth += 1;
@@ -170,52 +201,113 @@ public class TopK_NRAJoin extends Iterator implements GlobalConst {
         	
     		if(objectsSeen >= k && currDepthScore < minLowerBound) break;
     		
-    		String key1 = "" + join1;
-    		if(map.containsKey(key1)) {
-    			NRABounds temp = map.get(key1);
+    		
+    		String joinKey1 = "" + join1;
+    		if(map.containsKey(joinKey1)) {
+    			NRABounds temp = map.get(joinKey1);
     			if(temp.createBy == "REL2") {
-    				temp.updateBounds(merge1);
-    				minLowerBound = getMinLowerBound();
+    				temp.t2 = temp1;
+    				
+    				Tuple mergedTuple = new Tuple();
+    				mergedTuple.setHdr((short) newLength, joinAttrType, joinAttrSize);
+    		    	int newSize = mergedTuple.size();
+    		    	mergedTuple = new Tuple(newSize);
+    		    	mergedTuple.setHdr((short) newLength, joinAttrType, joinAttrSize);
+    		    	
+    		    	count = 1;
+    				for(int i = 0; i < table1_len; i++) {
+    					if(table1_attr[i].attrType == AttrType.attrInteger) {
+    						mergedTuple.setIntFld(count, temp.t1.getIntFld(i+1));
+    					}
+    					else if(table1_attr[i].attrType == AttrType.attrReal) {
+    						mergedTuple.setFloFld(count, temp.t1.getFloFld(i+1));
+    					}
+    					else if(table1_attr[i].attrType == AttrType.attrString) {
+    						mergedTuple.setStrFld(count, temp.t1.getStrFld(i+1));
+						}
+    					count++;
+    				}
+    				for(int i = 0; i < table2_len; i++) {
+    					if(i+1 == joinAttr2.offset) continue;
+    					if(table1_attr[i].attrType == AttrType.attrInteger) {
+    						mergedTuple.setIntFld(count, temp.t2.getIntFld(i+1));
+    					}
+    					else if(table1_attr[i].attrType == AttrType.attrReal) {
+    						mergedTuple.setFloFld(count, temp.t2.getFloFld(i+1));
+    					}
+    					else if(table1_attr[i].attrType == AttrType.attrString) {
+    						mergedTuple.setStrFld(count, temp.t2.getStrFld(i+1));
+						}
+    					count++;
+    				}
+    				mergedTuple.setFloFld(count, (float) ( temp.t1.getIntFld(mergeAttr1.offset) + 
+    						temp.t2.getIntFld( mergeAttr2.offset)) / (float)2.0 );
+    				pq.add(mergedTuple);
     			}
-    			else {
-    			}
+
     		}
     		else {
-    			NRABounds nbound = new NRABounds(merge1, "REL1");
-    			map.put(key1, nbound);
-				minLowerBound = getMinLowerBound();
-        		objectsSeen += 1;
+    			NRABounds nb1 = new NRABounds(merge1, "REL1");
+    			nb1.t1 = temp1;
+    			objectsSeen+=1;
+    			map.put(joinKey1, nb1);
     		}
     		
-    		String key2 = "" + join2;
-    		if(map.containsKey(key2)) {
-    			NRABounds temp = map.get(key2);
+    		
+    		String joinKey2 = "" + join2;
+    		if(map.containsKey(joinKey2)) {
+    			NRABounds temp = map.get(joinKey2);
     			if(temp.createBy == "REL1") {
-    				temp.updateBounds(merge2);
-    				minLowerBound = getMinLowerBound();
-
-    			}
-    			else {
+    				temp.t2 = temp2;
+    				
+    				Tuple mergedTuple = new Tuple();
+    				mergedTuple.setHdr((short) newLength, joinAttrType, joinAttrSize);
+    		    	int newSize = mergedTuple.size();
+    		    	mergedTuple = new Tuple(newSize);
+    		    	mergedTuple.setHdr((short) newLength, joinAttrType, joinAttrSize);
+    		    	
+    		    	count = 1;
+    				for(int i = 0; i < table1_len; i++) {
+    					if(table1_attr[i].attrType == AttrType.attrInteger) {
+    						mergedTuple.setIntFld(count, temp.t1.getIntFld(i+1));
+    					}
+    					else if(table1_attr[i].attrType == AttrType.attrReal) {
+    						mergedTuple.setFloFld(count, temp.t1.getFloFld(i+1));
+    					}
+    					else if(table1_attr[i].attrType == AttrType.attrString) {
+    						mergedTuple.setStrFld(count, temp.t1.getStrFld(i+1));
+						}
+    					count++;
+    				}
+    				for(int i = 0; i < table2_len; i++) {
+    					if(i+1 == joinAttr2.offset) continue;
+    					if(table1_attr[i].attrType == AttrType.attrInteger) {
+    						mergedTuple.setIntFld(count, temp.t2.getIntFld(i+1));
+    					}
+    					else if(table1_attr[i].attrType == AttrType.attrReal) {
+    						mergedTuple.setFloFld(count, temp.t2.getFloFld(i+1));
+    					}
+    					else if(table1_attr[i].attrType == AttrType.attrString) {
+    						mergedTuple.setStrFld(count, temp.t2.getStrFld(i+1));
+						}
+    					count++;
+    				}
+    				mergedTuple.setFloFld(count, (float) ( temp.t1.getIntFld(mergeAttr1.offset) + 
+    						temp.t2.getIntFld( mergeAttr2.offset)) / (float)2.0 );
+    				pq.add(mergedTuple);
     			}
     		}
     		else {
-    			NRABounds nbound = new NRABounds(merge2, "REL2");
-    			map.put(key2, nbound);
-        		objectsSeen += 1;
-				minLowerBound = getMinLowerBound();
+    			NRABounds nb2 = new NRABounds(merge2, "REL2");
+    			nb2.t1 = temp2;
+    			objectsSeen+=1;
+    			map.put(joinKey2, nb2);
     		}
     		
     		temp1 = iscan1.get_next();
     		temp2 = iscan2.get_next();
     	}
-    	    	
-    	pq = new 
-                PriorityQueue<NRABounds>(k, new NRABoundsComparator());
     	
-    	for (Map.Entry<String,NRABounds> entry : map.entrySet()) {
-    		pq.add(entry.getValue());
-        }
-
 	}
 	
 	private float getMinLowerBound() {
@@ -236,8 +328,8 @@ public class TopK_NRAJoin extends Iterator implements GlobalConst {
 			LowMemException, UnknowAttrType, UnknownKeyTypeException, Exception {
 		// TODO Auto-generated method stub
 		while(k > 0) {
-    		System.out.println(pq.poll().toString());
-    		k--;
+			pq.poll().print(joinAttrType);
+			k--;
     	}
 		
 		return null;
@@ -255,5 +347,39 @@ public class TopK_NRAJoin extends Iterator implements GlobalConst {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
 }
+
+/*String key1 = "" + join1;
+if(map.containsKey(key1)) {
+	NRABounds temp = map.get(key1);
+	if(temp.createBy == "REL2") {
+		temp.updateBounds(merge1);
+		minLowerBound = getMinLowerBound();
+	}
+	else {
+	}
+}
+else {
+	NRABounds nbound = new NRABounds(merge1, "REL1");
+	map.put(key1, nbound);
+	minLowerBound = getMinLowerBound();
+	objectsSeen += 1;
+}
+
+String key2 = "" + join2;
+if(map.containsKey(key2)) {
+	NRABounds temp = map.get(key2);
+	if(temp.createBy == "REL1") {
+		temp.updateBounds(merge2);
+		minLowerBound = getMinLowerBound();
+
+	}
+	else {
+	}
+}
+else {
+	NRABounds nbound = new NRABounds(merge2, "REL2");
+	map.put(key2, nbound);
+	objectsSeen += 1;
+	minLowerBound = getMinLowerBound();
+}*/
