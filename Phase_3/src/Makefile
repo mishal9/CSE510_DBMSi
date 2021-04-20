@@ -53,3 +53,7 @@ clean:
 
 Iterator:
 	make -C iterator
+hash:
+	make -C hashindex
+Driver:
+	make -C driver
