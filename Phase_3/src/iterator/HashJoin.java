@@ -290,16 +290,15 @@ public class HashJoin extends Iterator {
             UnknownKeyTypeException,
             Exception
     {
-        Tuple t;
-        if(it==null ||  (t = it.get_next())==null ){
+        Tuple t=null;
+        if(it==null){
             it_outer = outer_hiws.get_next();
             it_inner = inner_hiws.get_next();
-            if(it_inner==null | it_outer==null){
+            if(it_inner==null || it_outer==null){
                 return null;
             }
             else{
                 create_heap_for_inner_iterator();
-
                 /*System.out.println("\n\nOuter file:");
                 Tuple temp;
                 while((temp=it_outer.get_next())!=null){
@@ -313,18 +312,46 @@ public class HashJoin extends Iterator {
                     temp.setHdr((short)in2_len, _in2, t2_str_sizescopy);
                     temp.printTuple(_in2);
                 }*/
-
                 it = new NestedLoopsJoins(_in1, in1_len, t1_str_sizescopy,
                                             _in2, in2_len, t2_str_sizescopy,
                                             n_buf_pgs, it_outer, temp_temp_inner_heap_name,
                                             OutputFilter, RightFilter, perm_mat, nOutFlds);
-
             }
-              return it.get_next();
         }
-        else{
-            return t;
+        t = it.get_next();
+        while(t==null){
+            it_outer = outer_hiws.get_next();
+            it_inner = inner_hiws.get_next();
+            if(it_inner==null || it_outer==null){
+                return null;
+            }
+            else{
+                create_heap_for_inner_iterator();
+                /*System.out.println("\n\nOuter file:");
+                Tuple temp;
+                while((temp=it_outer.get_next())!=null){
+                    temp.setHdr((short)in1_len, _in1, t1_str_sizescopy);
+                    temp.printTuple(_in1);
+                }
+                System.out.println("\n\nInner File:");
+                Scan temps = (new Heapfile(temp_temp_inner_heap_name)).openScan();
+                RID rid=new RID();
+                while((temp=temps.getNext(rid))!=null){
+                    temp.setHdr((short)in2_len, _in2, t2_str_sizescopy);
+                    temp.printTuple(_in2);
+                }*/
+                it = new NestedLoopsJoins(_in1, in1_len, t1_str_sizescopy,
+                        _in2, in2_len, t2_str_sizescopy,
+                        n_buf_pgs, it_outer, temp_temp_inner_heap_name,
+                        OutputFilter, RightFilter, perm_mat, nOutFlds);
+            }
+            if((t = it.get_next())!=null){
+                return t;
+            }
         }
+
+        return t;
+
     }
 
     private void create_heap_for_inner_iterator() throws Exception{

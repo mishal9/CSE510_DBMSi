@@ -1,6 +1,7 @@
 package tests;
 //originally from : joins.C
 
+import hashindex.HIndex;
 import iterator.*;
 import heap.*;
 import global.*;
@@ -20,41 +21,24 @@ import btree.*;
  * We also allow the user to hardwire trees together.
  */
 
-//Define the Sailor schema
-class Sailor {
-    public int sid;
-    public String sname;
-    public int rating;
-    public double age;
-
-    public Sailor(int _sid, String _sname, int _rating, double _age) {
-        sid = _sid;
-        sname = _sname;
-        rating = _rating;
-        age = _age;
-    }
-}
-
-//Define the Boat schema
-class Boats {
-    public int bid;
-    public String bname;
-    public String color;
-
-    public Boats(int _bid, String _bname, String _color) {
-        bid = _bid;
-        bname = _bname;
-        color = _color;
-    }
-}
-
 //Define the Reserves schema
-class Reserves {
+class Data1{
+    public int sid;
+    public int bid;
+    public float cid;
+    public String date;
+    public Data1(int _sid, String _date, int _bid, float _cid) {
+        sid = _sid;
+        bid = _bid;
+        date = _date;
+        cid = _cid;
+    }
+}
+class Data2{
     public int sid;
     public int bid;
     public String date;
-
-    public Reserves(int _sid, int _bid, String _date) {
+    public Data2(int _sid, int _bid, String _date) {
         sid = _sid;
         bid = _bid;
         date = _date;
@@ -153,6 +137,18 @@ implements GlobalConst {
         String outer_relation_name = "test1_o.in";
         String inner_relation_name = "test1_i.in";
 
+        Data1[] data1 = {
+                // int , str, int , floaat
+                new Data1(1, "Kushal", 1, (float) 1),
+                new Data1(3, "Krupal", 1, (float) 1),
+                new Data1(4, "Pooja", 1, (float) 1),
+                new Data1(5, "Monil", 1, (float) 1)
+        };
+        Data2[] data2 = {
+                // int, int ,str
+            new Data2(1, 1, "Monil"),
+            new Data2(2, 1, "Samip")
+        };
 
         AttrType[] Stypes = {
                 new AttrType(AttrType.attrInteger),
@@ -170,16 +166,15 @@ implements GlobalConst {
             int size = t.size();
             t = new Tuple(size);
             t.setHdr((short)Stypes.length, Stypes, Ssizes);
-            for(int i=0;i<20;i++){
-                int j = i%20;
-                t.setIntFld(1, j);
-                t.setStrFld(2, "f:"+String.valueOf((float)j));
-                t.setIntFld(3, i);
-                t.setFloFld(4, (float)j);
+            for(int i=0;i<data1.length;i++){
+                t.setIntFld(1, data1[i].sid);
+                t.setStrFld(2, "f:"+data1[i].date);
+                t.setIntFld(3, data1[i].bid);
+                t.setFloFld(4, data1[i].cid);
 
                 hf.insertRecord(t.getTupleByteArray());
             }
-            System.out.println("Outer Heap file created.");
+            System.out.println("Outer Heap file created. " + hf.getRecCnt() + " Records");
         }catch (Exception e){
             e.printStackTrace();
         }
@@ -199,14 +194,14 @@ implements GlobalConst {
             int size = t.size();
             t = new Tuple(size);
             t.setHdr((short)Rtypes.length, Rtypes, Rsizes);
-            for(int i=10;i<20;i++){
-                t.setIntFld(1, i);
-                t.setIntFld(2, i);
-                t.setStrFld(3, "f:"+String.valueOf((float)i));
+            for(int i=0;i<data2.length;i++){
+                t.setIntFld(1, data2[i].sid);
+                t.setIntFld(2, data2[i].bid);
+                t.setStrFld(3, "f:"+data2[i].date);
 
                 hf2.insertRecord(t.getTupleByteArray());
             }
-            System.out.println("Inner Heap file created.");
+            System.out.println("Inner Heap file created."+ hf2.getRecCnt() + " Records");
         }catch (Exception e){
             e.printStackTrace();
         }
@@ -269,6 +264,13 @@ implements GlobalConst {
             Runtime.getRuntime().exit(1);
         }
 
+        System.out.println("\n\n\nIndex");
+        try {
+            HIndex h = new HIndex("hash-join-inner-index.unclustered");
+            h.printBucketInfo();
+        }catch (Exception e){
+            e.printStackTrace();
+        }
 
         try {
             int count = 0;
@@ -306,7 +308,13 @@ implements GlobalConst {
             e.printStackTrace();
             Runtime.getRuntime().exit(1);
         }
-
+        System.out.println("\n\n\nAfter Index(will have inserts from previous INLJ as well. We can ignore them.)");
+        try {
+            HIndex h = new HIndex("hash-join-inner-index.unclustered");
+            h.printBucketInfo();
+        }catch (Exception e){
+            e.printStackTrace();
+        }
 
 
 
