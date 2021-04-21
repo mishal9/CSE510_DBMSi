@@ -17,6 +17,7 @@ import global.*;
 import index.IndexException;
 import iterator.*;
 import iterator.Iterator;
+import jdk.nashorn.internal.runtime.ECMAException;
 import tests.TestDriver;
 
 
@@ -98,7 +99,8 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
 			break;
 		case "BTSS":
 			//TBD run btree sorted sky with proper params
-			//TBD modify btree sort sky to handle input as a heap file
+			//TBD modify btr-ee sort sky to handle input as a heap file
+			runBtreeSortedSky();
 			break;
 		default:
 			break;
@@ -109,6 +111,85 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
 	private void close() {
 		if ( skyouttable != null ) {
 			skyouttable.add_table_to_global_queue();
+		}
+	}
+
+	private void runBtreeSortedSky(){
+		try{
+			int numberOfDimensions = skytable.getTable_num_attr();
+
+			int amt_of_mem = 100; // TODO what should this be?
+			Iterator am1 = null;
+			String relationName = skytable.getTable_heapfile();
+
+
+			int [] pref_list = new int[numberOfDimensions];
+
+			for(int i = 0; i < this.pref_list.length; i++) {
+				pref_list[this.pref_list[i] - 1] = 1;
+			}
+
+			for(int i = 0; i < numberOfDimensions; i++) {
+				if(pref_list[i] != 1) pref_list[i] = 0;
+			}
+
+			System.out.println("Pref list: "+Arrays.toString(pref_list));
+			System.out.println("Pref list length: "+numberOfDimensions);
+
+			//limiting buffer pages in BufMgr
+			System.out.println("No of buffers "+SystemDefs.JavabaseBM.getNumBuffers());
+			System.out.println("No of unpinned buffers "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
+
+			GenerateIndexFiles obj = new GenerateIndexFiles();
+			IndexFile indexFile = obj.createCombinedBTreeIndex(relationName, skytable.getTable_attr_type(), pref_list, pref_list.length);
+			System.out.println("Index created! ");
+			Tuple t = new Tuple();
+			short [] Ssizes = null;
+
+			AttrType [] attrType = new AttrType[pref_list.length];
+			for(int i=0;i<pref_list.length;i++){
+				attrType[i] = new AttrType (AttrType.attrReal);
+			}
+			t.setHdr((short)pref_list.length, attrType, Ssizes);
+			int size = t.size();
+
+			t = new Tuple(size);
+			t.setHdr((short)pref_list.length, attrType, Ssizes);
+
+			PCounter.initialize();
+			int numSkyEle = 0;
+			BTreeSortedSky btree = new BTreeSortedSky(attrType,
+										pref_list.length,
+										Ssizes,
+								0,
+										null,
+										relationName,
+										this.pref_list,
+										this.pref_list.length,
+										indexFile,
+										this.n_pages );
+			btree.computeSkylines();
+			Tuple skyEle = btree.get_next(); // first sky element
+			System.out.println("Nested Loop Skyline elements -->");
+			//System.out.print("First Sky element is: ");
+			skyEle.print(skytable.getTable_attr_type());
+			SystemDefs.JavabaseDB.add_to_mater_table(skyEle, this.skyouttable);
+			numSkyEle++;
+			while (skyEle != null) {
+				skyEle = btree.get_next(); // subsequent sky elements
+				if (skyEle == null) {
+					//System.out.println("No more sky elements");
+					break;
+				}
+				SystemDefs.JavabaseDB.add_to_mater_table(skyEle, this.skyouttable);
+				numSkyEle++;
+				//System.out.print("Sky element is: ");
+				skyEle.print(skytable.getTable_attr_type());
+			}
+			System.out.println("Skyline Length: "+numSkyEle);
+			btree.close();
+		}catch (Exception e){
+			e.printStackTrace();
 		}
 	}
 
