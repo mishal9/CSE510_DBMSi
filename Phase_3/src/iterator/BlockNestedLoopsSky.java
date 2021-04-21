@@ -132,7 +132,7 @@ public class BlockNestedLoopsSky extends Iterator implements GlobalConst
         try {
         	/* limit the memory usage of BM to calculated pages */
         	buffer_pages = this._n_pages/2;
-        	//SystemDefs.JavabaseBM.limit_memory_usage(true, buffer_pages);
+//        	SystemDefs.JavabaseBM.limit_memory_usage(true, buffer_pages);
         	this._heap_file = new Heapfile(this._relation_name);
 //        	System.out.println("BNL heapfile size "+_heap_file.getRecCnt());
         	this._temp_heap_file = new Heapfile(this._temp_heap_file_name);
@@ -158,8 +158,8 @@ public class BlockNestedLoopsSky extends Iterator implements GlobalConst
                 e.printStackTrace();
             }
         }
-
-		/* initialise tuple size */
+        
+        /* initialise tuple size */
         try {
         	this.outer_candidate_temp = new Tuple();
 			this.outer_candidate_temp.setHdr(this._len_in1, this._in1, this._t1_str_sizes);
@@ -177,7 +177,7 @@ public class BlockNestedLoopsSky extends Iterator implements GlobalConst
         
         /* calculate the window size and start computing the skyline */
         try {
-        	this._window_size = (int)5;
+        	this._window_size = 5;
 //        	System.out.println("Number of pages reserved for the window are "+ (this._n_pages - buffer_pages) );
 			compute_skyline();
 		} catch (JoinsException e) {
@@ -258,7 +258,6 @@ public class BlockNestedLoopsSky extends Iterator implements GlobalConst
             {
                 try
                 {
-                	//System.out.println("Opening scan 2");
                     this._scan = this._temp_heap_file.openScan();
                 }
                 catch (Exception e)
@@ -308,7 +307,6 @@ public class BlockNestedLoopsSky extends Iterator implements GlobalConst
             }
             this._scan.closescan();
         }
-        //System.out.println("Opening scan 3");
         this._scan = this._temp_heap_file.openScan();
     }
     
@@ -445,37 +443,27 @@ public class BlockNestedLoopsSky extends Iterator implements GlobalConst
 				{
 					// we need to delete the heap element
 					try {
-						//System.out.println("Deleting element from the heap file");
-						inner_candidate_temp = this._scan.getNext(_temp);
 						this._scan.closescan();
 						this._temp_heap_file.deleteRecord(_temp);
-						//System.out.println("opening scan 1");
 						this._scan = this._temp_heap_file.openScan();
-						//System.out.println("-----delete finish----");
 					} catch (InvalidSlotNumberException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
-//						System.exit(0);
 					} catch (InvalidTupleSizeException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
-//						System.exit(0);
 					} catch (HFException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
-//						System.exit(0);
 					} catch (HFBufMgrException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
-//						System.exit(0);
 					} catch (HFDiskMgrException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
-//						System.exit(0);
 					} catch (Exception e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
-//						System.exit(0);
 					}
 				}
 			} catch (TupleUtilsException e) {
@@ -515,7 +503,7 @@ public class BlockNestedLoopsSky extends Iterator implements GlobalConst
         {
             closeFlag = true;
             this._scan.closescan();
-            /*try {
+            try {
 				this._temp_heap_file.deleteFile();
 			} catch (InvalidSlotNumberException e) {
 				// TODO Auto-generated catch block
@@ -535,7 +523,7 @@ public class BlockNestedLoopsSky extends Iterator implements GlobalConst
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
-			}*/
+			}
         }
 
        // _scan.closescan();
@@ -568,8 +556,7 @@ public class BlockNestedLoopsSky extends Iterator implements GlobalConst
 				return this.inner_candidate;
 			}
 		}
-		this._temp_heap_file.deleteFile();
-		//SystemDefs.JavabaseBM.limit_memory_usage(false, this._n_pages);
+//		SystemDefs.JavabaseBM.limit_memory_usage(false, this._n_pages);
 //		System.out.println("No more records in skyline. All records already scanned.");
 		return null;
 	}
@@ -589,4 +576,3 @@ public class BlockNestedLoopsSky extends Iterator implements GlobalConst
 	}
 
 }
-

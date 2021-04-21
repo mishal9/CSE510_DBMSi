@@ -1733,14 +1733,14 @@ public class Table implements GlobalConst{
 	  rid = hp.insertRecord(t3, this.table_attr_type, this.table_attr_size, this.clustered_btree_attr, get_clustered_index_filename(clustered_btree_attr, "btree"));
 	  System.out.println("RID page no. "+rid.pageNo.pid);*/
     
-	  /*FldSpec[] projlist = new FldSpec[this.table_num_attr];
+	  FldSpec[] projlist = new FldSpec[this.table_num_attr];
 	  RelSpec rel = new RelSpec(RelSpec.outer);
 	  for ( int i=0; i<this.table_num_attr; i++ ) {
 		  projlist[i] = new FldSpec(rel, i+1);
 	  }
-	  IndexScan iscan = new IndexScan(new IndexType(IndexType.Cl_B_Index_ASC), 
+	  IndexScan iscan = new IndexScan(new IndexType(IndexType.Cl_B_Index_DESC), 
 			   						  this.table_heapfile, 
-			   						  this.get_clustered_index_filename(1, "btree"),
+			   						  this.get_clustered_index_filename(3, "btree"),
 			   						  this.table_attr_type, 
 			   						  this.table_attr_size, 
 			   						  this.table_num_attr, 
@@ -1754,14 +1754,14 @@ public class Table implements GlobalConst{
 		  temper.print(table_attr_type);
 		  temper = iscan.get_next();
 	  }
-	  iscan.close();*/
+	  iscan.close();
 //	  print_table_attr();
-	  ClusteredBTreeFile btf  = new ClusteredBTreeFile(this.get_clustered_index_filename(this.clustered_btree_attr, "btree"));
-	  KeyClass key = new StringKey("Pooja");
-	  PageId p = new PageId(108);
-	  RID rid = new RID(p, 4);
-	  btf.Delete(key, rid);
-	  btf.close();
+//	  ClusteredBTreeFile btf  = new ClusteredBTreeFile(this.get_clustered_index_filename(this.clustered_btree_attr, "btree"));
+//	  KeyClass key = new StringKey("Pooja");
+//	  PageId p = new PageId(108);
+//	  RID rid = new RID(p, 4);
+//	  btf.Delete(key, rid);
+//	  btf.close();
   }
   
   /* removes a tuple from the table heapfile */
