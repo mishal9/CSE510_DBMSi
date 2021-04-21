@@ -14,6 +14,7 @@ import global.*;
 import index.IndexException;
 import iterator.*;
 import iterator.Iterator;
+import sun.java2d.xr.GrowableEltArray;
 import tests.TestDriver;
 
 
@@ -710,7 +711,7 @@ class Driver extends TestDriver implements GlobalConst
 
         PCounter.initialize();
         int numSkyEle = 0;
-        BTreeSortedSky btree = new BTreeSortedSky(attrType, pref_list.length, Ssizes, 0, null, "heap_AAA", _pref_list, _pref_list.length, indexFile, _n_pages );
+        BTreeSortedSky btree = new BTreeSortedSky(attrType, pref_list.length, Ssizes, 0, null, , _pref_list, _pref_list.length, indexFile, _n_pages );
         btree.computeSkylines();
 
         System.out.println("Printing the Btree sorted Skyline");
