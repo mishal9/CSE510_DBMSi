@@ -97,11 +97,9 @@ public class TopK_NRAJoin extends Iterator implements GlobalConst {
 		Table table2 = SystemDefs.JavabaseDB.get_relation(this.relationName2);
 
 		if(table1.clustered_index_exist(this.mergeAttr1.offset, this.relationName1)) {
-			System.out.println("Relation 1 doesnot have clustered index");
 			return;
 		}
 		if(table2.clustered_index_exist(this.mergeAttr1.offset, this.relationName2)) {
-			System.out.println("Relation 2 doesnot have clustered index");
 			return;
 		}
 		
@@ -179,17 +177,81 @@ public class TopK_NRAJoin extends Iterator implements GlobalConst {
 		
 		joinAttrType[count] = new AttrType(AttrType.attrReal);
 		joinAttrSize[count] = STRSIZE;
+		
+		boolean relation1Ended = false;
+		boolean relation2Ended = false;
     	
     	while(true) {
     		depth += 1;
     		
-    		if(temp1 == null || temp2 == null) break;
+    		if(relation1Ended && relation2Ended) break;
     		
-    		int join1 = temp1.getIntFld(joinAttr1.offset);
-    		int join2 = temp2.getIntFld(joinAttr2.offset);
+    		if(temp1 == null) {
+    			relation1Ended = true;
+    		}
+    		if(temp2 == null) {
+    			relation2Ended = true;
+    		}
     		
-    		int merge1 = temp1.getIntFld(mergeAttr1.offset);
-    		int merge2 = temp2.getIntFld(mergeAttr2.offset);
+    		String joinKey1 = "";
+    		String mapKey1 = "";
+    		
+    		String joinKey2 = "";
+    		String mapKey2 = "";
+    		
+    		if(!relation1Ended) {
+    			// For relation 1
+        		if(table1_attr[joinAttr1.offset-1].attrType == AttrType.attrInteger) {
+        			joinKey1 = "" + temp1.getIntFld(joinAttr1.offset) + "-2";
+        			mapKey1 = temp1.getIntFld(joinAttr1.offset) + "-1";
+        		}
+        		else if (table1_attr[joinAttr1.offset-1].attrType == AttrType.attrReal) {
+        			joinKey1 = "" + temp1.getFloFld(joinAttr1.offset) + "-2";
+        			mapKey1 = temp1.getFloFld(joinAttr1.offset) + "-1";
+        		}
+        		else if (table1_attr[joinAttr1.offset-1].attrType == AttrType.attrString) {
+        			joinKey1 = "" + temp1.getStrFld(joinAttr1.offset) + "-2";
+        			mapKey1 = temp1.getStrFld(joinAttr1.offset) + "-1";
+        		}
+    		}
+    		
+    		if(!relation2Ended) {
+    		// For relation 2
+	    		if(table2_attr[joinAttr2.offset-1].attrType == AttrType.attrInteger) {
+	    			joinKey2 = "" + temp2.getIntFld(joinAttr2.offset) + "-1";
+	    			mapKey2 = temp2.getIntFld(joinAttr2.offset) + "-2";
+	    		}
+	    		else if (table2_attr[joinAttr2.offset-1].attrType == AttrType.attrReal) {
+	    			joinKey2 = "" + temp2.getFloFld(joinAttr2.offset) + "-1";
+	    			mapKey2 = temp2.getFloFld(joinAttr2.offset) + "-2";
+	    		}
+	    		else if (table2_attr[joinAttr2.offset-1].attrType == AttrType.attrString) {
+	    			joinKey2 = "" + temp2.getStrFld(joinAttr2.offset) + "-1";
+	    			mapKey2 = temp2.getStrFld(joinAttr2.offset) + "-2";
+	    		}
+    		}
+    		
+    		float merge1 = 0.0f;
+    		float merge2 = 0.0f;
+    		
+    		if(!relation1Ended) {
+	    		if(table1_attr[mergeAttr1.offset-1].attrType == AttrType.attrInteger) {
+	    			merge1 = (float) temp1.getIntFld(mergeAttr1.offset);
+	    		}
+	    		else if(table1_attr[mergeAttr1.offset-1].attrType == AttrType.attrReal) {
+	    			merge1 = temp1.getFloFld(mergeAttr1.offset);
+	    		}
+    		}
+    		
+    		
+    		if(!relation2Ended) {
+	    		if(table2_attr[mergeAttr2.offset-1].attrType == AttrType.attrInteger) {
+	    			merge2 = (float) temp2.getIntFld(mergeAttr2.offset);
+	    		}
+	    		else if(table2_attr[mergeAttr2.offset-1].attrType == AttrType.attrReal) {
+	    			merge2 = temp2.getFloFld(mergeAttr2.offset);
+	    		}
+    		}
     		
     		currDepthScore = merge1 + merge2;
     		
@@ -201,113 +263,161 @@ public class TopK_NRAJoin extends Iterator implements GlobalConst {
         	
     		if(objectsSeen >= k && currDepthScore < minLowerBound) break;
     		
+    		if(!relation1Ended) {
+	     		if(map.containsKey(joinKey1)) {
+	    			NRABounds temp = map.get(joinKey1);
+//	     			temp.t1 = temp1;
+	    				
+					Tuple mergedTuple = new Tuple();
+					mergedTuple.setHdr((short) newLength, joinAttrType, joinAttrSize);
+			    	int newSize = mergedTuple.size();
+			    	mergedTuple = new Tuple(newSize);
+			    	mergedTuple.setHdr((short) newLength, joinAttrType, joinAttrSize);
+			    	
+			    	count = 1;
+					for(int i = 0; i < table1_len; i++) {
+						if(table1_attr[i].attrType == AttrType.attrInteger) {
+							mergedTuple.setIntFld(count, temp1.getIntFld(i+1));
+						}
+						else if(table1_attr[i].attrType == AttrType.attrReal) {
+							mergedTuple.setFloFld(count, temp1.getFloFld(i+1));
+						}
+						else if(table1_attr[i].attrType == AttrType.attrString) {
+							mergedTuple.setStrFld(count, temp1.getStrFld(i+1));
+						}
+						count++;
+					}
+					for(int i = 0; i < table2_len; i++) {
+						if(i+1 == joinAttr2.offset) continue;
+						if(table2_attr[i].attrType == AttrType.attrInteger) {
+							mergedTuple.setIntFld(count, temp.t2.getIntFld(i+1));
+						}
+						else if(table2_attr[i].attrType == AttrType.attrReal) {
+							mergedTuple.setFloFld(count, temp.t2.getFloFld(i+1));
+						}
+						else if(table2_attr[i].attrType == AttrType.attrString) {
+							mergedTuple.setStrFld(count, temp.t2.getStrFld(i+1));
+						}
+						count++;
+					}
+					
+					if(!map.containsKey(mapKey1)) {
+						NRABounds nra1 = new NRABounds(merge1, null);
+						nra1.t1 = temp1;
+		    			objectsSeen+=1;
+		    			map.put(mapKey1, nra1);
+					}
+					
+					float v1 = 0.0f;
+					float v2 = 0.0f;
+					
+					if(table1_attr[mergeAttr1.offset-1].attrType == AttrType.attrInteger ) {
+						v1 = (float) temp1.getIntFld(mergeAttr1.offset);
+					}
+					else if(table1_attr[mergeAttr1.offset-1].attrType == AttrType.attrReal ) {
+						v1 = temp1.getFloFld(mergeAttr1.offset);
+					}
+					
+					if(table2_attr[mergeAttr2.offset-1].attrType == AttrType.attrInteger ) {
+						v2 = (float) temp.t2.getIntFld(mergeAttr2.offset);
+					}
+					else if(table2_attr[mergeAttr2.offset-1].attrType == AttrType.attrReal) {
+						v2 = temp.t2.getFloFld(mergeAttr2.offset);
+					}
+					
+					mergedTuple.setFloFld(count, (v1 + v2) / (float)2.0 );
+					pq.add(mergedTuple);
+	 
+	    		}
+	    		else {
+	    			NRABounds nb1 = new NRABounds(merge1, null);
+	    			nb1.t1 = temp1;
+	    			objectsSeen+=1;
+	    			map.put(mapKey1, nb1);
+	  	    	}
+    		}
     		
-    		String joinKey1 = "" + join1;
-    		if(map.containsKey(joinKey1)) {
-    			NRABounds temp = map.get(joinKey1);
-    			if(temp.createBy == "REL2") {
-    				temp.t2 = temp1;
-    				
-    				Tuple mergedTuple = new Tuple();
-    				mergedTuple.setHdr((short) newLength, joinAttrType, joinAttrSize);
-    		    	int newSize = mergedTuple.size();
-    		    	mergedTuple = new Tuple(newSize);
-    		    	mergedTuple.setHdr((short) newLength, joinAttrType, joinAttrSize);
-    		    	
-    		    	count = 1;
-    				for(int i = 0; i < table1_len; i++) {
-    					if(table1_attr[i].attrType == AttrType.attrInteger) {
-    						mergedTuple.setIntFld(count, temp.t1.getIntFld(i+1));
-    					}
-    					else if(table1_attr[i].attrType == AttrType.attrReal) {
-    						mergedTuple.setFloFld(count, temp.t1.getFloFld(i+1));
-    					}
-    					else if(table1_attr[i].attrType == AttrType.attrString) {
-    						mergedTuple.setStrFld(count, temp.t1.getStrFld(i+1));
+    		if(!relation2Ended) {
+	    		if(map.containsKey(joinKey2)) {
+	    			NRABounds temp = map.get(joinKey2);
+//					temp.t2 = temp2;
+					
+					Tuple mergedTuple = new Tuple();
+					mergedTuple.setHdr((short) newLength, joinAttrType, joinAttrSize);
+			    	int newSize = mergedTuple.size();
+			    	mergedTuple = new Tuple(newSize);
+			    	mergedTuple.setHdr((short) newLength, joinAttrType, joinAttrSize);
+			    	
+			    	count = 1;
+					for(int i = 0; i < table1_len; i++) {
+						if(table1_attr[i].attrType == AttrType.attrInteger) {
+							mergedTuple.setIntFld(count, temp.t1.getIntFld(i+1));
 						}
-    					count++;
-    				}
-    				for(int i = 0; i < table2_len; i++) {
-    					if(i+1 == joinAttr2.offset) continue;
-    					if(table1_attr[i].attrType == AttrType.attrInteger) {
-    						mergedTuple.setIntFld(count, temp.t2.getIntFld(i+1));
-    					}
-    					else if(table1_attr[i].attrType == AttrType.attrReal) {
-    						mergedTuple.setFloFld(count, temp.t2.getFloFld(i+1));
-    					}
-    					else if(table1_attr[i].attrType == AttrType.attrString) {
-    						mergedTuple.setStrFld(count, temp.t2.getStrFld(i+1));
+						else if(table1_attr[i].attrType == AttrType.attrReal) {
+							mergedTuple.setFloFld(count, temp.t1.getFloFld(i+1));
 						}
-    					count++;
-    				}
-    				mergedTuple.setFloFld(count, (float) ( temp.t1.getIntFld(mergeAttr1.offset) + 
-    						temp.t2.getIntFld( mergeAttr2.offset)) / (float)2.0 );
-    				pq.add(mergedTuple);
-    			}
+						else if(table1_attr[i].attrType == AttrType.attrString) {
+							mergedTuple.setStrFld(count, temp.t1.getStrFld(i+1));
+						}
+						count++;
+					}
+					for(int i = 0; i < table2_len; i++) {
+						if(i+1 == joinAttr2.offset) continue;
+						if(table2_attr[i].attrType == AttrType.attrInteger) {
+							mergedTuple.setIntFld(count, temp2.getIntFld(i+1));
+						}
+						else if(table2_attr[i].attrType == AttrType.attrReal) {
+							mergedTuple.setFloFld(count, temp2.getFloFld(i+1));
+						}
+						else if(table2_attr[i].attrType == AttrType.attrString) {
+							mergedTuple.setStrFld(count, temp2.getStrFld(i+1));
+						}
+						count++;
+					}
+					
+					if(!map.containsKey(mapKey2)) {
+						NRABounds nra2 = new NRABounds(merge2, null);
+						nra2.t2 = temp2;
+		    			objectsSeen+=1;
+		    			map.put(mapKey2, nra2);
+					}
+					
+					float v1 = 0.0f;
+					float v2 = 0.0f;
+					
+					if(table1_attr[mergeAttr1.offset-1].attrType == AttrType.attrInteger ) {
+						v1 = (float) temp.t1.getIntFld(mergeAttr1.offset);
+					}
+					else if(table1_attr[mergeAttr1.offset-1].attrType == AttrType.attrReal ) {
+						v1 = temp.t1.getFloFld(mergeAttr1.offset);
+					}
+					
+					if(table2_attr[mergeAttr2.offset-1].attrType == AttrType.attrInteger ) {
+						v2 = (float) temp2.getIntFld(mergeAttr2.offset);
+					}
+					else if(table2_attr[mergeAttr2.offset-1].attrType == AttrType.attrReal) {
+						v2 = temp2.getFloFld(mergeAttr2.offset);
+					}
+	    			
+					mergedTuple.setFloFld(count, (v1 + v2) / (float)2.0 );
+					pq.add(mergedTuple);
+	    		}
+	    		else {
+	    			NRABounds nb2 = new NRABounds(merge2, null);
+	    			nb2.t2 = temp2;
+	    			objectsSeen+=1;
+	    			map.put(mapKey2, nb2);
+	    		}
+    		}
+    		
+    		if(!relation1Ended) {
+    			temp1 = iscan1.get_next();
+    		}
+    		if(!relation2Ended) {
+    			temp2 = iscan2.get_next();
+    		}
 
-    		}
-    		else {
-    			NRABounds nb1 = new NRABounds(merge1, "REL1");
-    			nb1.t1 = temp1;
-    			objectsSeen+=1;
-    			map.put(joinKey1, nb1);
-    		}
-    		
-    		
-    		String joinKey2 = "" + join2;
-    		if(map.containsKey(joinKey2)) {
-    			NRABounds temp = map.get(joinKey2);
-    			if(temp.createBy == "REL1") {
-    				temp.t2 = temp2;
-    				
-    				Tuple mergedTuple = new Tuple();
-    				mergedTuple.setHdr((short) newLength, joinAttrType, joinAttrSize);
-    		    	int newSize = mergedTuple.size();
-    		    	mergedTuple = new Tuple(newSize);
-    		    	mergedTuple.setHdr((short) newLength, joinAttrType, joinAttrSize);
-    		    	
-    		    	count = 1;
-    				for(int i = 0; i < table1_len; i++) {
-    					if(table1_attr[i].attrType == AttrType.attrInteger) {
-    						mergedTuple.setIntFld(count, temp.t1.getIntFld(i+1));
-    					}
-    					else if(table1_attr[i].attrType == AttrType.attrReal) {
-    						mergedTuple.setFloFld(count, temp.t1.getFloFld(i+1));
-    					}
-    					else if(table1_attr[i].attrType == AttrType.attrString) {
-    						mergedTuple.setStrFld(count, temp.t1.getStrFld(i+1));
-						}
-    					count++;
-    				}
-    				for(int i = 0; i < table2_len; i++) {
-    					if(i+1 == joinAttr2.offset) continue;
-    					if(table1_attr[i].attrType == AttrType.attrInteger) {
-    						mergedTuple.setIntFld(count, temp.t2.getIntFld(i+1));
-    					}
-    					else if(table1_attr[i].attrType == AttrType.attrReal) {
-    						mergedTuple.setFloFld(count, temp.t2.getFloFld(i+1));
-    					}
-    					else if(table1_attr[i].attrType == AttrType.attrString) {
-    						mergedTuple.setStrFld(count, temp.t2.getStrFld(i+1));
-						}
-    					count++;
-    				}
-    				mergedTuple.setFloFld(count, (float) ( temp.t1.getIntFld(mergeAttr1.offset) + 
-    						temp.t2.getIntFld( mergeAttr2.offset)) / (float)2.0 );
-    				pq.add(mergedTuple);
-    			}
-    		}
-    		else {
-    			NRABounds nb2 = new NRABounds(merge2, "REL2");
-    			nb2.t1 = temp2;
-    			objectsSeen+=1;
-    			map.put(joinKey2, nb2);
-    		}
-    		
-    		temp1 = iscan1.get_next();
-    		temp2 = iscan2.get_next();
     	}
-    	
 	}
 	
 	private float getMinLowerBound() {
@@ -327,12 +437,19 @@ public class TopK_NRAJoin extends Iterator implements GlobalConst {
 			InvalidTypeException, PageNotReadException, TupleUtilsException, PredEvalException, SortException,
 			LowMemException, UnknowAttrType, UnknownKeyTypeException, Exception {
 		// TODO Auto-generated method stub
-		while(k > 0) {
-			pq.poll().print(joinAttrType);
+		Tuple res = null;
+		
+//		System.out.println(pq.size());
+		
+		if(k > 0) {
+			if(pq.size() > 0) {
+				res = pq.poll();
+			}
+//			res.print(joinAttrType);
 			k--;
     	}
 		
-		return null;
+		return res;
 	}
 
 	@Override
@@ -341,45 +458,9 @@ public class TopK_NRAJoin extends Iterator implements GlobalConst {
 		
 	}
 
-
 	@Override
 	public List<Tuple> get_next_aggr() throws Exception {
 		// TODO Auto-generated method stub
 		return null;
 	}
 }
-
-/*String key1 = "" + join1;
-if(map.containsKey(key1)) {
-	NRABounds temp = map.get(key1);
-	if(temp.createBy == "REL2") {
-		temp.updateBounds(merge1);
-		minLowerBound = getMinLowerBound();
-	}
-	else {
-	}
-}
-else {
-	NRABounds nbound = new NRABounds(merge1, "REL1");
-	map.put(key1, nbound);
-	minLowerBound = getMinLowerBound();
-	objectsSeen += 1;
-}
-
-String key2 = "" + join2;
-if(map.containsKey(key2)) {
-	NRABounds temp = map.get(key2);
-	if(temp.createBy == "REL1") {
-		temp.updateBounds(merge2);
-		minLowerBound = getMinLowerBound();
-
-	}
-	else {
-	}
-}
-else {
-	NRABounds nbound = new NRABounds(merge2, "REL2");
-	map.put(key2, nbound);
-	objectsSeen += 1;
-	minLowerBound = getMinLowerBound();
-}*/

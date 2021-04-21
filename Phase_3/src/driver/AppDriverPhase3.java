@@ -1110,21 +1110,15 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    	        FldSpec joinAttr2_Hash = new FldSpec(new RelSpec(RelSpec.innerRel), innerr_join_attribute);
 	    	        FldSpec mergeAttr2_Hash = new FldSpec(new RelSpec(RelSpec.innerRel), inner_merge_attribute);
 	    	        
-	    	        AttrType[] attrTypeHash = new AttrType[2];
-	    	        attrTypeHash[0] = new AttrType(AttrType.attrInteger);
-	    	        attrTypeHash[1] = new AttrType(AttrType.attrInteger);
-	    	        
-	    	        short[] attrSizeHash = new short[2];
-
-	                for(int i=0; i<2; i++){
-	                	attrSizeHash[i] = 32;
-	                }
+	    	        Table t1hash = SystemDefs.JavabaseDB.get_relation(outer_table_name);
+	        		Table t2hash = SystemDefs.JavabaseDB.get_relation(inner_table_name); 
+	        		
 				
 	                TopK_HashJoin tjhj = new TopK_HashJoin(
-							attrTypeHash, attrTypeHash.length, attrSizeHash,
+	                		t1hash.getTable_attr_type(), t1hash.getTable_attr_type().length, t1hash.getTable_attr_size(),
 	    	        		joinAttr1_Hash,
 	    	    			mergeAttr1_Hash,
-	    	    			attrTypeHash, attrTypeHash.length, attrSizeHash,
+	                		t2hash.getTable_attr_type(), t2hash.getTable_attr_type().length, t2hash.getTable_attr_size(),
 	    	    			joinAttr2_Hash,
 	    	    			mergeAttr2_Hash,
 	    	    			outer_table_name,
@@ -1154,21 +1148,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    	        Table t1 = SystemDefs.JavabaseDB.get_relation(outer_table_name);
 	        		Table t2 = SystemDefs.JavabaseDB.get_relation(inner_table_name); 
 	        		
-//	        		AttrType[] newAttrType1 = new AttrType[t1.getTable_attr_type().length + 1 + t2.getTable_attr_type().length];
-//	        		short[] newAttrSize1 = new short[t1.getTable_attr_type().length + 1 + t2.getTable_attr_type().length];		
-//	        		
-//	        		int pointer1 = 0;
-//	        		for(int i = 0; i < t1.getTable_attr_type().length; i++) {
-//	        			newAttrType1[pointer1] = t1.getTable_attr_type()[i];
-//	        			newAttrSize1[pointer1] = t2.getTable_attr_size()[i];
-//	        			pointer1++;
-//	                }
-//	                for(int i = 0; i < t2.getTable_attr_type().length; i++) {
-//	                	newAttrType1[pointer1] = t1.getTable_attr_type()[i];
-//	                	newAttrSize1[pointer1] = t2.getTable_attr_size()[i];
-//	                	pointer1++;
-//	                }
-	    	        		
+	
 	    			TopK_NRAJoin tknj = new TopK_NRAJoin(
 	    					t1.getTable_attr_type(), t1.getTable_attr_type().length, t1.getTable_attr_size(),
 					        joinAttr1,
@@ -1181,33 +1161,27 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 					        join_k, 
 					        join_n_pages
 	    			);
-	    			
-//	    			tknj.calculateTopKJoins();
-
-//	    			System.out.println("****************");
-//	    			tknj.get_next();
-//	    			System.out.println("****************");
-	    			
+			
 					try {
 						tknj.calculateTopKJoins();
 					} catch (Exception e) {
 						e.printStackTrace();
 					}
+					
 					Tuple r = tknj.get_next();
+					
+					System.out.println("TOPKNRA JOIN RESULTS START");
+					while(r != null) {
+						r.print(tknj.joinAttrType);
+						r = tknj.get_next();
+					}
+					System.out.println("TOPKNRA JOIN RESULTS END");
 				
-//					while(r != null) {
-//						r.print(tknj.joinAttrType);
-//						r = tknj.get_next();
-//					}
 	    			break;
 	    		default:
 	    			validate_token_length(0, "topkjoin");
 	    			break;
 	    	}
-//    	}catch (ArrayIndexOutOfBoundsException e){
-//    		System.out.println("OUT OF BOUNDS");
-//	        validate_token_length(0, "topkjoin");
-//	    }
     }
     
     public void run_test_query() {
