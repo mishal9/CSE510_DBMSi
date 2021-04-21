@@ -83,7 +83,7 @@ public class GroupByWithSort extends Iterator{
         _result = new ArrayList<>();
 
         try {
-            _skyline_grp_heap = new Heapfile("skyline_group_by.in");
+            _skyline_grp_heap = new Heapfile("skyline_group_by2.in");
         }
         catch (Exception e) {
             System.err.println("Could not open the skyline heapfile");
@@ -106,7 +106,7 @@ public class GroupByWithSort extends Iterator{
 
     public void skyline_Aggregation(String skyline_grp_heap, FldSpec[] pref_list, AttrType[] attrType, short[] attrSize, int buffer){
         BlockNestedLoopsSky blockNestedLoopsSky = null;
-
+        System.out.println("Running skyline aggregation");
         int[] preference_list = new int[pref_list.length];
         for(int i=0; i<pref_list.length; i++){
             preference_list[i] = pref_list[i].offset;
@@ -124,11 +124,9 @@ public class GroupByWithSort extends Iterator{
 
             Tuple temp;
             try {
-            	Tuple tup = TupleUtils.getEmptyTuple(attrType, attrSize);
                 temp = blockNestedLoopsSky.get_next();
-                tup.tupleCopy(temp);
                 while (temp!=null) {
-                    _result.add(tup);
+                    _result.add(temp);
                     temp = blockNestedLoopsSky.get_next();
                 }
 
@@ -224,10 +222,12 @@ public class GroupByWithSort extends Iterator{
 
         // Compute Skyline here
         if(_agg_type.aggType == AggType.SKYLINE) {
-            skyline_Aggregation("skyline_group_by.in", _agg_list, _attrType, _attr_sizes, _n_pages - 3);
+            skyline_Aggregation("skyline_group_by2.in", _agg_list, _attrType, _attr_sizes, _n_pages - 3);
             recreateSkyLineHeap();
             // Reset aggregation
             resetAggregation();
+            System.out.println("Skyline aggregation size: "+_result.size());
+            System.out.println(_result);
             return  _result;
         }
 
@@ -257,7 +257,7 @@ public class GroupByWithSort extends Iterator{
         // delete heap file
         try {
             _skyline_grp_heap.deleteFile();
-            _skyline_grp_heap = new Heapfile("skyline_group_by.in");
+            _skyline_grp_heap = new Heapfile("skyline_group_by2.in");
         } catch (InvalidSlotNumberException e) {
             e.printStackTrace();
         } catch (FileAlreadyDeletedException e) {
@@ -277,9 +277,22 @@ public class GroupByWithSort extends Iterator{
 
     @Override
     public void close() throws IOException, SortException, JoinsException, IndexException {
-            _am.close();
-            _sort.close();
-            _sort = null;
-            _am = null;
+        _am.close();
+        _sort.close();
+        _sort = null;
+        _am = null;
+        try {
+            _skyline_grp_heap.deleteFile();
+        } catch (InvalidSlotNumberException e) {
+            e.printStackTrace();
+        } catch (FileAlreadyDeletedException e) {
+            e.printStackTrace();
+        } catch (InvalidTupleSizeException e) {
+            e.printStackTrace();
+        } catch (HFBufMgrException e) {
+            e.printStackTrace();
+        } catch (HFDiskMgrException e) {
+            e.printStackTrace();
+        }
     }
 }
