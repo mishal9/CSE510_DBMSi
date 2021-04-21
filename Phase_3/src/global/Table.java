@@ -84,8 +84,10 @@ import iterator.UnknowAttrType;
 
 public class Table implements GlobalConst{
 
+	private static String OS = System.getProperty("os.name").toLowerCase();
+
 	/* data folder */
-	private  static String data_folder = "data/Phase3_report_dataset/";
+	private  static String data_folder = OS.indexOf("mac") >= 0 ? "../../data/Phase3_report_dataset/" : "data/Phase3_report_dataset/";
 	
 	/* table separateer in printing the table */
 	private static String table_sep = "\t\t";

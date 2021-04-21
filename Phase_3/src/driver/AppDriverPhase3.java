@@ -634,7 +634,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    	}
 	    	Iterator groupby = null;
 	    	FldSpec[] groupby_projection = get_projection_for_table(groupby_table, "outer", -1);
-			FileScan groupby_table_file_scan =  new FileScan(groupby_table.getTable_heapfile(), 
+			FileScan groupby_table_file_scan =  new FileScan(groupby_table.getTable_heapfile(),
 														   	 groupby_table.getTable_attr_type(),
 														   	 groupby_table.getTable_attr_size(),
 														   	 (short) groupby_table.getTable_num_attr(),
@@ -643,7 +643,9 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 														   	 null);
 			FldSpec[] agg_fldspc = get_aggregation_list(agg_attributes);
 			FldSpec groupByAttr = new FldSpec(new RelSpec(RelSpec.outer), groupby_attribute);
-			
+
+
+
 			/* keep the output attrtype ready */
 			AttrType[] agg_attrtype = new AttrType[groupby_table.getTable_num_attr()];
 			for ( int i=0; i<agg_attrtype.length; i++ ) {
@@ -673,7 +675,15 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    											  null, 
 	    											  groupby_attribute,//confirm that this is groupby attr
 	    											  false);
-	    			groupby = new GroupByWithHash(groupby_table.getTable_attr_type(),
+
+					groupby_projection = new FldSpec[agg_fldspc.length + 1];
+					groupby_projection[0] = groupByAttr;
+
+					for(int i=1; i<groupby_projection.length; i++){
+						groupby_projection[i] = agg_fldspc[i-1];
+					}
+
+					groupby = new GroupByWithHash(groupby_table.getTable_attr_type(),
 												  groupby_table.getTable_num_attr(),
 												  groupby_table.getTable_attr_size(),
 												  hiwfs,
@@ -685,13 +695,13 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 												  groupby_n_pages);
 	    			break;
 	    		case "SORT":
-//	    			//TBD run SORT hash with proper params
-//	    			System.out.println("Attribute type "+Arrays.toString(groupby_table.getTable_attr_type()));
-//	    			System.out.println("Attribute number "+groupby_table.getTable_num_attr());
-//	    			System.out.println("Attribute type "+Arrays.toString(groupby_table.getTable_attr_type()));
-//	    			groupby_table.print_table_attr();
-//	    			System.out.println("");
-//	    			System.out.println("Running groupby sort algorithm");
+					groupby_projection = new FldSpec[agg_fldspc.length + 1];
+					groupby_projection[0] = new FldSpec(new RelSpec(RelSpec.outer), groupByAttr.offset);
+
+					for(int i=1; i<groupby_projection.length; i++){
+						groupby_projection[i] = new FldSpec(new RelSpec(RelSpec.outer), agg_fldspc[i-1].offset);
+					}
+
 	    			groupby = new GroupByWithSort(groupby_table.getTable_attr_type(),
 	    										  groupby_table.getTable_num_attr(),
 	    										  groupby_table.getTable_attr_size(),
@@ -699,8 +709,8 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    										  groupByAttr,
 	    										  agg_fldspc,
 	    										  agg,
-	    										  groupby_projection,
-	    										  groupby_projection.length,
+							                      groupby_projection,
+							                      groupby_projection.length,
 	    										  groupby_n_pages);
 	    			break;
 	    		default:

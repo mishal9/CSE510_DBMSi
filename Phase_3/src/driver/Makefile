@@ -12,3 +12,9 @@ AppDriver:AppDriver.java
 
 driver: AppDriver
 	$(JAVA) driver.AppDriver
+
+AppDriverPhase3:AppDriverPhase3.java
+	$(JAVAC) AppDriverPhase3.java
+
+driver3: AppDriverPhase3
+	$(JAVA) driver.AppDriverPhase3

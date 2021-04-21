@@ -158,8 +158,8 @@ public class BlockNestedLoopsSky extends Iterator implements GlobalConst
                 e.printStackTrace();
             }
         }
-        
-        /* initialise tuple size */
+
+		/* initialise tuple size */
         try {
         	this.outer_candidate_temp = new Tuple();
 			this.outer_candidate_temp.setHdr(this._len_in1, this._in1, this._t1_str_sizes);
