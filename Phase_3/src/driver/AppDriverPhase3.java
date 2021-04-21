@@ -206,6 +206,9 @@ class DriverPhase3 extends TestDriver implements GlobalConst
      * */
     public void parse_create_index() {
     	try {
+    		/* limiting memory */
+	    	PCounter.initialize();
+	    	
 	    	boolean btree_type_index = query.contains("BTREE");
 	    	boolean hash_type_index = query.contains("HASH");
 	    	if ( validate_token_length(4, "create_index") == false ) {
@@ -238,6 +241,10 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 					table.create_unclustered_index(index_att_no, "hash");
 				}
 			}
+			/*printing the reads and writes and closing pcounter and also free the BM from the limit */
+	    	System.out.println("Number of Page reads: "+PCounter.get_rcounter());
+	    	System.out.println("Number of Page Writes: "+PCounter.get_wcounter());
+	    	PCounter.initialize();
     	}catch (ArrayIndexOutOfBoundsException e){
 	        validate_token_length(0, "create_index");
 	    }
@@ -248,6 +255,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
      * structure: create_table [CLUSTERED BTREE/HASH ATT_NO] FILENAME
      * */
     public void parse_create_table() throws Exception {
+    	
     	boolean is_index_required = query.contains("CLUSTERED");
     	boolean btree_type_index = query.contains("BTREE");
     	boolean hash_type_index = query.contains("HASH");
@@ -354,7 +362,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 				System.out.println("*********ERROR: table does not exist **************");
 			}
 			else {
-				table.print_table_cl();
+				table.print_table();
 			}
 		} catch (InvalidTupleSizeException e) {
 			// TODO Auto-generated catch block
@@ -530,6 +538,10 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    		temp_sub_query = String.join(" ", tokens);
 	    	}
 	    	
+	    	/* limiting memory */
+	    	SystemDefs.JavabaseBM.limit_memory_usage(true, groupby_n_pages);
+	    	PCounter.initialize();
+	    	
 	    	/* --------------------------extract the preference list and n pages from the query------------ */
 	    	String temp_query = String.valueOf(temp_sub_query);
 	    	temp_query = temp_query.replaceAll("[^\\d]", " ");
@@ -684,6 +696,11 @@ class DriverPhase3 extends TestDriver implements GlobalConst
                 }
             }
             groupby.close();
+            /*printing the reads and writes and closing pcounter and also free the BM from the limit */
+	    	System.out.println("Number of Page reads: "+PCounter.get_rcounter());
+	    	System.out.println("Number of Page Writes: "+PCounter.get_wcounter());
+	    	SystemDefs.JavabaseBM.limit_memory_usage(false, groupby_n_pages);
+	    	PCounter.initialize();
     	}catch (ArrayIndexOutOfBoundsException e){
 	        validate_token_length(0, "groupby");
 	    }catch (NegativeArraySizeException e) {
@@ -732,6 +749,8 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    	
 	    	/*------------join n_pages----------------------------*/
 	    	int join_n_pages = Integer.parseInt(tokens[7]);
+	    	SystemDefs.JavabaseBM.limit_memory_usage(true, join_n_pages);
+	    	PCounter.initialize();
 	    	
 	    	/*---------------------extract tablename and outtablename--------------------------*/
 	    	boolean is_output_saved = query.contains("MATER");
@@ -767,15 +786,6 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 			inner_table.inner_projection = inner_complete_projection;
 			outer_table.inner_projection = outer_projection;
 			FldSpec[] join_projection = get_projection_for_join_table(outer_projection, inner_projection);
-//			for ( int i=0; i<join_projection.length; i++ ) {
-//				if ( join_projection[i].relation.key == RelSpec.outer ) {
-//					System.out.println(join_projection[i].relation.key + " offset "+join_projection[i].offset);
-//				}
-//				else {
-//					System.out.println(join_projection[i].relation.key + " offset "+join_projection[i].offset);
-//				}
-//				
-//			}
 			FileScan outer_table_file_scan =  new FileScan(outer_table.getTable_heapfile(), 
 										   				   outer_table.getTable_attr_type(),
 										   				   outer_table.getTable_attr_size(),
@@ -805,6 +815,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    	/* run the appropriate skyline algorithm */
 	    	switch ( join_algo ) {
 	    		case "NLJ":
+	    			System.out.println("Printing results of Nested Loops Join ---->");
 	    			joiner = new NestedLoopsJoins (outer_table.getTable_attr_type(),
 	    										   outer_table.getTable_num_attr(), 
 	    										   outer_table.getTable_attr_size(),
@@ -821,6 +832,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    			//TBD run NLJ with proper params
 	    			break;
 	    		case "SMJ":
+	    			System.out.println("Printing results of Sort Merge Join ---->");
 	    			TupleOrder ascending = new TupleOrder(TupleOrder.Ascending);
 	    			joiner = new SortMerge(outer_table.getTable_attr_type(),
 										   outer_table.getTable_num_attr(), 
@@ -844,6 +856,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    			//TBD run SMJ with proper params
 	    			break;
 	    		case "INLJ":
+	    			System.out.println("Printing results of Index Nested Loops Join ---->");
 	    			joiner = new IndexNestedLoopJoin(outer_table.getTable_attr_type(),
 	    											 outer_table.getTable_num_attr(),
 	    											 outer_table.getTable_attr_size(),
@@ -860,6 +873,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    			//TBD run INLJ with proper params
 	    			break;
 	    		case "HJ":
+	    			System.out.println("Printing results of Hash Join ---->");
 	    			joiner = new HashJoin(outer_table.getTable_attr_type(),
 									      outer_table.getTable_num_attr(),
 									      outer_table.getTable_attr_size(),
@@ -880,8 +894,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    			break;
 	    	}
 	    	Tuple temp = joiner.get_next();
-	    	System.out.println("Tup");
-	    	temp.printTuple(join_attr_type);
+//	    	temp.printTuple(join_attr_type);
 	    	if ( mater_table != null ) {
 	    		mater_table.setTable_tuple_size(temp.size());
 	    	}
@@ -898,9 +911,15 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 				inner_table_file_scan.close();
 			}
 			if ( mater_table != null ) {
+				System.out.println("");
 				mater_table.add_table_to_global_queue();
 				mater_table.print_table_cl();
 			}
+			/*printing the reads and writes and closing pcounter and also free the BM from the limit */
+	    	System.out.println("Number of Page reads: "+PCounter.get_rcounter());
+	    	System.out.println("Number of Page Writes: "+PCounter.get_wcounter());
+	    	SystemDefs.JavabaseBM.limit_memory_usage(false, join_n_pages);
+	    	PCounter.initialize();
     	}catch (ArrayIndexOutOfBoundsException e){
 	        validate_token_length(0, "join");
 	    }
@@ -1082,6 +1101,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    	
 	    	/*------------join n_pages----------------------------*/
 	    	int join_n_pages = Integer.parseInt(tokens[9]);
+	    	SystemDefs.JavabaseBM.limit_memory_usage(true, join_n_pages);
 	    	
 	    	/*---------------------extract tablename and outtablename--------------------------*/
 	    	boolean is_output_saved = query.contains("MATER");
@@ -1185,6 +1205,10 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    			validate_token_length(0, "topkjoin");
 	    			break;
 	    	}
+	    	/*printing the reads and writes and closing pcounter and also free the BM from the limit */
+	    	System.out.println("Number of Page reads: "+PCounter.get_rcounter());
+	    	System.out.println("Number of Page Writes: "+PCounter.get_wcounter());
+	    	SystemDefs.JavabaseBM.limit_memory_usage(false, join_n_pages);
     }
     
     public void parse_table_info() {

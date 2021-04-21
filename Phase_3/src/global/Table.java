@@ -1329,8 +1329,8 @@ public class Table implements GlobalConst{
 	  System.out.println("Table attrypes: "+ Arrays.toString(this.table_attr_type));
 	  System.out.println("Table strsizes: "+Arrays.toString(this.table_attr_size));
 	  System.out.println("Table tuple size: "+this.table_tuple_size);
-	  System.out.println("Clustered btree index on attr: "+Arrays.toString(btree_unclustered_attr));
-	  System.out.println("Clustered hash index on attr: "+Arrays.toString(hash_unclustered_attr));
+	  System.out.println("Unclustered btree index on attr: "+Arrays.toString(btree_unclustered_attr));
+	  System.out.println("Unclustered hash index on attr: "+Arrays.toString(hash_unclustered_attr));
 	  System.out.println("Clustered btree index attribute: " + this.clustered_btree_attr);
 	  System.out.println("Clustered hash index attribute: "+this.clustered_hash_attr);
 	  System.out.println("Number of Records in the table: "+heap_file.getRecCnt());
