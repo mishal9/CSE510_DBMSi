@@ -12,16 +12,6 @@ import java.lang.*;
 import java.io.*;
 import java.util.*;
 
-class Test {
-    public int first;
-    public int second;
-    
-    public Test(int val1, int val2) {
-    	this.first = val1;
-    	this.second = val2;
-    }
-}
-
 class TupleComparator implements Comparator<Tuple>{
 
 	@Override
@@ -59,8 +49,8 @@ public class TopK_HashJoin extends Iterator implements GlobalConst {
 	int n_pages;
 	
 	PriorityQueue<Tuple> pq = null;
-//	HashJoin hj = null;
-	NestedLoopsJoins hj = null;
+	HashJoin hj = null;
+//	NestedLoopsJoins hj = null;
 	
 	public AttrType[] newAttrType = null;
 	public short[] newAttrSize = null;
@@ -143,33 +133,8 @@ public class TopK_HashJoin extends Iterator implements GlobalConst {
 	    outFilter[0].type2 = new AttrType(AttrType.attrSymbol);
 	    outFilter[0].operand2.symbol = new FldSpec (new RelSpec(RelSpec.innerRel),joinAttr2.offset);
 	    outFilter[1] = null;
-	    	    
-//	    AttrType[] Rtypes = new AttrType[2];
-//        Rtypes[0] = new AttrType(AttrType.attrInteger);
-//        Rtypes[1] = new AttrType(AttrType.attrInteger);
-//
-//        short[] Rsizes = new short[2];
-//        Rsizes[0] = 15;
-//        Rsizes[1] = 15;
-//	    
-//	    Heapfile f = new Heapfile(this.relationName2+".txt");
-//	    
-//	    Tuple t = new Tuple();
-//	    t.setHdr((short) table2_len, table2.getTable_attr_type(), table2.getTable_attr_size());
-//	    int size = t.size();
-//	    
-//	    t = new Tuple(size);
-//	    t.setHdr((short) table2_len, table2.getTable_attr_type(), table2.getTable_attr_size());
-//	    
-//	    for(int i = 0; i< test.length; i++) {
-//	    	t.setIntFld(1, test[i].first);
-//	    	t.setIntFld(2, test[i].second);
-//            RID rid = f.insertRecord(t.returnTupleByteArray());
-//	    }
-	    
-//	    System.out.println("table2.getTable_heapfile(): " + table2.getTable_heapfile());
-	    
-	    hj = new NestedLoopsJoins(
+	    	     
+	    hj = new HashJoin(
     		  table1_attr, table1_len, table1_attr_size,
     		  table2_attr, table2_len, table2_attr_size,
     		  100,
@@ -197,18 +162,9 @@ public class TopK_HashJoin extends Iterator implements GlobalConst {
         
         newAttrType[pointer] = new AttrType(AttrType.attrReal); 
     	newAttrSize[pointer] = STRSIZE;
-    	
-    	System.out.println("newAttrType" + Arrays.toString(newAttrType));
-		System.out.println("newAttrSize" + Arrays.toString(newAttrSize));
-
-    	
+    		
 	    Tuple t = hj.get_next();
-	    
-//	    while(t != null) {
-//	    	t.print(newAttrType);
-//	    	t = hj.get_next();
-//	    }
-	    
+  
 	    pq = new 
                 PriorityQueue<Tuple>(new TupleComparator());
 	    
