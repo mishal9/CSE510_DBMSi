@@ -3,6 +3,8 @@ package iterator;
 import java.io.*;
 import java.util.List;
 
+import btree.KeyDataEntry;
+import btree.ScanIteratorException;
 import global.*;
 import bufmgr.*;
 import diskmgr.*;
@@ -749,6 +751,12 @@ public class Sort extends Iterator implements GlobalConst
 
 	@Override
 	public List<Tuple> get_next_aggr() throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public KeyDataEntry get_next_key_data() throws ScanIteratorException {
 		// TODO Auto-generated method stub
 		return null;
 	}

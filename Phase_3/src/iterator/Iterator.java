@@ -7,6 +7,9 @@ import index.*;
 import java.io.*;
 import java.util.List;
 
+import btree.KeyDataEntry;
+import btree.ScanIteratorException;
+
 /**
  *All the relational operators and access methods are iterators.
  */
@@ -59,6 +62,8 @@ public abstract class Iterator implements Flags {
 	   Exception;
 
   public abstract List<Tuple> get_next_aggr() throws Exception;
+  
+  public abstract KeyDataEntry get_next_key_data() throws ScanIteratorException;
   /**
    *@exception IOException I/O errors
    *@exception JoinsException some join exception

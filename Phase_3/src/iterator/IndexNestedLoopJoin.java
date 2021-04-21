@@ -174,7 +174,7 @@ public class IndexNestedLoopJoin extends Iterator {
                     index_found = false;
                     hf = new Heapfile(table.getTable_heapfile());
                     inner = hf.openScan();
-                    System.out.println("Using no index");
+//                    System.out.println("Using no index");
                 }
             }
             else {
@@ -196,7 +196,7 @@ public class IndexNestedLoopJoin extends Iterator {
                     index_found = false;
                     hf = new Heapfile(table.getTable_heapfile());
                     inner = hf.openScan();
-                    System.out.println("Using no index");
+//                    System.out.println("Using no index");
                 }
             }
 //			indexType = IndexType.Hash;
@@ -474,6 +474,12 @@ public class IndexNestedLoopJoin extends Iterator {
         // TODO Auto-generated method stub
         return null;
     }
+
+	@Override
+	public KeyDataEntry get_next_key_data() throws ScanIteratorException {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }
 
 

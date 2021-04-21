@@ -6,26 +6,26 @@ import heap.Tuple;
 
 public class NRABounds {
 
-	public int lVal1 = 0;
-	public int lVal2 = 0;
+	public float lVal1 = 0.0f;
+	public float lVal2 = 0.0f;
 	
-	public int uVal1 = 500;
-	public int uVal2 = 500;
+	public float uVal1 = 500.0f;
+	public float uVal2 = 500.0f;
 	
 	public boolean isFullySeen = false;
 
-	public String createBy; //REL1 or REL2
+	public String createBy = null; //REL1 or REL2
 	
 	Tuple t1 = null;
 	Tuple t2 = null;
 
-	public NRABounds(int val, String createBy) {
+	public NRABounds(float val, String createBy) {
 		this.lVal1 = val;
 		this.uVal1 = val;
 		this.createBy = createBy;
 	}
 	
-	public void updateBounds(int newVal) {
+	public void updateBounds(float newVal) {
 		this.lVal2 = newVal;
 		this.uVal2 = newVal;
 	}

@@ -127,26 +127,17 @@ public class HashJoin extends Iterator {
         perm_mat = proj_list;
         nOutFlds = n_out_flds;
 
-        int outer_count=0;
-        for(int i=0;i<perm_mat.length;i++){
-            if(perm_mat[i].relation.key == RelSpec.outer)
-                outer_count++;
-        }
-        outer_projection = new FldSpec[outer_count];
-        inner_projection = new FldSpec[n_out_flds-outer_count];
+        outer_projection = new FldSpec[_in1.length];
+        inner_projection = new FldSpec[_in2.length];
         int j=0,k=0;
-        int l=0,m=0,m1=0,m2=0;
-        for(int i=0;i<perm_mat.length;i++){
-            if(perm_mat[i].relation.key == RelSpec.outer) {
-                outer_projection[j] = new FldSpec(new RelSpec(RelSpec.outer), perm_mat[i].offset);
-                j++;
-            }
-            else {
-                inner_projection[k] = new FldSpec(new RelSpec(RelSpec.outer), perm_mat[i].offset);
-                k++;
-            }
+        for(int i=0;i<_in1.length;i++) {
+            outer_projection[j] = new FldSpec(new RelSpec(RelSpec.outer), i+1);
+            j++;
         }
-//        System.out.println(Jtypes.length + " " + t_size.length);
+        for(int i=0;i<_in2.length;i++) {
+            inner_projection[k] = new FldSpec(new RelSpec(RelSpec.outer), i+1);
+            k++;
+        }
 
         try {
             t_size = TupleUtils.setup_op_tuple(Jtuple, Jtypes,
@@ -163,15 +154,12 @@ public class HashJoin extends Iterator {
         index_found = false;
         // check if index exists on the inner relation
         // TODO: ??
-        /*
-        Table t = new Table(relationName);
-        if(t.getHash_unclustered_attr()[fld]){
+
+        if(inner_table!=null && inner_table.getHash_unclustered_attr()[fld2]){
             // index exists
             index_found = true;
-            hash_index_name = "" ????
+            inner_hash_index_name = "hash-join-inner-index.unclustered";
         }
-        */
-        index_found = false;
 
         outer_relation_attrType = _in2[fld1-1].attrType;
         inner_relation_attrType = _in1[fld2-1].attrType;
@@ -202,6 +190,7 @@ public class HashJoin extends Iterator {
 	                }
 	                inner_h.insert(key, rid);
 	            }
+	            s.closescan();
 	            System.out.println("Hindex on inner relation created.");
 	        }
         }
@@ -301,16 +290,15 @@ public class HashJoin extends Iterator {
             UnknownKeyTypeException,
             Exception
     {
-        Tuple t;
-        if(it==null ||  (t = it.get_next())==null ){
+        Tuple t=null;
+        if(it==null){
             it_outer = outer_hiws.get_next();
             it_inner = inner_hiws.get_next();
-            if(it_inner==null | it_outer==null){
+            if(it_inner==null || it_outer==null){
                 return null;
             }
             else{
                 create_heap_for_inner_iterator();
-
                 /*System.out.println("\n\nOuter file:");
                 Tuple temp;
                 while((temp=it_outer.get_next())!=null){
@@ -324,18 +312,46 @@ public class HashJoin extends Iterator {
                     temp.setHdr((short)in2_len, _in2, t2_str_sizescopy);
                     temp.printTuple(_in2);
                 }*/
-
                 it = new NestedLoopsJoins(_in1, in1_len, t1_str_sizescopy,
                                             _in2, in2_len, t2_str_sizescopy,
                                             n_buf_pgs, it_outer, temp_temp_inner_heap_name,
                                             OutputFilter, RightFilter, perm_mat, nOutFlds);
-
             }
-              return it.get_next();
         }
-        else{
-            return t;
+        t = it.get_next();
+        while(t==null){
+            it_outer = outer_hiws.get_next();
+            it_inner = inner_hiws.get_next();
+            if(it_inner==null || it_outer==null){
+                return null;
+            }
+            else{
+                create_heap_for_inner_iterator();
+                /*System.out.println("\n\nOuter file:");
+                Tuple temp;
+                while((temp=it_outer.get_next())!=null){
+                    temp.setHdr((short)in1_len, _in1, t1_str_sizescopy);
+                    temp.printTuple(_in1);
+                }
+                System.out.println("\n\nInner File:");
+                Scan temps = (new Heapfile(temp_temp_inner_heap_name)).openScan();
+                RID rid=new RID();
+                while((temp=temps.getNext(rid))!=null){
+                    temp.setHdr((short)in2_len, _in2, t2_str_sizescopy);
+                    temp.printTuple(_in2);
+                }*/
+                it = new NestedLoopsJoins(_in1, in1_len, t1_str_sizescopy,
+                        _in2, in2_len, t2_str_sizescopy,
+                        n_buf_pgs, it_outer, temp_temp_inner_heap_name,
+                        OutputFilter, RightFilter, perm_mat, nOutFlds);
+            }
+            if((t = it.get_next())!=null){
+                return t;
+            }
         }
+
+        return t;
+
     }
 
     private void create_heap_for_inner_iterator() throws Exception{
@@ -463,6 +479,12 @@ public class HashJoin extends Iterator {
 
 	@Override
 	public List<Tuple> get_next_aggr() throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public KeyDataEntry get_next_key_data() throws ScanIteratorException {
 		// TODO Auto-generated method stub
 		return null;
 	}

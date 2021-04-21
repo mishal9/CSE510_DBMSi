@@ -63,11 +63,12 @@ public class ClusteredBTSortedPage  extends HFPage{
        if ( rid == null )
     	   return null;
 	 
-	 
+//	 System.out.println("Full Slots in the table "+getSlotCnt());
 	 // performs a simple insertion sort
 	 for (i=getSlotCnt()-1; i > 0; i--) {
 		 KeyClass key_i, key_iplus1;
 	     byte[] tuple_i, tuple_iplus1;
+//	     System.out.println("\tswapping check for i "+i+" page "+ rid.pageNo.pid);
 	     tuple_i = Convert.getbyteValue(getSlotOffset(i), getpage(), getSlotLength(i));
 	     tuple_iplus1 = Convert.getbyteValue(getSlotOffset(i-1), getpage(), getSlotLength(i-1));
 
@@ -80,6 +81,11 @@ public class ClusteredBTSortedPage  extends HFPage{
 	     t_i_hdr.tupleCopy(t_i);
 	     t_iplus1_hdr.tupleCopy(t_iplus1);
 	     
+//	     System.out.print(" Tuple i ");
+//	     t_i_hdr.print(attrtype);
+//	     System.out.print("Tuple i-1 ");
+//	     t_iplus1_hdr.print(attrtype);
+	     
 	     key_i = TupleUtils.get_key_from_tuple_attrtype(t_i_hdr, attrtype[key_index-1], key_index);
 	     key_iplus1 = TupleUtils.get_key_from_tuple_attrtype(t_iplus1_hdr, attrtype[key_index-1], key_index);
 	     /*if ( attrtype[key_index-1].attrType == AttrType.attrInteger ) {
@@ -90,11 +96,11 @@ public class ClusteredBTSortedPage  extends HFPage{
 	    	 key_i = new StringKey(t_i_hdr.getStrFld(key_index));
 	    	 key_iplus1 = new StringKey(t_iplus1_hdr.getStrFld(key_index));
 	     }*/
-	     System.out.println("Comparing keys "+key_i.toString()+" and "+key_iplus1.toString());
+//	     System.out.println("Comparing keys "+key_i.toString()+" and "+key_iplus1.toString());
 	     if (BT.keyCompare(key_i, key_iplus1) < 0)
 	       {
 		       // switch slots:
-	    	 System.out.println("swapping");
+//	    	 System.out.println("swapping");
 			 int ln, off;
 			 ln= getSlotLength(i);
 			 off=getSlotOffset(i);

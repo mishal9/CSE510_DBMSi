@@ -7,6 +7,10 @@ import index.*;
 
 import java.lang.*;
 import java.util.List;
+
+import btree.KeyDataEntry;
+import btree.ScanIteratorException;
+
 import java.io.*;
 
 /**
@@ -171,6 +175,12 @@ public class DuplElim extends Iterator
 
 @Override
 public List<Tuple> get_next_aggr() throws Exception {
+	// TODO Auto-generated method stub
+	return null;
+}
+
+@Override
+public KeyDataEntry get_next_key_data() throws ScanIteratorException {
 	// TODO Auto-generated method stub
 	return null;
 }  

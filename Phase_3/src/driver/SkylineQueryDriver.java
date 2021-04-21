@@ -135,7 +135,7 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
 			btreesky.debug = false;
 			int numSkyEle = 0;
 			Tuple skyEle = btreesky.get_next(); // first sky element
-			System.out.println("Nested Loop Skyline elements -->");
+			System.out.println("BTreeSky Skyline elements -->");
 			//System.out.print("First Sky element is: ");
 			skyEle.print(skytable.getTable_attr_type());
 			SystemDefs.JavabaseDB.add_to_mater_table(skyEle, this.skyouttable);

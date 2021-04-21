@@ -868,7 +868,7 @@ implements GlobalConst {
 
 
 			// ASSERTIONS:
-				// - currentLeafPage empty
+			// - currentLeafPage empty
 			// - newLeafPage holds all former records from currentLeafPage
 
 			KeyDataEntry undoEntry=null; 

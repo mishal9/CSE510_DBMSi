@@ -485,4 +485,25 @@ public class TupleUtils {
 		}
 		return key;
 	}
+	
+	public static boolean are_keys_equal( KeyClass key1, KeyClass key2) {
+		if ( key1 instanceof IntegerKey ) {
+//			System.out.println("key1 "+((IntegerKey) key1).getKey() );
+//			System.out.println("Key2 "+ ((IntegerKey) key2).getKey());
+			if ( ((IntegerKey) key1).getKey().equals( ((IntegerKey) key2).getKey() ) ) {
+				return true;
+			}
+		}
+		else if ( key1 instanceof FloatKey ) {
+			if ( ((FloatKey) key1).getKey().equals( ((FloatKey) key2).getKey() ) ) {
+				return true;
+			}
+		}
+		else if ( key1 instanceof StringKey ) {
+			if ( ((StringKey) key1).getKey().equals( ((IntegerKey) key2).getKey() ) ) {
+				return true;
+			}
+		}
+		return false;
+	}
 }

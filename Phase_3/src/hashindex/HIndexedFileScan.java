@@ -10,6 +10,9 @@ import iterator.*;
 import java.io.IOException;
 import java.util.List;
 
+import btree.KeyDataEntry;
+import btree.ScanIteratorException;
+
 /*
   Given the name of heap file for a window,
   we iterate ofer the window heap file and return the
@@ -80,6 +83,12 @@ public class HIndexedFileScan extends Iterator {
 
 	@Override
 	public List<Tuple> get_next_aggr() throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public KeyDataEntry get_next_key_data() throws ScanIteratorException {
 		// TODO Auto-generated method stub
 		return null;
 	}
