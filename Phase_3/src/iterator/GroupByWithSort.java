@@ -6,6 +6,7 @@ import heap.*;
 import index.IndexException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 
@@ -174,6 +175,8 @@ public class GroupByWithSort extends Iterator{
         } catch (InvalidTupleSizeException e) {
             e.printStackTrace();
         }
+
+        System.out.println(Arrays.toString(_outAttrType));
 
         Tuple t = null;
 
