@@ -291,4 +291,10 @@ public class TopK_HashJoin extends Iterator implements GlobalConst {
 		return null;
 	}
 
+	@Override
+	public KeyDataEntry get_next_key_data() throws ScanIteratorException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }

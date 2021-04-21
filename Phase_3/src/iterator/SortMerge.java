@@ -7,6 +7,9 @@ import index.*;
 import java.io.*;
 import java.util.List;
 
+import btree.KeyDataEntry;
+import btree.ScanIteratorException;
+
 /**
  * This file contains the interface for the sort_merg joins.
  * We name the two relations being joined as R and S.
@@ -432,6 +435,12 @@ public class SortMerge extends Iterator implements GlobalConst
 
 @Override
 public List<Tuple> get_next_aggr() throws Exception {
+	// TODO Auto-generated method stub
+	return null;
+}
+
+@Override
+public KeyDataEntry get_next_key_data() throws ScanIteratorException {
 	// TODO Auto-generated method stub
 	return null;
 }

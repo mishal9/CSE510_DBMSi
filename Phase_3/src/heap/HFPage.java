@@ -337,6 +337,7 @@ implements ConstSlot, GlobalConst{
 	public RID insertRecord ( byte [] record)		
 			throws IOException
 	{
+//		System.out.println("\tInsert record slotcnt " + slotCnt);
 		RID rid = new RID();
 
 		int recLen = record.length;
@@ -391,6 +392,8 @@ implements ConstSlot, GlobalConst{
 			curPage.pid = Convert.getIntValue (CUR_PAGE, data);
 			rid.pageNo.pid = curPage.pid;
 			rid.slotNo = i;
+//			System.out.println("\tInserted rid page, slot " +rid.pageNo.pid+" " + rid.slotNo);
+//			System.out.println("\tafter insert record slotcnt " + slotCnt);
 			return   rid ;
 		}
 	} 
@@ -406,6 +409,7 @@ implements ConstSlot, GlobalConst{
 			throws IOException,  
 			InvalidSlotNumberException
 	{
+//		System.out.println("\tdeleting record page slot " + rid.pageNo.pid+" "+rid.slotNo);
 		int slotNo = rid.slotNo;
 		short recLen = getSlotLength (slotNo);
 		slotCnt = Convert.getShortValue (SLOT_CNT, data);
@@ -456,6 +460,7 @@ implements ConstSlot, GlobalConst{
 		else {
 			throw new InvalidSlotNumberException (null, "HEAPFILE: INVALID_SLOTNO");
 		}
+//		System.out.println("\tAfter deleting record slotcnt " + slotCnt);
 	}
 
 	/**

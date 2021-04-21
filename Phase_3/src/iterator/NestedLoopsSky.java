@@ -9,6 +9,9 @@ import java.io.*;
 import java.util.Arrays;
 import java.util.List;
 
+import btree.KeyDataEntry;
+import btree.ScanIteratorException;
+
 /**
  *use the iterator and relationName to compute the skyline using nested loop method
  *output file, call get_next to get next tuple in the skyline
@@ -250,6 +253,14 @@ public class NestedLoopsSky extends Iterator
 
 	@Override
 	public List<Tuple> get_next_aggr() throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+
+
+	@Override
+	public KeyDataEntry get_next_key_data() throws ScanIteratorException {
 		// TODO Auto-generated method stub
 		return null;
 	}

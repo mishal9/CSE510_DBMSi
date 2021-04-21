@@ -8,6 +8,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import btree.KeyDataEntry;
+import btree.ScanIteratorException;
+
 
 public class GroupByWithSort extends Iterator{
     public static List<Tuple> _result;
@@ -282,4 +285,10 @@ public class GroupByWithSort extends Iterator{
             _sort = null;
             _am = null;
     }
+
+	@Override
+	public KeyDataEntry get_next_key_data() throws ScanIteratorException {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

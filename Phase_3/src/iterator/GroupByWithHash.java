@@ -12,6 +12,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import btree.KeyDataEntry;
+import btree.ScanIteratorException;
+
 import static global.GlobalConst.MINIBASE_PAGESIZE;
 
 public class GroupByWithHash extends Iterator{
@@ -105,4 +108,11 @@ public class GroupByWithHash extends Iterator{
         _hiwfs.close();
         _hiwfs = null;
     }
+
+
+	@Override
+	public KeyDataEntry get_next_key_data() throws ScanIteratorException {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

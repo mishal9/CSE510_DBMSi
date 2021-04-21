@@ -354,13 +354,15 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 				System.out.println("*********ERROR: table does not exist **************");
 			}
 			else {
-				table.print_table_cl();
+				table.print_table();
 			}
 		} catch (InvalidTupleSizeException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+		}catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
-    	//TBD print the mentioned table properly
     }
     
     /* parses the output_index query for the exact structure 
@@ -1109,10 +1111,11 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    	        
 	    	        FldSpec joinAttr2_Hash = new FldSpec(new RelSpec(RelSpec.innerRel), innerr_join_attribute);
 	    	        FldSpec mergeAttr2_Hash = new FldSpec(new RelSpec(RelSpec.innerRel), inner_merge_attribute);
-	    	        
+
 	    	        Table t1hash = SystemDefs.JavabaseDB.get_relation(outer_table_name);
 	        		Table t2hash = SystemDefs.JavabaseDB.get_relation(inner_table_name); 
 	        		
+
 				
 	                TopK_HashJoin tjhj = new TopK_HashJoin(
 	                		t1hash.getTable_attr_type(), t1hash.getTable_attr_type().length, t1hash.getTable_attr_size(),
@@ -1182,6 +1185,26 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    			validate_token_length(0, "topkjoin");
 	    			break;
 	    	}
+    }
+    
+    public void parse_table_info() {
+    	String tablename = tokens[1];
+    	System.out.println("Printing the table "+tablename);
+    	try {
+			Table table = SystemDefs.JavabaseDB.get_relation(tablename);
+			if ( table == null ) {
+				System.out.println("*********ERROR: table does not exist **************");
+			}
+			else {
+				table.print_table_attr();
+			}
+		} catch (InvalidTupleSizeException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
     }
     
     public void run_test_query() {
@@ -1343,6 +1366,9 @@ class DriverPhase3 extends TestDriver implements GlobalConst
     				break;
     			case "test":
     				run_test_query();
+    				break;
+    			case "output_table_info":
+    				parse_table_info();
     				break;
     			default:
     				System.out.println("Query command not recognized "+tokens[0]);
