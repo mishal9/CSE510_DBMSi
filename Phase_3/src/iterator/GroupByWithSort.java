@@ -6,6 +6,7 @@ import heap.*;
 import index.IndexException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 
@@ -24,10 +25,11 @@ public class GroupByWithSort extends Iterator{
     private Heapfile _skyline_grp_heap;
 
     // size of the tuples in the skyline/window/temporary_heap_file
-    private int          _tuple_size;
+    private int          result_tuple_size;
+    private int          candidate_tuple_size;
 
     // Value of the aggregation attribute in the last tuple
-    private static float _lastPolled = 0.0f;
+    private static float _lastPolled;
 
     // buffer pages allocation
     private int _n_pages;
@@ -39,6 +41,9 @@ public class GroupByWithSort extends Iterator{
     private static int _group_size;
     private static float _grp_result;
     private static Iterator _am;
+    private static FldSpec[] _projlist;
+    private static int _nOutFlds;
+    public static AttrType[] _outAttrType;
 
     public GroupByWithSort(
             AttrType[] in1, int len_in1, short[] t1_str_sizes,
@@ -59,16 +64,28 @@ public class GroupByWithSort extends Iterator{
         _agg_list = agg_list;
         _group_by_attr = group_by_attr;
         _am = am1;
+        _projlist = proj_list;
+        _nOutFlds = n_out_flds;
+
+        _outAttrType = new AttrType[proj_list.length];
+
+        _lastPolled = 0.0f;
 
         _aggr_val = _agg_type.aggType == AggType.AVG ? 0.0f : _agg_type.aggType == AggType.MIN ? Float.MAX_VALUE : -Float.MIN_VALUE;
         _group_size = 0;
         _grp_result = 0.0f;
 
+        _outAttrType[0] = _attrType[_group_by_attr.offset-1];
+        _outAttrType[1] = new AttrType(AttrType.attrInteger);
+
+        _attr_sizes = new short[1];
+        _attr_sizes[0] = 32;
+
         /* initialise tuple size */
         try {
             Tuple tuple_candidate = new Tuple();
-            tuple_candidate.setHdr((short) this._len_in, this._attrType, this._attr_sizes);
-            this._tuple_size = tuple_candidate.size();
+            tuple_candidate.setHdr((short) _len_in, _attrType, this._attr_sizes);
+            this.candidate_tuple_size = tuple_candidate.size();
         } catch (InvalidTypeException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -141,12 +158,13 @@ public class GroupByWithSort extends Iterator{
         }
     }
 
-    public List<Tuple> get_next_aggr() throws IOException, FieldNumberOutOfBoundException {
+    public List<Tuple> get_next_aggr() throws IOException, FieldNumberOutOfBoundException, UnknowAttrType, WrongPermat {
         _result = new ArrayList<>();
 
-        Tuple result = new Tuple(this._tuple_size);
+        Tuple result = new Tuple(this.candidate_tuple_size);
+
         try {
-            result.setHdr((short) _len_in, _attrType, _attr_sizes);
+            result.setHdr((short) _nOutFlds, _outAttrType, _attr_sizes);
         } catch (IOException e) {
             e.printStackTrace();
         } catch (InvalidTypeException e) {
@@ -173,34 +191,24 @@ public class GroupByWithSort extends Iterator{
         RID rid;
 
         while(t != null && t.getFloFld(_group_by_attr.offset) == _lastPolled){
-            Tuple outer = new Tuple(this._tuple_size);
-            try {
-                outer.setHdr((short) _len_in, _attrType, _attr_sizes);
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (InvalidTypeException e) {
-                e.printStackTrace();
-            } catch (InvalidTupleSizeException e) {
-                e.printStackTrace();
-            }
-            outer.tupleCopy(t);
-            result.tupleCopy(outer);
+
+            Projection.Project(t, _attrType, result, _projlist, _projlist.length);
 
             _group_size += 1;
 
             if (_agg_type.aggType == AggType.MIN) {
-                _aggr_val = Math.min(_aggr_val, outer.getFloFld(_agg_list[0].offset));
+                _aggr_val = Math.min(_aggr_val, t.getFloFld(_agg_list[0].offset));
                 _grp_result = _aggr_val;
             } else if (_agg_type.aggType == AggType.MAX) {
-                _aggr_val = Math.max(_aggr_val, outer.getFloFld(_agg_list[0].offset));
+                _aggr_val = Math.max(_aggr_val, t.getFloFld(_agg_list[0].offset));
                 _grp_result = _aggr_val;
             } else if (_agg_type.aggType == AggType.AVG) {
-                _aggr_val += outer.getFloFld(_agg_list[0].offset);
+                _aggr_val += t.getFloFld(_agg_list[0].offset);
                 _grp_result = _aggr_val / _group_size;
             } else if (_agg_type.aggType == AggType.SKYLINE) {
                 // add to skyline group heap
                 try {
-                    rid = _skyline_grp_heap.insertRecord(outer.returnTupleByteArray());
+                    rid = _skyline_grp_heap.insertRecord(t.returnTupleByteArray());
                 }
                 catch (Exception e) {
                     status = false;
@@ -208,7 +216,7 @@ public class GroupByWithSort extends Iterator{
                 }
             }
 
-            _lastPolled = outer.getFloFld(_group_by_attr.offset);
+            _lastPolled = t.getFloFld(_group_by_attr.offset);
 
             try {
                 t = _sort.get_next();
@@ -226,14 +234,12 @@ public class GroupByWithSort extends Iterator{
             recreateSkyLineHeap();
             // Reset aggregation
             resetAggregation();
-            System.out.println("Skyline aggregation size: "+_result.size());
-            System.out.println(_result);
             return  _result;
         }
 
         // Construct result tuple here
-        result.setFloFld(_group_by_attr.offset,  _lastPolled);
-        result.setFloFld(_agg_list[0].offset,  _grp_result);
+
+        result.setFloFld(2,  _grp_result);
         _result.add(result);
 
         // Reset aggregation
