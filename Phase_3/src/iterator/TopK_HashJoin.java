@@ -239,6 +239,9 @@ public class TopK_HashJoin extends Iterator implements GlobalConst {
 	@Override
 	public void close() throws IOException, JoinsException, SortException, IndexException {
 		// TODO Auto-generated method stub
+		if ( hj!= null ) {
+			hj.close();
+		}
 	}
 
 	@Override

@@ -264,6 +264,7 @@ public class BTreeSky extends Iterator implements GlobalConst {
 			setArr[i].close();
 			
 		}
+		insertCheckerList.close();
 		
 		if(debug) {
 			System.out.println("getNumUnpinnedBuffers "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
