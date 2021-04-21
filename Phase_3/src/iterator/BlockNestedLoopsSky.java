@@ -177,7 +177,7 @@ public class BlockNestedLoopsSky extends Iterator implements GlobalConst
         
         /* calculate the window size and start computing the skyline */
         try {
-        	this._window_size = ((int)(MINIBASE_PAGESIZE/this._tuple_size))*(this._n_pages - buffer_pages);
+        	this._window_size = (int)5;
 //        	System.out.println("Number of pages reserved for the window are "+ (this._n_pages - buffer_pages) );
 			compute_skyline();
 		} catch (JoinsException e) {

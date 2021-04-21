@@ -207,7 +207,8 @@ class DriverPhase3 extends TestDriver implements GlobalConst
     public void parse_create_index() {
     	try {
     		/* limiting memory */
-	    	PCounter.initialize();
+    		/*printing the reads and writes and closing pcounter and also free the BM from the limit */
+        	PCounter.initialize();
 	    	
 	    	boolean btree_type_index = query.contains("BTREE");
 	    	boolean hash_type_index = query.contains("HASH");
@@ -256,6 +257,9 @@ class DriverPhase3 extends TestDriver implements GlobalConst
      * */
     public void parse_create_table() throws Exception {
     	
+    	/*printing the reads and writes and closing pcounter and also free the BM from the limit */
+    	PCounter.initialize();
+    	
     	boolean is_index_required = query.contains("CLUSTERED");
     	boolean btree_type_index = query.contains("BTREE");
     	boolean hash_type_index = query.contains("HASH");
@@ -302,7 +306,12 @@ class DriverPhase3 extends TestDriver implements GlobalConst
     		}
     		//TBD create just a table and no index 
     		table.create_table(table.getTable_heapfile(), table.getTable_data_file());
+    		
     	}
+    	/*printing the reads and writes and closing pcounter and also free the BM from the limit */
+    	System.out.println("Number of Page reads: "+PCounter.get_rcounter());
+    	System.out.println("Number of Page Writes: "+PCounter.get_wcounter());
+    	PCounter.initialize();
     }
     
     /* parses the insert_data query for the exact structure 
@@ -313,6 +322,10 @@ class DriverPhase3 extends TestDriver implements GlobalConst
     	if ( validate_token_length(3, "insert_data") == false ) {
 			return;
 		}
+    	/*printing the reads and writes and closing pcounter and also free the BM from the limit */
+    	System.out.println("Number of Page reads: "+PCounter.get_rcounter());
+    	System.out.println("Number of Page Writes: "+PCounter.get_wcounter());
+    	PCounter.initialize();
     	String filename = tokens[2];
     	String tablename = tokens[1];
     	System.out.println("Inserting data from file "+filename+" to table "+tablename);
@@ -324,6 +337,10 @@ class DriverPhase3 extends TestDriver implements GlobalConst
     		return;
     	}
     	table.insert_data(filename);
+    	/*printing the reads and writes and closing pcounter and also free the BM from the limit */
+    	System.out.println("Number of Page reads: "+PCounter.get_rcounter());
+    	System.out.println("Number of Page Writes: "+PCounter.get_wcounter());
+    	PCounter.initialize();
     }
     
     /* parses the delete_data query for the exact structure 
@@ -334,6 +351,11 @@ class DriverPhase3 extends TestDriver implements GlobalConst
     	if ( validate_token_length(3, "delete_data") == false ) {
 			return;
 		}
+    	/*printing the reads and writes and closing pcounter and also free the BM from the limit */
+    	System.out.println("Number of Page reads: "+PCounter.get_rcounter());
+    	System.out.println("Number of Page Writes: "+PCounter.get_wcounter());
+    	PCounter.initialize();
+    	
     	String filename = tokens[2];
     	String tablename = tokens[1];
     	System.out.println("Deleting data of file "+filename+" from table "+tablename);
@@ -344,6 +366,10 @@ class DriverPhase3 extends TestDriver implements GlobalConst
     		return;
     	}
     	table.delete_data(filename);
+    	/*printing the reads and writes and closing pcounter and also free the BM from the limit */
+    	System.out.println("Number of Page reads: "+PCounter.get_rcounter());
+    	System.out.println("Number of Page Writes: "+PCounter.get_wcounter());
+    	PCounter.initialize();
     }
     
     /* parses the output_table query for the exact structure 
@@ -354,6 +380,9 @@ class DriverPhase3 extends TestDriver implements GlobalConst
     	if ( validate_token_length(2, "output_table") == false ) {
 			return;
 		}
+    	/*printing the reads and writes and closing pcounter and also free the BM from the limit */
+    	PCounter.initialize();
+    	
     	String tablename = tokens[1];
     	System.out.println("Printing the table "+tablename);
     	try {
@@ -362,7 +391,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 				System.out.println("*********ERROR: table does not exist **************");
 			}
 			else {
-				table.print_table();
+				table.print_table_cl();
 			}
 		} catch (InvalidTupleSizeException e) {
 			// TODO Auto-generated catch block
@@ -371,6 +400,11 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+    	
+    	/*printing the reads and writes and closing pcounter and also free the BM from the limit */
+    	System.out.println("Number of Page reads: "+PCounter.get_rcounter());
+    	System.out.println("Number of Page Writes: "+PCounter.get_wcounter());
+    	PCounter.initialize();
     }
     
     /* parses the output_index query for the exact structure 
@@ -381,6 +415,8 @@ class DriverPhase3 extends TestDriver implements GlobalConst
     	if ( validate_token_length(3, "output_index") == false ) {
 			return;
 		}
+    	/*printing the reads and writes and closing pcounter and also free the BM from the limit */
+    	PCounter.initialize();
     	String tablename = tokens[1];
     	int index_att_no = Integer.parseInt(tokens[2]);
     	System.out.println("Printing the indices on attribute "+index_att_no+" on table "+tablename);
@@ -422,6 +458,10 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+    	/*printing the reads and writes and closing pcounter and also free the BM from the limit */
+    	System.out.println("Number of Page reads: "+PCounter.get_rcounter());
+    	System.out.println("Number of Page Writes: "+PCounter.get_wcounter());
+    	PCounter.initialize();
     }
     
     /* parses the skyline query for the exact structure 

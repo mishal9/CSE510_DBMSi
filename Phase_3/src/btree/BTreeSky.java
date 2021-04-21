@@ -64,7 +64,7 @@ public class BTreeSky extends Iterator implements GlobalConst {
 			String relationName, int[] pref_list, int pref_length_list, IndexFile[] index_file_list,
 			int n_pages) throws Exception {
 
-
+		this.prunedHeapFileName = System.currentTimeMillis()+".pruned";
 		this.relationName = relationName;
 		this.btreeindexes = (BTreeFile[]) index_file_list;
 
@@ -146,7 +146,7 @@ public class BTreeSky extends Iterator implements GlobalConst {
 					firstSkyLineElementRID = rid;
 					firstSkyEleKey = scannedVal.key;
 					btreeWithFirstSkyEle = i;
-					System.out.println("firstSkyEleKey: "+firstSkyEleKey+" btreeWithFirstSkyEle: "+btreeWithFirstSkyEle);
+//					System.out.println("firstSkyEleKey: "+firstSkyEleKey+" btreeWithFirstSkyEle: "+btreeWithFirstSkyEle);
 					if (debug) {
 						System.out.println("firstSkyLineElement: " + firstSkyLineElementRID);
 					}
@@ -253,7 +253,7 @@ public class BTreeSky extends Iterator implements GlobalConst {
 
 		}
 		
-		System.out.println("Will now run Block Nested Loop Skyline on \n Pruned DataFile record count: "+prunedDataFile.getRecCnt());
+//		System.out.println("Will now run Block Nested Loop Skyline on \n Pruned DataFile record count: "+prunedDataFile.getRecCnt());
 		
 		//run block nested loop skyline on the pruned data now
 		
