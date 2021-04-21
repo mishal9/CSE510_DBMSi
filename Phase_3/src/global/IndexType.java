@@ -12,6 +12,7 @@ public class IndexType {
   public static final int Hash            = 2;
   public static final int Cl_B_Index_DESC = 3;
   public static final int Cl_B_Index_ASC  = 4;
+  public static final int CL_B_Index_nodes = 5;
 
   public int indexType;
 

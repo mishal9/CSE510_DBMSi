@@ -1,6 +1,8 @@
 package iterator;
 
+import btree.KeyDataEntry;
 import btree.LeafData;
+import btree.ScanIteratorException;
 import bufmgr.*;
 import global.*;
 import heap.*;
@@ -241,6 +243,12 @@ public class SortFirstSky extends Iterator implements GlobalConst {
 
 	@Override
 	public List<Tuple> get_next_aggr() throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public KeyDataEntry get_next_key_data() throws ScanIteratorException {
 		// TODO Auto-generated method stub
 		return null;
 	}

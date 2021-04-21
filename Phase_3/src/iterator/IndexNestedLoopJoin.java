@@ -474,6 +474,12 @@ public class IndexNestedLoopJoin extends Iterator {
         // TODO Auto-generated method stub
         return null;
     }
+
+	@Override
+	public KeyDataEntry get_next_key_data() throws ScanIteratorException {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }
 
 
