@@ -125,11 +125,11 @@ public class BTreeSortedSky extends Iterator implements GlobalConst {
 		entry = scan.get_next();
 
 		int count = 0;
-		/*
+
 		while (entry != null && count < _window.length) {
 			Tuple temp = getEmptyTuple();
 			rid = ((LeafData) entry.data).getData();
-			temp.tupleCopy(hf.getRecord(rid));
+			temp.tupleCopy(tuples.getRecord(rid));
 			//temp.print(attrType);
 
 			boolean isDominatedByWindow = checkDominationWithinWindowTuples(temp,count);
@@ -140,7 +140,7 @@ public class BTreeSortedSky extends Iterator implements GlobalConst {
 
 			entry = scan.get_next();
 		}
-		*/
+
 		while (entry != null) {
 			boolean isDominatedBy = false;
 			Tuple htuple = getEmptyTuple();
@@ -257,8 +257,8 @@ public class BTreeSortedSky extends Iterator implements GlobalConst {
 		try {
 			if ( this.temp.getRecCnt() != 0 ) {
 				this.bnls.close();
-				temp.deleteFile();
 			}
+			temp.deleteFile();
 
 		} catch (InvalidSlotNumberException e) {
 			// TODO Auto-generated catch block
