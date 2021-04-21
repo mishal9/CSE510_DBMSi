@@ -1754,7 +1754,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 
                     case 5:
                         // call btree sort sky
-                        runBtreeSortSky();
+                        //runBtreeSortSky();
                         break;
 
                     case 0:
@@ -1794,7 +1794,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
         return true;
     }
 	
-	private void runBtreeSortSky() throws Exception {
+	/*private void runBtreeSortSky() throws Exception {
         System.out.println("Will run btree sort sky with params: ");
         System.out.println("N pages: "+_n_pages);
 
@@ -1819,7 +1819,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 
 
         GenerateIndexFiles obj = new GenerateIndexFiles();
-        IndexFile indexFile = obj.createCombinedBTreeIndex(dataFile,pref_list, pref_list.length);
+        IndexFile indexFile = obj.createCombinedBTreeIndex(dataFile,,pref_list, pref_list.length);
         System.out.println("Index created! ");
         Tuple t = new Tuple();
         short [] Ssizes = null;
@@ -1854,7 +1854,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
         PCounter.initialize();
         btree.close();
         
-    }
+    }*/
 
 }
 

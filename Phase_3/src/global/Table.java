@@ -85,7 +85,7 @@ import iterator.UnknowAttrType;
 public class Table implements GlobalConst{
 
 	/* data folder */
-	private  static String data_folder = "data/Phase3_report_dataset/";
+	private  static String data_folder = "../data/Phase3_report_dataset/";
 	
 	/* table separateer in printing the table */
 	private static String table_sep = "\t\t";
