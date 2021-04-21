@@ -51,6 +51,10 @@ public class GroupByWithHash extends Iterator{
 
         _result = new ArrayList<>();
 
+        _outAttrType = new AttrType[proj_list.length];
+        _outAttrType[0] = _attrType[group_by_attr.offset-1];
+        _outAttrType[1] = new AttrType(AttrType.attrInteger);
+
         _n_out_flds = n_out_flds;
         _hiwfs = am1;
         fld = group_by_attr.offset;

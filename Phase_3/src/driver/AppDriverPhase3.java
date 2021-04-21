@@ -702,6 +702,10 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 						groupby_projection[i] = new FldSpec(new RelSpec(RelSpec.outer), agg_fldspc[i-1].offset);
 					}
 
+					for(int i=0; i<groupby_projection.length; i++){
+						System.out.println(groupby_projection[i].offset+"\t");
+					}
+
 	    			groupby = new GroupByWithSort(groupby_table.getTable_attr_type(),
 	    										  groupby_table.getTable_num_attr(),
 	    										  groupby_table.getTable_attr_size(),
@@ -727,9 +731,10 @@ class DriverPhase3 extends TestDriver implements GlobalConst
             }
 
             while(result != null) {
-                result.forEach((tuple) -> {
+				Iterator finalGroupby = groupby;
+				result.forEach((tuple) -> {
                     try {
-                        tuple.print(groupby_table.getTable_attr_type());
+                        tuple.print(finalGroupby._outAttrType);
                         
                     } catch (IOException e) {
                     	
@@ -751,10 +756,8 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    	System.out.println("Number of Page Writes: "+PCounter.get_wcounter());
 	    	SystemDefs.JavabaseBM.limit_memory_usage(false, groupby_n_pages);
 	    	PCounter.initialize();
-    	}catch (ArrayIndexOutOfBoundsException e){
-	        validate_token_length(0, "groupby");
-	    }catch (NegativeArraySizeException e) {
-	    	validate_token_length(0, "groupby");
+    	}catch (Exception e){
+	        e.printStackTrace();
 	    }
     }
     

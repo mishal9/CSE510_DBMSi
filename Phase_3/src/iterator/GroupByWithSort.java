@@ -45,7 +45,6 @@ public class GroupByWithSort extends Iterator{
     private static Iterator _am;
     private static FldSpec[] _projlist;
     private static int _nOutFlds;
-    public static AttrType[] _outAttrType;
 
     public GroupByWithSort(
             AttrType[] in1, int len_in1, short[] t1_str_sizes,
