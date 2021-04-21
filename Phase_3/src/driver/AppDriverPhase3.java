@@ -354,7 +354,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 				System.out.println("*********ERROR: table does not exist **************");
 			}
 			else {
-				table.print_table();
+				table.print_table_cl();
 			}
 		} catch (InvalidTupleSizeException e) {
 			// TODO Auto-generated catch block
