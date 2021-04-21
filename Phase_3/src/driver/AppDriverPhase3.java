@@ -628,7 +628,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 					for(int i=1; i<groupby_projection.length; i++){
 						groupby_projection[i] = agg_fldspc[i-1];
 					}
-					
+
 					groupby = new GroupByWithHash(groupby_table.getTable_attr_type(),
 												  groupby_table.getTable_num_attr(),
 												  groupby_table.getTable_attr_size(),
@@ -641,14 +641,6 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 												  groupby_n_pages);
 	    			break;
 	    		case "SORT":
-//	    			//TBD run SORT hash with proper params
-//	    			System.out.println("Attribute type "+Arrays.toString(groupby_table.getTable_attr_type()));
-//	    			System.out.println("Attribute number "+groupby_table.getTable_num_attr());
-//	    			System.out.println("Attribute type "+Arrays.toString(groupby_table.getTable_attr_type()));
-//	    			groupby_table.print_table_attr();
-//	    			System.out.println("");
-//	    			System.out.println("Running groupby sort algorithm");
-
 					groupby_projection = new FldSpec[agg_fldspc.length + 1];
 					groupby_projection[0] = new FldSpec(new RelSpec(RelSpec.outer), groupByAttr.offset);
 

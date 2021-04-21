@@ -6,7 +6,6 @@ import heap.*;
 import index.IndexException;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 
@@ -25,7 +24,6 @@ public class GroupByWithSort extends Iterator{
     private Heapfile _skyline_grp_heap;
 
     // size of the tuples in the skyline/window/temporary_heap_file
-    private int          result_tuple_size;
     private int          candidate_tuple_size;
 
     // Value of the aggregation attribute in the last tuple
@@ -68,18 +66,14 @@ public class GroupByWithSort extends Iterator{
         _nOutFlds = n_out_flds;
 
         _outAttrType = new AttrType[proj_list.length];
+        _outAttrType[0] = _attrType[_group_by_attr.offset-1];
+        _outAttrType[1] = new AttrType(AttrType.attrInteger);
 
         _lastPolled = 0.0f;
 
         _aggr_val = _agg_type.aggType == AggType.AVG ? 0.0f : _agg_type.aggType == AggType.MIN ? Float.MAX_VALUE : -Float.MIN_VALUE;
         _group_size = 0;
         _grp_result = 0.0f;
-
-        _outAttrType[0] = _attrType[_group_by_attr.offset-1];
-        _outAttrType[1] = new AttrType(AttrType.attrInteger);
-
-        _attr_sizes = new short[1];
-        _attr_sizes[0] = 32;
 
         /* initialise tuple size */
         try {
@@ -161,6 +155,14 @@ public class GroupByWithSort extends Iterator{
     public List<Tuple> get_next_aggr() throws IOException, FieldNumberOutOfBoundException, UnknowAttrType, WrongPermat {
         _result = new ArrayList<>();
 
+        /*
+        TODO: Set projection attributes for skyline aggregation
+        TODO: Define str sizes beforehand
+        */
+
+        _attr_sizes = new short[1];
+        _attr_sizes[0] = 32;
+
         Tuple result = new Tuple(this.candidate_tuple_size);
 
         try {
@@ -238,7 +240,6 @@ public class GroupByWithSort extends Iterator{
         }
 
         // Construct result tuple here
-
         result.setFloFld(2,  _grp_result);
         _result.add(result);
 
