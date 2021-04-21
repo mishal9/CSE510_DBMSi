@@ -1152,6 +1152,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    	/*------------join n_pages----------------------------*/
 	    	int join_n_pages = Integer.parseInt(tokens[9]);
 	    	SystemDefs.JavabaseBM.limit_memory_usage(true, join_n_pages);
+	    	PCounter.initialize();
 	    	
 	    	/*---------------------extract tablename and outtablename--------------------------*/
 	    	boolean is_output_saved = query.contains("MATER");
@@ -1202,13 +1203,13 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	        		
 	                Tuple t = tjhj.get_next();
 	                
-	                System.out.println("STARTS HERE -----");
+	                System.out.println("\nResult of Top-K HASH Join -->");
 	                while(t != null) {
 	                	t.print(tjhj.newAttrType);
 	                	t = tjhj.get_next();
 	                }
-	                System.out.println("ENDS HERE -----");
-	    	        
+//	                System.out.println("ENDS HERE -----");
+	                tjhj.close();
 	    			break;
 	    		case "NRA":
 	    			//TBD run top-K-join NRA with proper params
@@ -1258,6 +1259,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    	System.out.println("\nNumber of Page reads: "+PCounter.get_rcounter());
 	    	System.out.println("Number of Page Writes: "+PCounter.get_wcounter());
 	    	SystemDefs.JavabaseBM.limit_memory_usage(false, join_n_pages);
+	    	PCounter.initialize();
     }
     
     public void parse_table_info() {

@@ -61,6 +61,7 @@ public class TopK_NRAJoin extends Iterator implements GlobalConst {
     
     public AttrType joinAttrType[];
     public short[] joinAttrSize;
+    public boolean index_exist = true;
     
 	public TopK_NRAJoin(
 			AttrType[] in1, int len_in1, short[] t1_str_sizes,
@@ -100,10 +101,12 @@ public class TopK_NRAJoin extends Iterator implements GlobalConst {
 
 		if(table1.clustered_index_exist(this.mergeAttr1.offset, this.relationName1)) {
 			System.err.println("No Clustered index found on table "+ this.relationName1);
+			index_exist = false;
 			return;
 		}
 		if(table2.clustered_index_exist(this.mergeAttr1.offset, this.relationName2)) {
 			System.err.println("No Clustered index found on table "+ this.relationName2);
+			index_exist = false;
 			return;
 		}
 		
@@ -442,7 +445,9 @@ public class TopK_NRAJoin extends Iterator implements GlobalConst {
 			LowMemException, UnknowAttrType, UnknownKeyTypeException, Exception {
 		// TODO Auto-generated method stub
 		Tuple res = null;
-		
+		if ( index_exist == false ) {
+			return null;
+		}
 //		System.out.println(pq.size());
 		
 		if(k > 0) {
@@ -459,8 +464,12 @@ public class TopK_NRAJoin extends Iterator implements GlobalConst {
 	@Override
 	public void close() throws IOException, JoinsException, SortException, IndexException {
 		// TODO Auto-generated method stub
-		iscan1.close();
-		iscan2.close();
+		if ( iscan1!=null ) {
+			iscan1.close();
+		}
+		if ( iscan2 != null ) {
+			iscan2.close();
+		}
 	}
 
 	@Override
