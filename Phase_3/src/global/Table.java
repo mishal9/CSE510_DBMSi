@@ -84,7 +84,7 @@ import iterator.UnknowAttrType;
 
 public class Table implements GlobalConst{
 
-	String OS = System.getProperty("os.name").toLowerCase();
+	private static String OS = System.getProperty("os.name").toLowerCase();
 
 	/* data folder */
 	private  static String data_folder = OS.indexOf("mac") >= 0 ? "../../data/Phase3_report_dataset/" : "data/Phase3_report_dataset/";
