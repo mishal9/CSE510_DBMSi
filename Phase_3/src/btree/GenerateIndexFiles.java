@@ -59,6 +59,7 @@ public class GenerateIndexFiles{
                     }
                     catch (Exception e){
                         System.out.println("cannot get int field: "+(i+1));
+                        e.printStackTrace();
                     }
                 }
 				else if (attrType[i].attrType == AttrType.attrReal){
@@ -66,7 +67,8 @@ public class GenerateIndexFiles{
                         sum += t.getFloFld(i+1);
                     }
                     catch (Exception e){
-                        System.out.println("cannot get int field: "+(i+1));
+                        System.out.println("cannot get float field: "+(i+1));
+                        e.printStackTrace();
                     }
                 }
 				else{
@@ -112,7 +114,7 @@ public class GenerateIndexFiles{
         Heapfile heapfile = new Heapfile(filename);
         Scan heap_scan = heapfile.openScan();
 
-        file = new BTreeFile(btree_index_name, keyType, keySize, 1);
+        file = new BTreeFile(btree_index_name, keyType, keySize, 0);
 
         AttrType [] Stypes = new AttrType[pref_list_length];
         for(int i=0;i<pref_list_length;i++){Stypes[i] = new AttrType (AttrType.attrReal);}
@@ -122,7 +124,7 @@ public class GenerateIndexFiles{
         t.setHdr((short) pref_list_length,Stypes, Ssizes);
         int size = t.size();
         t = new Tuple(size);
-        t.setHdr((short) pref_list_length, Stypes, Ssizes);
+
 
         RID rid = new RID();
         
@@ -132,6 +134,7 @@ public class GenerateIndexFiles{
         //TBD modify this portion of the code to handle input file as a heap file and also create proper keys 
         while((t=heap_scan.getNext(rid)) != null)
         {
+            t.setHdr((short) pref_list_length, Stypes, Ssizes);
             fkey = create_key_float(t, attrType, pref_list, pref_list_length);
             ffkey = new FloatKey(-fkey);
 
@@ -139,6 +142,10 @@ public class GenerateIndexFiles{
         }
 
         return file;
+    }
+
+    public void close() throws DeleteFileEntryException, IteratorException, PinPageException, IOException, ConstructPageException, FreePageException, UnpinPageException {
+        file.destroyFile();
     }
 
     public IndexFile[] createBTreeIndex (String filePath) throws IOException, AddFileEntryException, GetFileEntryException, ConstructPageException, HashEntryNotFoundException, IteratorException, InvalidFrameNumberException, PageUnpinnedException, ReplacerException, NodeNotMatchException, UnpinPageException, LeafInsertRecException, IndexSearchException, InsertException, PinPageException, ConvertException, DeleteRecException, KeyNotMatchException, LeafDeleteException, KeyTooLongException, IndexInsertRecException, HFDiskMgrException, HFBufMgrException, HFException, InvalidTupleSizeException, InvalidTypeException, FieldNumberOutOfBoundException, SpaceNotAvailableException, InvalidSlotNumberException {

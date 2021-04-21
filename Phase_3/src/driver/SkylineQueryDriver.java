@@ -146,8 +146,24 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
 			short [] Ssizes = null;
 
 			AttrType [] attrType = new AttrType[pref_list.length];
+			AttrType[] temp_attr = skytable.getTable_attr_type();
+			int str_size = 0;
 			for(int i=0;i<pref_list.length;i++){
-				attrType[i] = new AttrType (AttrType.attrReal);
+				if(pref_list[i]==1) {
+					attrType[i] = new AttrType(AttrType.attrReal);
+				}
+				else if(temp_attr[i].attrType == AttrType.attrString){
+					attrType[i] = new AttrType(AttrType.attrString);
+					str_size++;
+				}
+				else{
+					attrType[i] = new AttrType((temp_attr[i].attrType));
+				}
+			}
+			short[] temp_sizes = skytable.getTable_attr_size();
+			Ssizes = new short[str_size];
+			for(int i=0;i<str_size;i++){
+				Ssizes[i] = temp_sizes[i];
 			}
 			t.setHdr((short)pref_list.length, attrType, Ssizes);
 			int size = t.size();
@@ -171,6 +187,8 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
 			Tuple skyEle = btree.get_next(); // first sky element
 			System.out.println("Nested Loop Skyline elements -->");
 			//System.out.print("First Sky element is: ");
+			System.out.println(Arrays.toString(skytable.getTable_attr_type()));
+
 			skyEle.print(skytable.getTable_attr_type());
 			SystemDefs.JavabaseDB.add_to_mater_table(skyEle, this.skyouttable);
 			numSkyEle++;
@@ -187,6 +205,7 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
 			}
 			System.out.println("Skyline Length: "+numSkyEle);
 			btree.close();
+			obj.close();
 		}catch (Exception e){
 			e.printStackTrace();
 		}
@@ -324,6 +343,7 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
 			// clean up
 			try {
 				sortFirstSky.close();
+
 			}
 			catch (Exception e) {
 				e.printStackTrace();
