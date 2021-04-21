@@ -1161,13 +1161,13 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    	}
 	    	
 	    	if ( is_output_saved ) {
-	    		System.out.println(" calculating top-K-join "+join_algo+" on outer table "+ outer_table_name+" join attribute "+ outer_join_attribute +
+	    		System.out.println("Calculating top-K-join "+join_algo+" on outer table "+ outer_table_name+" join attribute "+ outer_join_attribute +
 	    				" merge attribute "+ outer_merge_attribute +" and inner table "+ inner_table_name+" join attribute "+ innerr_join_attribute +
 	    				" merge attribute "+ inner_merge_attribute +" with buffer pages: "+join_n_pages+
 	    				". Saving the output table to "+out_tablename+". K = "+join_k);
 	    	}
 	    	else {
-	    		System.out.println(" calculating top-K-join "+join_algo+" on outer table "+ outer_table_name+" join attribute "+ outer_join_attribute +
+	    		System.out.println("Calculating top-K-join "+join_algo+" on outer table "+ outer_table_name+" join attribute "+ outer_join_attribute +
 	    				" merge attribute "+ outer_merge_attribute +" and inner table "+ inner_table_name+" join attribute "+ innerr_join_attribute +
 	    				" merge attribute "+ inner_merge_attribute +" with buffer pages: "+join_n_pages+". K = "+join_k);
 	    	}
@@ -1243,20 +1243,19 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 					
 					Tuple r = tknj.get_next();
 					
-					System.out.println("TOPKNRA JOIN RESULTS START");
+					System.out.println("\nResult of Top-K NRA Join -->");
 					while(r != null) {
 						r.print(tknj.joinAttrType);
 						r = tknj.get_next();
 					}
-					System.out.println("TOPKNRA JOIN RESULTS END");
-				
+					tknj.close();
 	    			break;
 	    		default:
 	    			validate_token_length(0, "topkjoin");
 	    			break;
 	    	}
 	    	/*printing the reads and writes and closing pcounter and also free the BM from the limit */
-	    	System.out.println("Number of Page reads: "+PCounter.get_rcounter());
+	    	System.out.println("\nNumber of Page reads: "+PCounter.get_rcounter());
 	    	System.out.println("Number of Page Writes: "+PCounter.get_wcounter());
 	    	SystemDefs.JavabaseBM.limit_memory_usage(false, join_n_pages);
     }

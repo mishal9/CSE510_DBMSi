@@ -49,6 +49,8 @@ public class TopK_NRAJoin extends Iterator implements GlobalConst {
 	java.lang.String relationName2;
 	int k;
 	int n_pages;
+	IndexScan iscan1 = null;
+	IndexScan iscan2 = null;
 	
 	boolean firstEntry = true;
 	
@@ -97,9 +99,11 @@ public class TopK_NRAJoin extends Iterator implements GlobalConst {
 		Table table2 = SystemDefs.JavabaseDB.get_relation(this.relationName2);
 
 		if(table1.clustered_index_exist(this.mergeAttr1.offset, this.relationName1)) {
+			System.err.println("No Clustered index found on table "+ this.relationName1);
 			return;
 		}
 		if(table2.clustered_index_exist(this.mergeAttr1.offset, this.relationName2)) {
+			System.err.println("No Clustered index found on table "+ this.relationName2);
 			return;
 		}
 		
@@ -125,7 +129,7 @@ public class TopK_NRAJoin extends Iterator implements GlobalConst {
 			projlist2[i] = new FldSpec(rel2, i+1);
 		}
 		
-		IndexScan iscan1 = new IndexScan(new IndexType(IndexType.Cl_B_Index_DESC), 
+		iscan1 = new IndexScan(new IndexType(IndexType.Cl_B_Index_DESC), 
 					  this.relationName1, 
 					  table1.get_clustered_index_filename(this.mergeAttr1.offset, "btree"), 
 					  table1_attr, 
@@ -137,7 +141,7 @@ public class TopK_NRAJoin extends Iterator implements GlobalConst {
 					  table1.getTable_num_attr(), 
 					  false);
 		
-		IndexScan iscan2 = new IndexScan(new IndexType(IndexType.Cl_B_Index_DESC), 
+		iscan2 = new IndexScan(new IndexType(IndexType.Cl_B_Index_DESC), 
 		  this.relationName2, 
 		  table2.get_clustered_index_filename(this.mergeAttr2.offset, "btree"), 
 		  table2_attr, 
@@ -455,7 +459,8 @@ public class TopK_NRAJoin extends Iterator implements GlobalConst {
 	@Override
 	public void close() throws IOException, JoinsException, SortException, IndexException {
 		// TODO Auto-generated method stub
-		
+		iscan1.close();
+		iscan2.close();
 	}
 
 	@Override
