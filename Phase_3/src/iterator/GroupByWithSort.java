@@ -12,6 +12,8 @@ import java.util.List;
 import btree.KeyDataEntry;
 import btree.ScanIteratorException;
 
+import static global.GlobalConst.STRSIZE;
+
 
 public class GroupByWithSort extends Iterator{
     public static List<Tuple> _result;
@@ -69,14 +71,22 @@ public class GroupByWithSort extends Iterator{
         _nOutFlds = n_out_flds;
 
         _outAttrType = new AttrType[proj_list.length];
+
+
         _outAttrType[0] = _attrType[_group_by_attr.offset-1];
-        _outAttrType[1] = new AttrType(AttrType.attrInteger);
+
+        for(int i=1; i<_nOutFlds; i++){
+            _outAttrType[i] = new AttrType(AttrType.attrInteger);
+        }
 
         _lastPolled = 0.0f;
 
         _aggr_val = _agg_type.aggType == AggType.AVG ? 0.0f : _agg_type.aggType == AggType.MIN ? Float.MAX_VALUE : -Float.MIN_VALUE;
         _group_size = 0;
         _grp_result = 0.0f;
+
+        _attr_sizes = new short[1];
+        _attr_sizes[0] = STRSIZE;
 
         /* initialise tuple size */
         try {
@@ -126,6 +136,7 @@ public class GroupByWithSort extends Iterator{
             preference_list[i] = pref_list[i].offset;
         }
 
+
         try {
             blockNestedLoopsSky = new BlockNestedLoopsSky(attrType,
                     (short)attrType.length,
@@ -137,10 +148,24 @@ public class GroupByWithSort extends Iterator{
                     buffer);
 
             Tuple temp;
+
+            Tuple result = new Tuple(this.candidate_tuple_size);
+
+            try {
+                result.setHdr((short) _nOutFlds, _outAttrType, _attr_sizes);
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (InvalidTypeException e) {
+                e.printStackTrace();
+            } catch (InvalidTupleSizeException e) {
+                e.printStackTrace();
+            }
+
             try {
                 temp = blockNestedLoopsSky.get_next();
                 while (temp!=null) {
-                    _result.add(temp);
+                    Projection.Project(temp, _attrType, result, _projlist, _projlist.length);
+                    _result.add(result);
                     temp = blockNestedLoopsSky.get_next();
                 }
 
@@ -163,8 +188,7 @@ public class GroupByWithSort extends Iterator{
         TODO: Define str sizes beforehand
         */
 
-        _attr_sizes = new short[1];
-        _attr_sizes[0] = 32;
+
 
         Tuple result = new Tuple(this.candidate_tuple_size);
 
@@ -177,8 +201,6 @@ public class GroupByWithSort extends Iterator{
         } catch (InvalidTupleSizeException e) {
             e.printStackTrace();
         }
-
-        System.out.println(Arrays.toString(_outAttrType));
 
         Tuple t = null;
 

@@ -702,10 +702,6 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 						groupby_projection[i] = new FldSpec(new RelSpec(RelSpec.outer), agg_fldspc[i-1].offset);
 					}
 
-					for(int i=0; i<groupby_projection.length; i++){
-						System.out.println(groupby_projection[i].offset+"\t");
-					}
-
 	    			groupby = new GroupByWithSort(groupby_table.getTable_attr_type(),
 	    										  groupby_table.getTable_num_attr(),
 	    										  groupby_table.getTable_attr_size(),
