@@ -140,7 +140,7 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
 			System.out.println("No of unpinned buffers "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
 
 			GenerateIndexFiles obj = new GenerateIndexFiles();
-			IndexFile indexFile = obj.createCombinedBTreeIndex(relationName, skytable.getTable_attr_type(), pref_list, pref_list.length);
+			IndexFile indexFile = obj.createCombinedBTreeIndex(relationName, skytable.getTable_attr_type(), pref_list, pref_list.length, skytable.getTable_attr_size());
 			System.out.println("Index created! ");
 			Tuple t = new Tuple();
 			short [] Ssizes = null;
@@ -173,7 +173,7 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
 
 			PCounter.initialize();
 			int numSkyEle = 0;
-			BTreeSortedSky btree = new BTreeSortedSky(attrType,
+			BTreeSortedSky btree = new BTreeSortedSky(temp_attr,
 										pref_list.length,
 										Ssizes,
 								0,
@@ -200,7 +200,7 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
 				}
 				SystemDefs.JavabaseDB.add_to_mater_table(skyEle, this.skyouttable);
 				numSkyEle++;
-				//System.out.print("Sky element is: ");
+				System.out.print("Sky element is: ");
 				skyEle.print(skytable.getTable_attr_type());
 			}
 			System.out.println("Skyline Length: "+numSkyEle);
@@ -294,12 +294,19 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
 			attrType_for_sort[i] = skytable.getTable_attr_type()[i];
 		}
 		attrType_for_sort[COLS] = new AttrType(AttrType.attrReal);
+		
+		short[] attrsize_for_sort = new short[COLS+1];
+
+		for(int i=0;i<COLS;i++) {
+			attrsize_for_sort[i] = skytable.getTable_attr_size()[i];
+		}
+		attrsize_for_sort[COLS] = STRSIZE;
 
 		//SystemDefs.JavabaseBM.limit_memory_usage(true, _n_pages);
 
 		Sort sort = null;
 		try {
-			sort = new Sort(attrType_for_sort, (short) (COLS+1), skytable.getTable_attr_size(), fscan, (COLS+1), new TupleOrder(TupleOrder.Descending), 4, 5);
+			sort = new Sort(attrType_for_sort, (short) (COLS+1), attrsize_for_sort, fscan, (COLS+1), new TupleOrder(TupleOrder.Descending), 4, 5);
 		}
 		catch (Exception e) {
 			e.printStackTrace();
@@ -310,8 +317,8 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
 		SortFirstSky sortFirstSky = null;
 		try {
 			sortFirstSky = new SortFirstSky(attrType_for_sort,
-					(short) (COLS),
-					null,
+					(short) (COLS+1),
+					attrsize_for_sort,
 					sort,
 					(short)skytable.getTable_tuple_size(),
 					skytable.getTable_heapfile(),
@@ -424,15 +431,13 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
 					numSkyEle++;
 					temp = blockNestedLoopsSky.get_next();
 				}
-
+				blockNestedLoopsSky.close();
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 
 		} catch (IOException | FileScanException | TupleUtilsException | InvalidRelation e) {
 			e.printStackTrace();
-		} finally {
-			blockNestedLoopsSky.close();
 		}
 		System.out.println("Skyline Length: "+numSkyEle);
 		//System.out.println("Number of Disk reads: "+ PCounter.get_rcounter());
