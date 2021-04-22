@@ -21,7 +21,7 @@ import btree.*;
 public class GenerateIndexFiles{
     BTreeFile file;
     int id=0;
-    public int prefix = 0;
+    public static int prefix = 0;
     public GenerateIndexFiles(){
     }
 
@@ -105,7 +105,7 @@ public class GenerateIndexFiles{
             throws IOException, AddFileEntryException, GetFileEntryException, ConstructPageException, HashEntryNotFoundException, IteratorException, InvalidFrameNumberException, PageUnpinnedException, ReplacerException, NodeNotMatchException, UnpinPageException, LeafInsertRecException, IndexSearchException, InsertException, PinPageException, ConvertException, DeleteRecException, KeyNotMatchException, LeafDeleteException, KeyTooLongException, IndexInsertRecException, HFDiskMgrException, HFBufMgrException, HFException, FieldNumberOutOfBoundException, InvalidSlotNumberException, SpaceNotAvailableException, InvalidTupleSizeException, InvalidTypeException {
 
         String filename = relationName;
-        String btree_index_name = filename + ".btreeindex";
+        String btree_index_name = filename + ".btreeindex" + ++prefix;
 
         int keyType = AttrType.attrReal;
         int keySize = 4;
