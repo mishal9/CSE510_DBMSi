@@ -951,9 +951,9 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    	}
 			while ( temp != null ) {
 				num_out++;
-				if ( num_out%100 == 0 ) {
-					System.out.println("iter: "+num_out);
-				}
+//				if ( num_out%100 == 0 ) {
+//					System.out.println("iter: "+num_out);
+//				}
 				if ( mater_table == null )
 					temp.print(join_attr_type);
 				SystemDefs.JavabaseDB.add_to_mater_table(temp, mater_table);
