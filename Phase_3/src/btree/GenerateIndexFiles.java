@@ -21,7 +21,7 @@ import btree.*;
 public class GenerateIndexFiles{
     BTreeFile file;
     int id=0;
-    public int prefix = 0;
+    public static int prefix = 0;
     public GenerateIndexFiles(){
     }
 
@@ -48,11 +48,32 @@ public class GenerateIndexFiles{
         return sb.toString();
     }
     
-    float create_key_float(double[] values, int[] pref_list, int pref_list_length) {
+    float create_key_float(Tuple t, AttrType[] attrType, int[] pref_list, int pref_list_length) {
 		float sum = 0.0f;
-		for(int i = 0; i < values.length; i++) {
+		for(int i = 0; i < pref_list_length; i++) {
 			if(pref_list[i] == 1) {
-				sum += (float) values[i];
+				if(attrType[i].attrType == AttrType.attrInteger){
+                    try{
+                        sum += t.getIntFld(i+1);
+                    }
+                    catch (Exception e){
+                        System.out.println("cannot get int field: "+(i+1));
+                        e.printStackTrace();
+                    }
+                }
+				else if (attrType[i].attrType == AttrType.attrReal){
+                    try{
+                        sum += t.getFloFld(i+1);
+                    }
+                    catch (Exception e){
+                        System.out.println("cannot get float field: "+(i+1));
+                        e.printStackTrace();
+                    }
+                }
+				else{
+				    System.out.println("Only integer&real attribute types are supposted for Skyline computation.");
+                }
+
 			}
 		}
 		return sum;
@@ -80,54 +101,50 @@ public class GenerateIndexFiles{
         return ret;
     }
 
-    public IndexFile createCombinedBTreeIndex(String filePath, int[] pref_list, int pref_list_length)
+    public IndexFile createCombinedBTreeIndex(String relationName, AttrType[] attrType, int[] pref_list, int pref_list_length, short[] aSizes)
             throws IOException, AddFileEntryException, GetFileEntryException, ConstructPageException, HashEntryNotFoundException, IteratorException, InvalidFrameNumberException, PageUnpinnedException, ReplacerException, NodeNotMatchException, UnpinPageException, LeafInsertRecException, IndexSearchException, InsertException, PinPageException, ConvertException, DeleteRecException, KeyNotMatchException, LeafDeleteException, KeyTooLongException, IndexInsertRecException, HFDiskMgrException, HFBufMgrException, HFException, FieldNumberOutOfBoundException, InvalidSlotNumberException, SpaceNotAvailableException, InvalidTupleSizeException, InvalidTypeException {
 
-        double[][] records = readFile(filePath);
-        String filename = "AAA";
-        int COLS = records.length;
+        String filename = relationName;
+        String btree_index_name = filename + ".btreeindex" + ++prefix;
 
         int keyType = AttrType.attrReal;
         int keySize = 4;
 
-        Heapfile heapfile = new Heapfile("heap_" + filename);
-        
-        file = new BTreeFile(filename, keyType, keySize, 1);
+        Heapfile heapfile = new Heapfile(filename);
+        Scan heap_scan = heapfile.openScan();
 
-        AttrType [] Stypes = new AttrType[pref_list_length];
-        for(int i=0;i<pref_list_length;i++){Stypes[i] = new AttrType (AttrType.attrReal);}
+        file = new BTreeFile(btree_index_name, keyType, keySize, 0);
+
+//        AttrType [] Stypes = new AttrType[pref_list_length];
+//        for(int i=0;i<pref_list_length;i++){Stypes[i] = new AttrType (AttrType.attrReal);}
         Tuple t = new Tuple();
-        short [] Ssizes = null;
+//        short [] Ssizes = null;
 
-        t.setHdr((short) pref_list_length,Stypes, Ssizes);
+        t.setHdr((short) pref_list_length, attrType, aSizes);
         int size = t.size();
-        
-
         t = new Tuple(size);
-        t.setHdr((short) pref_list_length, Stypes, Ssizes);
 
-        RID rid;
+
+        RID rid = new RID();
         
         float fkey;
         KeyClass ffkey;
         
         //TBD modify this portion of the code to handle input file as a heap file and also create proper keys 
-        for(double[] value :records){
-            
-            fkey = create_key_float(value, pref_list, pref_list_length);
+        while((t=heap_scan.getNext(rid)) != null)
+        {
+            t.setHdr((short) pref_list_length, attrType, aSizes);
+            fkey = create_key_float(t, attrType, pref_list, pref_list_length);
             ffkey = new FloatKey(-fkey);
 
-            for(int i=0; i<value.length; i++) {
-                t.setFloFld(i+1, (float) value[i]);
-            }
-            
-            rid = heapfile.insertRecord(t.returnTupleByteArray());
-                       
             file.insert(ffkey, rid);
         }
 
-
         return file;
+    }
+
+    public void close() throws DeleteFileEntryException, IteratorException, PinPageException, IOException, ConstructPageException, FreePageException, UnpinPageException {
+        file.destroyFile();
     }
 
     public IndexFile[] createBTreeIndex (String filePath) throws IOException, AddFileEntryException, GetFileEntryException, ConstructPageException, HashEntryNotFoundException, IteratorException, InvalidFrameNumberException, PageUnpinnedException, ReplacerException, NodeNotMatchException, UnpinPageException, LeafInsertRecException, IndexSearchException, InsertException, PinPageException, ConvertException, DeleteRecException, KeyNotMatchException, LeafDeleteException, KeyTooLongException, IndexInsertRecException, HFDiskMgrException, HFBufMgrException, HFException, InvalidTupleSizeException, InvalidTypeException, FieldNumberOutOfBoundException, SpaceNotAvailableException, InvalidSlotNumberException {

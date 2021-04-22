@@ -8,6 +8,7 @@ import heap.Tuple;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import btree.KeyDataEntry;
@@ -52,6 +53,15 @@ public class GroupByWithHash extends Iterator{
         _result = new ArrayList<>();
 
         _n_out_flds = n_out_flds;
+
+        _outAttrType = new AttrType[proj_list.length];
+
+        _outAttrType[0] = _attrType[group_by_attr.offset-1];
+
+        for(int i=1; i<_n_out_flds; i++){
+            _outAttrType[i] = new AttrType(AttrType.attrInteger);
+        }
+
         _hiwfs = am1;
         fld = group_by_attr.offset;
     }

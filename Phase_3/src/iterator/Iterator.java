@@ -24,6 +24,8 @@ public abstract class Iterator implements Flags {
    */
   public boolean closeFlag = false; // added by bingjie 5/4/98
 
+    public AttrType[] _outAttrType;
+
   /* used to store the table on which this iterator is working on.
    * In cases where this iterator is working on sort, the string
    * will remain empty
