@@ -11,7 +11,6 @@ import heap.*;
 import bufmgr.*;
 import global.*;
 import btree.*;
-import org.w3c.dom.Attr;
 
 /**
  * Note that in JAVA, methods can't be overridden to be more private.
@@ -102,7 +101,7 @@ public class GenerateIndexFiles{
         return ret;
     }
 
-    public IndexFile createCombinedBTreeIndex(String relationName, AttrType[] attrType, int[] pref_list, int pref_list_length)
+    public IndexFile createCombinedBTreeIndex(String relationName, AttrType[] attrType, int[] pref_list, int pref_list_length, short[] aSizes)
             throws IOException, AddFileEntryException, GetFileEntryException, ConstructPageException, HashEntryNotFoundException, IteratorException, InvalidFrameNumberException, PageUnpinnedException, ReplacerException, NodeNotMatchException, UnpinPageException, LeafInsertRecException, IndexSearchException, InsertException, PinPageException, ConvertException, DeleteRecException, KeyNotMatchException, LeafDeleteException, KeyTooLongException, IndexInsertRecException, HFDiskMgrException, HFBufMgrException, HFException, FieldNumberOutOfBoundException, InvalidSlotNumberException, SpaceNotAvailableException, InvalidTupleSizeException, InvalidTypeException {
 
         String filename = relationName;
@@ -116,12 +115,12 @@ public class GenerateIndexFiles{
 
         file = new BTreeFile(btree_index_name, keyType, keySize, 0);
 
-        AttrType [] Stypes = new AttrType[pref_list_length];
-        for(int i=0;i<pref_list_length;i++){Stypes[i] = new AttrType (AttrType.attrReal);}
+//        AttrType [] Stypes = new AttrType[pref_list_length];
+//        for(int i=0;i<pref_list_length;i++){Stypes[i] = new AttrType (AttrType.attrReal);}
         Tuple t = new Tuple();
-        short [] Ssizes = null;
+//        short [] Ssizes = null;
 
-        t.setHdr((short) pref_list_length,Stypes, Ssizes);
+        t.setHdr((short) pref_list_length, attrType, aSizes);
         int size = t.size();
         t = new Tuple(size);
 
@@ -134,7 +133,7 @@ public class GenerateIndexFiles{
         //TBD modify this portion of the code to handle input file as a heap file and also create proper keys 
         while((t=heap_scan.getNext(rid)) != null)
         {
-            t.setHdr((short) pref_list_length, Stypes, Ssizes);
+            t.setHdr((short) pref_list_length, attrType, aSizes);
             fkey = create_key_float(t, attrType, pref_list, pref_list_length);
             ffkey = new FloatKey(-fkey);
 

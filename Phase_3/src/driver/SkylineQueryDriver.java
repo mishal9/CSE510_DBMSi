@@ -140,7 +140,7 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
 			System.out.println("No of unpinned buffers "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
 
 			GenerateIndexFiles obj = new GenerateIndexFiles();
-			IndexFile indexFile = obj.createCombinedBTreeIndex(relationName, skytable.getTable_attr_type(), pref_list, pref_list.length);
+			IndexFile indexFile = obj.createCombinedBTreeIndex(relationName, skytable.getTable_attr_type(), pref_list, pref_list.length, skytable.getTable_attr_size());
 			System.out.println("Index created! ");
 			Tuple t = new Tuple();
 			short [] Ssizes = null;
@@ -173,7 +173,7 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
 
 			PCounter.initialize();
 			int numSkyEle = 0;
-			BTreeSortedSky btree = new BTreeSortedSky(attrType,
+			BTreeSortedSky btree = new BTreeSortedSky(temp_attr,
 										pref_list.length,
 										Ssizes,
 								0,
@@ -200,7 +200,7 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
 				}
 				SystemDefs.JavabaseDB.add_to_mater_table(skyEle, this.skyouttable);
 				numSkyEle++;
-				//System.out.print("Sky element is: ");
+				System.out.print("Sky element is: ");
 				skyEle.print(skytable.getTable_attr_type());
 			}
 			System.out.println("Skyline Length: "+numSkyEle);

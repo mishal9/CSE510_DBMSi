@@ -140,7 +140,6 @@ public class BTreeSortedSky extends Iterator implements GlobalConst {
 
 			entry = scan.get_next();
 		}
-
 		while (entry != null) {
 			boolean isDominatedBy = false;
 			Tuple htuple = getEmptyTuple();
@@ -150,7 +149,7 @@ public class BTreeSortedSky extends Iterator implements GlobalConst {
 
 			for(int i=0; i<_window.length; i++){
 				if (_window[i] != null) {
-					if (TupleUtils.DominatesForCombinedTree(_window[i], attrType, htuple, attrType, (short) attr_len, t1_str_sizes, pref_list, pref_list_length)) {
+					if (TupleUtils.Dominates(_window[i], attrType, htuple, attrType, (short) attr_len, t1_str_sizes, pref_list, pref_list_length)) {
 						isDominatedBy = true;
 						break;
 					}
@@ -206,7 +205,7 @@ public class BTreeSortedSky extends Iterator implements GlobalConst {
 		if(count == 0) return false;
 
 		for(int i = 0; i < count; i++) {
-			if (TupleUtils.DominatesForCombinedTree(_window[i] , attrType, temp, attrType, (short) attr_len, t1_str_sizes, pref_list, pref_list_length)) {
+			if (TupleUtils.Dominates(_window[i] , attrType, temp, attrType, (short) attr_len, t1_str_sizes, pref_list, pref_list_length)) {
 				return true;
 			}
 		}
