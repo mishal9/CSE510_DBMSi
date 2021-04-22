@@ -893,7 +893,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 										   outer_str_sizes[outer_table_attribute-1],
 										   inner_table_attribute,
 										   inner_str_sizes[inner_table_attribute-1],
-										   10,
+										   join_n_pages,
 										   outer_table_file_scan, 
 										   inner_table_file_scan,
 										   false, 
@@ -942,47 +942,33 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    			validate_token_length(0, "join");
 	    			break;
 	    	}
-	    	int num_out = 0;
 	    	Tuple temp = joiner.get_next();
 //	    	temp.printTuple(join_attr_type);
 	    	if ( mater_table != null ) {
 	    		mater_table.setTable_tuple_size(temp.size());
 	    	}
 			while ( temp != null ) {
-				num_out++;
-//				if ( num_out%100 == 0 ) {
-//					System.out.println("iter: "+num_out);
-//				}
-				if ( mater_table == null )
-					temp.print(join_attr_type);
+				temp.print(join_attr_type);
 				SystemDefs.JavabaseDB.add_to_mater_table(temp, mater_table);
 				temp = joiner.get_next();
 			}
-			
+			joiner.close();
 			if ( outer_table_file_scan.closeFlag == false ) {
 				outer_table_file_scan.close();
 			}
 			if ( inner_table_file_scan.closeFlag == false ) {
 				inner_table_file_scan.close();
 			}
-			
 			if ( mater_table != null ) {
 				System.out.println("");
 				mater_table.add_table_to_global_queue();
 				mater_table.print_table_cl();
 			}
-			System.out.println("Number of join elements "+num_out);
 			/*printing the reads and writes and closing pcounter and also free the BM from the limit */
 	    	System.out.println("Number of Page reads: "+PCounter.get_rcounter());
 	    	System.out.println("Number of Page Writes: "+PCounter.get_wcounter());
-	    	
+	    	SystemDefs.JavabaseBM.limit_memory_usage(false, join_n_pages);
 	    	PCounter.initialize();
-	    	try {
-	    		joiner.close();
-	    		SystemDefs.JavabaseBM.limit_memory_usage(false, join_n_pages);
-	    	} catch ( Exception e ) {
-	    		
-	    	}
     	}catch (ArrayIndexOutOfBoundsException e){
 	        validate_token_length(0, "join");
 	    }

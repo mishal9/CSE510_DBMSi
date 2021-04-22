@@ -286,7 +286,8 @@ class Clock extends Replacer {
 				}
 				System.out.println("Process needs more number of BM pages "+numBuffers);
 				mgr.limit_memory_usage(false, 0);
-				throw new BufferPoolExceededException (null, "BUFMGR: BUFFER_EXCEEDED.");
+				//throw new BufferPoolExceededException (null, "BUFMGR: BUFFER_EXCEEDED.");
+				return INVALID_FRAME;
 			}
 			++num;
 			head = (head+1) % numBuffers;
