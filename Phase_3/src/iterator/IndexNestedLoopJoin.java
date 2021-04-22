@@ -168,7 +168,7 @@ public class IndexNestedLoopJoin extends Iterator {
                     indexType = IndexType.Cl_B_Index_ASC;
                     index_name = table.get_clustered_index_filename(fld2, "btree");
                     index_found = true;
-                    System.out.println("Using unclustered btree index");
+                    System.out.println("Using clustered btree index");
                 }
                 else{
                     index_found = false;
