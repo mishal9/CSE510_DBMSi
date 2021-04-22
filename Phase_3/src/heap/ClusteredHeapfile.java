@@ -1612,7 +1612,7 @@ public class ClusteredHeapfile extends Heapfile implements GlobalConst {
 					unpinPage(lookup_currentDataPageId, false);
 				}
 				System.err.println("ERROR: Page not found ");
-				merge(btsfilename, attrtype, strsizes, key_index, table_tuple_size);
+//				merge(btsfilename, attrtype, strsizes, key_index, table_tuple_size);
 				break;
 			}
 
