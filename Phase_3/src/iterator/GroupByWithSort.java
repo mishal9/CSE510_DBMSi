@@ -183,9 +183,11 @@ public class GroupByWithSort extends Iterator{
 
     public List<Tuple> get_next_aggr() throws IOException, FieldNumberOutOfBoundException, UnknowAttrType, WrongPermat {
         _result = new ArrayList<>();
+        
         /*
         TODO: Define str sizes beforehand
         TODO: Solve BUF MGR Page Pinned exception
+        TODO: Check MATER with GroupBy
         */
 
         Tuple result = new Tuple(this.candidate_tuple_size);
