@@ -1,5 +1,7 @@
 package iterator;
 
+import btree.KeyDataEntry;
+import btree.ScanIteratorException;
 import heap.*;
 import index.IndexException;
 import global.*;
@@ -9,14 +11,7 @@ import diskmgr.Page;
 
 import java.lang.*;
 import java.io.*;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Queue;
-import java.util.Stack;
-
-import btree.KeyDataEntry;
-import btree.ScanIteratorException;
+import java.util.*;
 
 /**
  *use the iterator and relationName to compute the skyline using nested loop method
@@ -132,9 +127,9 @@ public class BlockNestedLoopsSky extends Iterator implements GlobalConst
 		try {
 			/* limit the memory usage of BM to calculated pages */
 			buffer_pages = this._n_pages/2;
-//        	SystemDefs.JavabaseBM.limit_memory_usage(true, buffer_pages);
+			SystemDefs.JavabaseBM.limit_memory_usage(true, buffer_pages);
 			this._heap_file = new Heapfile(this._relation_name);
-//        	System.out.println("BNL heapfile size "+_heap_file.getRecCnt());
+			System.out.println("BNL heapfile size "+_heap_file.getRecCnt());
 			this._temp_heap_file = new Heapfile(this._temp_heap_file_name);
 			this._status = true;
 		}
@@ -177,8 +172,8 @@ public class BlockNestedLoopsSky extends Iterator implements GlobalConst
 
 		/* calculate the window size and start computing the skyline */
 		try {
-			this._window_size = 5;
-//        	System.out.println("Number of pages reserved for the window are "+ (this._n_pages - buffer_pages) );
+			this._window_size = ((int)(MINIBASE_PAGESIZE/this._tuple_size))*(this._n_pages - buffer_pages);
+			System.out.println("Number of pages reserved for the window are "+ (this._n_pages - buffer_pages) );
 			compute_skyline();
 		} catch (JoinsException e) {
 			// TODO Auto-generated catch block
@@ -556,22 +551,18 @@ public class BlockNestedLoopsSky extends Iterator implements GlobalConst
 				return this.inner_candidate;
 			}
 		}
-//		SystemDefs.JavabaseBM.limit_memory_usage(false, this._n_pages);
-//		System.out.println("No more records in skyline. All records already scanned.");
+		SystemDefs.JavabaseBM.limit_memory_usage(false, this._n_pages);
+		System.out.println("No more records in skyline. All records already scanned.");
 		return null;
 	}
-
 
 	@Override
 	public List<Tuple> get_next_aggr() throws Exception {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
-
 	@Override
 	public KeyDataEntry get_next_key_data() throws ScanIteratorException {
-		// TODO Auto-generated method stub
 		return null;
 	}
 

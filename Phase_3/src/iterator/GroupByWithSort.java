@@ -130,7 +130,6 @@ public class GroupByWithSort extends Iterator{
 
     public void skyline_Aggregation(String skyline_grp_heap, FldSpec[] pref_list, AttrType[] attrType, short[] attrSize, int buffer){
         BlockNestedLoopsSky blockNestedLoopsSky = null;
-        System.out.println("Running skyline aggregation");
         int[] preference_list = new int[pref_list.length];
         for(int i=0; i<pref_list.length; i++){
             preference_list[i] = pref_list[i].offset;
