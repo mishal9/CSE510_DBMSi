@@ -25,7 +25,6 @@ public class GroupByWithSort extends Iterator{
     private static short[] _attr_sizes;
     private static AggType _agg_type;
     private static FldSpec[] _agg_list;
-
     // heap file containing our data on which skyline is computed
     private Heapfile _skyline_grp_heap;
 
@@ -134,7 +133,7 @@ public class GroupByWithSort extends Iterator{
         for(int i=0; i<pref_list.length; i++){
             preference_list[i] = pref_list[i].offset;
         }
-
+        int skylineEle = 0;
 
         try {
             blockNestedLoopsSky = new BlockNestedLoopsSky(attrType,
@@ -165,6 +164,7 @@ public class GroupByWithSort extends Iterator{
                 while (temp!=null) {
                     Projection.Project(temp, _attrType, result, _projlist, _projlist.length);
                     _result.add(result);
+                    skylineEle++;
                     temp = blockNestedLoopsSky.get_next();
                 }
 
@@ -177,6 +177,8 @@ public class GroupByWithSort extends Iterator{
         } finally {
             blockNestedLoopsSky.close();
         }
+
+        System.out.println("Skyline aggregation elements for the group "+skylineEle);
     }
 
     public List<Tuple> get_next_aggr() throws IOException, FieldNumberOutOfBoundException, UnknowAttrType, WrongPermat {

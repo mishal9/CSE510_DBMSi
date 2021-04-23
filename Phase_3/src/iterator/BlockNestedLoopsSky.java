@@ -129,7 +129,7 @@ public class BlockNestedLoopsSky extends Iterator implements GlobalConst
 			buffer_pages = this._n_pages/2;
 			SystemDefs.JavabaseBM.limit_memory_usage(true, buffer_pages);
 			this._heap_file = new Heapfile(this._relation_name);
-			System.out.println("BNL heapfile size "+_heap_file.getRecCnt());
+			//System.out.println("BNL heapfile size "+_heap_file.getRecCnt());
 			this._temp_heap_file = new Heapfile(this._temp_heap_file_name);
 			this._status = true;
 		}
@@ -173,7 +173,7 @@ public class BlockNestedLoopsSky extends Iterator implements GlobalConst
 		/* calculate the window size and start computing the skyline */
 		try {
 			this._window_size = ((int)(MINIBASE_PAGESIZE/this._tuple_size))*(this._n_pages - buffer_pages);
-			System.out.println("Number of pages reserved for the window are "+ (this._n_pages - buffer_pages) );
+			//System.out.println("Number of pages reserved for the window are "+ (this._n_pages - buffer_pages) );
 			compute_skyline();
 		} catch (JoinsException e) {
 			// TODO Auto-generated catch block
@@ -552,7 +552,7 @@ public class BlockNestedLoopsSky extends Iterator implements GlobalConst
 			}
 		}
 		SystemDefs.JavabaseBM.limit_memory_usage(false, this._n_pages);
-		System.out.println("No more records in skyline. All records already scanned.");
+		//System.out.println("No more records in skyline. All records already scanned.");
 		return null;
 	}
 

@@ -81,6 +81,12 @@ public class GroupByWithHash extends Iterator{
                     _result.add(tuple);
                 });
             }
+
+            try {
+                grpSort.close();
+            } catch(Exception e) {
+                e.printStackTrace();
+            }
         }else{
             return null;
         }
