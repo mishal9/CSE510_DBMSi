@@ -309,7 +309,6 @@ public class GroupByWithSort extends Iterator{
 
     @Override
     public void close() throws IOException, SortException, JoinsException, IndexException {
-        _am.close();
         _sort.close();
         _sort = null;
         _am = null;
@@ -328,9 +327,9 @@ public class GroupByWithSort extends Iterator{
         }
     }
 
-	@Override
-	public KeyDataEntry get_next_key_data() throws ScanIteratorException {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public KeyDataEntry get_next_key_data() throws ScanIteratorException {
+        // TODO Auto-generated method stub
+        return null;
+    }
 }
