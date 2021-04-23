@@ -727,13 +727,11 @@ class DriverPhase3 extends TestDriver implements GlobalConst
             }
 
             while(result != null) {
-				Iterator finalGroupby = groupby;
+				AttrType[] attrTypes = groupby._outAttrType;
 				result.forEach((tuple) -> {
                     try {
-                        tuple.print(finalGroupby._outAttrType);
-                        
+                        tuple.print(attrTypes);
                     } catch (IOException e) {
-                    	
                         e.printStackTrace();
                     }
                 });

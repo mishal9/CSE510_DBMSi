@@ -117,7 +117,8 @@ public class HashIndexWindowedScan {
     public void close(){
         scan.closescan();
         try {
-			HindFile.close();
+            if(HindFile != null)
+			    HindFile.close();
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
