@@ -747,6 +747,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
                 }
             }
             groupby.close();
+            groupby = null;
             /*printing the reads and writes and closing pcounter and also free the BM from the limit */
 	    	System.out.println("Number of Page reads: "+PCounter.get_rcounter());
 	    	System.out.println("Number of Page Writes: "+PCounter.get_wcounter());

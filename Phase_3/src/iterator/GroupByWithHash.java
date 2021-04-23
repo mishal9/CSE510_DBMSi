@@ -82,11 +82,8 @@ public class GroupByWithHash extends Iterator{
                 });
             }
 
-            try {
-                grpSort.close();
-            } catch(Exception e) {
-                e.printStackTrace();
-            }
+            grpSort.close();
+            grpSort = null;
         }else{
             return null;
         }
