@@ -16,15 +16,15 @@ import static global.GlobalConst.STRSIZE;
 
 
 public class GroupByWithSort extends Iterator{
-    public static List<Tuple> _result;
-    private static Sort _sort;
-    private static AttrType[] _attrType;
-    private static FldSpec _group_by_attr;
-    private static int _len_in;
-    private static boolean status = true;
-    private static short[] _attr_sizes;
-    private static AggType _agg_type;
-    private static FldSpec[] _agg_list;
+    public  List<Tuple> _result;
+    private  Sort _sort;
+    private  AttrType[] _attrType;
+    private  FldSpec _group_by_attr;
+    private  int _len_in;
+    private  boolean status = true;
+    private  short[] _attr_sizes;
+    private  AggType _agg_type;
+    private  FldSpec[] _agg_list;
     // heap file containing our data on which skyline is computed
     private Heapfile _skyline_grp_heap;
 
@@ -32,7 +32,7 @@ public class GroupByWithSort extends Iterator{
     private int          candidate_tuple_size;
 
     // Value of the aggregation attribute in the last tuple
-    private static float _lastPolled;
+    private  float _lastPolled;
 
     // buffer pages allocation
     private int _n_pages;
@@ -40,12 +40,12 @@ public class GroupByWithSort extends Iterator{
     // get the next immediate tuple
     private Tuple _next;
 
-    private static float _aggr_val;
-    private static int _group_size;
-    private static float _grp_result;
-    private static Iterator _am;
-    private static FldSpec[] _projlist;
-    private static int _nOutFlds;
+    private  float _aggr_val;
+    private  int _group_size;
+    private  float _grp_result;
+    private  Iterator _am;
+    private  FldSpec[] _projlist;
+    private  int _nOutFlds;
 
     public GroupByWithSort(
             AttrType[] in1, int len_in1, short[] t1_str_sizes,
