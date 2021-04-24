@@ -114,7 +114,7 @@ public class GroupByWithSort extends Iterator{
         }
 
         try {
-            _sort = new Sort(_attrType, (short) _len_in, _attr_sizes, _am, group_by_attr.offset, new TupleOrder(TupleOrder.Descending), 32, 3);
+            _sort = new Sort(_attrType, (short) _len_in, _attr_sizes, _am, group_by_attr.offset, new TupleOrder(TupleOrder.Descending), 32, (int)_n_pages /2);
         }
         catch (Exception e) {
             status = false;
@@ -186,7 +186,6 @@ public class GroupByWithSort extends Iterator{
         
         /*
         TODO: Define str sizes beforehand
-        TODO: Solve BUF MGR Page Pinned exception
         TODO: Check MATER with GroupBy
         */
 
@@ -259,7 +258,7 @@ public class GroupByWithSort extends Iterator{
 
         // Compute Skyline here
         if(_agg_type.aggType == AggType.SKYLINE) {
-            skyline_Aggregation("skyline_group_by2.in", _agg_list, _attrType, _attr_sizes, _n_pages - 3);
+            skyline_Aggregation("skyline_group_by2.in", _agg_list, _attrType, _attr_sizes, _n_pages /2);
             recreateSkyLineHeap();
             // Reset aggregation
             resetAggregation();
