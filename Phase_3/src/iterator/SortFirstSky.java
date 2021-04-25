@@ -55,7 +55,7 @@ public class SortFirstSky extends Iterator implements GlobalConst {
         _pref_list = pref_list;
         _pref_list_length = pref_list_length;
         _n_pages = n_pages;
-        _window = new Tuple[(MINIBASE_PAGESIZE / _tuple_size) * (_n_pages)];
+        _window = new Tuple[5];//new Tuple[(MINIBASE_PAGESIZE / _tuple_size) * (_n_pages)];
 
         _sort = (Sort)am1;
 
