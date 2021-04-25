@@ -110,7 +110,7 @@ public class TopK_HashJoin extends Iterator implements GlobalConst {
 				   projlist, 
 				   null);
 
-	    FldSpec[] proj1 = new FldSpec[table1_len + table2_len];
+	    FldSpec[] proj1 = new FldSpec[table1_len + table2_len - 1];
 	    	
 	    int c = 0;
 	    for(int i = 0; i < table1_len; i++) {
@@ -118,6 +118,9 @@ public class TopK_HashJoin extends Iterator implements GlobalConst {
 	    	c++;
 	    }
 	    for(int i = 0; i < table2_len; i++) {
+	    	if ( i == ( joinAttr2.offset - 1 ) ) {
+	    		continue;
+	    	}
 	    	proj1[c] =  new FldSpec(new RelSpec(RelSpec.innerRel), i+1);
 	    	c++;
 	    }
@@ -139,7 +142,7 @@ public class TopK_HashJoin extends Iterator implements GlobalConst {
     		  table2_attr, table2_len, table2_attr_size,
     		  100,
     		  am, table2.getTable_heapfile(),
-    		  outFilter, null, proj1, table1_len + table2_len);
+    		  outFilter, null, proj1, table1_len + table2_len - 1);
 	    
 	    
 	    int newLength = table1_len + table2_len;
@@ -164,7 +167,6 @@ public class TopK_HashJoin extends Iterator implements GlobalConst {
     	newAttrSize[pointer] = STRSIZE;
     		
 	    Tuple t = hj.get_next();
-  
 	    pq = new 
                 PriorityQueue<Tuple>(new TupleComparator());
 	    
@@ -177,10 +179,10 @@ public class TopK_HashJoin extends Iterator implements GlobalConst {
 	    	newTuple.setHdr((short) newLength, newAttrType, newAttrSize);
 	    	
 	    	int curr = 1;
-	    	for(int i = 1; i <= newLength; i++) {
-	    		if(i == table1_len + joinAttr2.offset) {
-	    			continue;
-	    		}
+	    	for(int i = 1; i < newLength; i++) {
+//	    		if(i == table1_len + joinAttr2.offset) {
+//	    			continue;
+//	    		}
 
 	    		if(newAttrType[i-1].attrType == AttrType.attrString) {
 	    			newTuple.setStrFld(curr, t.getStrFld(i));
@@ -196,25 +198,26 @@ public class TopK_HashJoin extends Iterator implements GlobalConst {
 	    	
 	    	if(table1_attr[mergeAttr1.offset-1].attrType == AttrType.attrReal && table2_attr[mergeAttr2.offset-1].attrType == AttrType.attrReal) {
 	    		newTuple.setFloFld(curr, (float) (t.getFloFld(mergeAttr1.offset) + 
-		    			 t.getFloFld( table1_len + mergeAttr2.offset) / (float) 2.0)
+		    			 t.getFloFld( table1_len + mergeAttr2.offset - 1) / (float) 2.0)
 		    	);
 	    	}
 	    	else if(table1_attr[mergeAttr1.offset-1].attrType == AttrType.attrInteger && table2_attr[mergeAttr2.offset-1].attrType == AttrType.attrInteger) {
 	    		newTuple.setFloFld(curr, (float) ( t.getIntFld(mergeAttr1.offset) + 
-		    			 t.getIntFld( table1_len + mergeAttr2.offset)) / (float) 2.0
+		    			 t.getIntFld( table1_len + mergeAttr2.offset - 1)) / (float) 2.0
 		    	);
 	    		
 	    	}
 	    	else if(table1_attr[mergeAttr1.offset-1].attrType == AttrType.attrInteger && table2_attr[mergeAttr2.offset-1].attrType == AttrType.attrReal) {
 	    		newTuple.setFloFld(curr, (float) ( t.getIntFld(mergeAttr1.offset) + 
-		    			 t.getFloFld( table1_len + mergeAttr2.offset)) / (float) 2.0
+		    			 t.getFloFld( table1_len + mergeAttr2.offset - 1)) / (float) 2.0
 		    	);
 	    	}
 	    	else if(table1_attr[mergeAttr1.offset-1].attrType == AttrType.attrReal && table2_attr[mergeAttr2.offset-1].attrType == AttrType.attrInteger) {
 	    		newTuple.setFloFld(curr, (float) ( t.getFloFld(mergeAttr1.offset) + 
-		    			 t.getIntFld( table1_len + mergeAttr2.offset)) / (float) 2.0
+		    			 t.getIntFld( table1_len + mergeAttr2.offset - 1)) / (float) 2.0
 		    	);
 	    	}
+	    	
 	    	
 	    	pq.add(newTuple);
 	    	t = hj.get_next();
