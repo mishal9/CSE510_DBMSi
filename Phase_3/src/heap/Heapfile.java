@@ -648,14 +648,18 @@ public class Heapfile implements Filetype,  GlobalConst {
 		HFPage currentDataPage = new HFPage();
 		PageId currentDataPageId = new PageId();
 		RID currentDataPageRid = new RID();
-
+		
 		status = _findDataPage(rid,
 				currentDirPageId, currentDirPage, 
 				currentDataPageId, currentDataPage,
 				currentDataPageRid);
-
-		if(status != true) return status;	// record not found
-
+		
+		if(status != true) {
+			System.out.println("gone");
+			return status;
+			
+		}	// record not found
+		
 		// ASSERTIONS:
 			// - currentDirPage, currentDirPageId valid and pinned
 		// - currentDataPage, currentDataPageid valid and pinned
@@ -673,16 +677,19 @@ public class Heapfile implements Filetype,  GlobalConst {
 		pdpinfo.flushToTuple();	//Write to the buffer pool
 		if (pdpinfo.recct >= 1) 
 		{
+			System.out.println("find data unpinned in "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
 			// more records remain on datapage so it still hangs around.  
 			// we just need to modify its directory entry
 
 			pdpinfo.availspace = currentDataPage.available_space();
 			pdpinfo.flushToTuple();
 			unpinPage(currentDataPageId, true /* = DIRTY*/);
-
+			System.out.println("find data unpinned in "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
+			System.out.println("Page number "+currentDirPageId.pid);
+			System.out.println("First directory pageid "+_firstDirPageId.pid);
 			unpinPage(currentDirPageId, true /* = DIRTY */);
-
-
+			System.out.println("find data unpinned out "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
+			System.out.println("Leaving recct");
 		}
 		else
 		{
@@ -751,7 +758,7 @@ public class Heapfile implements Filetype,  GlobalConst {
 				unpinPage(currentDirPageId, false/*undirty*/);
 				unpinPage(currentDirPageId, true/*undirty*/);
 				freePage(currentDirPageId);
-
+				System.out.println("Leaving");
 
 			}
 			else
@@ -759,12 +766,14 @@ public class Heapfile implements Filetype,  GlobalConst {
 				// either (the directory page has at least one more datapagerecord
 				// entry) or (it is the first directory page):
 				// in both cases we do not delete it, but we have to unpin it:
-
+				
 				unpinPage(currentDirPageId, true /* == DIRTY */);
+				System.out.println("unpinnned");
 
 
 			}
 		}
+		System.out.println("pinned bufs "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
 		return true;
 	}
 

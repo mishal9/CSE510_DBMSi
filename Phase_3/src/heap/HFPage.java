@@ -284,6 +284,12 @@ implements ConstSlot, GlobalConst{
 		slotCnt =  Convert.getShortValue (SLOT_CNT, data);
 		return slotCnt;
 	}
+	
+	public void incrementSlotCnt() throws IOException {
+		slotCnt = Convert.getShortValue(SLOT_CNT, data);
+		slotCnt++;
+		Convert.setShortValue (slotCnt, SLOT_CNT, data);
+	}
 
 	/**
 	 * sets slot contents
@@ -413,6 +419,8 @@ implements ConstSlot, GlobalConst{
 		int slotNo = rid.slotNo;
 		short recLen = getSlotLength (slotNo);
 		slotCnt = Convert.getShortValue (SLOT_CNT, data);
+//		System.out.println("delete length "+recLen);
+//		System.out.println("delete slot number "+slotNo);
 
 		// first check if the record being deleted is actually valid
 		if ((slotNo >= 0) && (slotNo < slotCnt) && (recLen > 0))
@@ -745,6 +753,7 @@ implements ConstSlot, GlobalConst{
 
 		slotCnt = Convert.getShortValue (SLOT_CNT, data);
 		freeSpace = Convert.getShortValue (FREE_SPACE, data);
+//		System.out.println("Slotcnt "+ slotCnt);
 
 		while (current_scan_posn < slotCnt) 
 		{

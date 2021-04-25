@@ -392,9 +392,9 @@ public class BT  implements GlobalConst{
 		i++;
 		if( sortedPage.getType()==NodeType.INDEX) {  
 			BTIndexPage indexPage=new BTIndexPage((Page)sortedPage, keyType);
-
-			System.out.println(i+prefix+ indexPage.getPrevPage());
-			_printTree( indexPage.getPrevPage(), prefix, i, keyType);
+			System.out.println("Number of records in the index page "+indexPage.numberOfRecords());
+//			System.out.println(i+prefix+ indexPage.getPrevPage());
+//			_printTree( indexPage.getPrevPage(), prefix, i, keyType);
 
 			RID rid=new RID();
 			for( KeyDataEntry entry=indexPage.getFirst(rid); entry!=null; 
@@ -458,7 +458,7 @@ public class BT  implements GlobalConst{
 		if( sortedPage.getType()==NodeType.INDEX) {  
 			BTIndexPage indexPage=new BTIndexPage((Page)sortedPage, keyType);
 
-			_printAllLeafPages( indexPage.getPrevPage(),  keyType);
+//			_printAllLeafPages( indexPage.getPrevPage(),  keyType);
 
 			RID rid=new RID();
 			for( KeyDataEntry entry=indexPage.getFirst(rid); entry!=null; 

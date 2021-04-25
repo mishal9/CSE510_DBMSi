@@ -33,10 +33,10 @@ public interface GlobalConst {
   public static final int STRSIZE = 50;
   
   /* number of pages in the DB */
-  public static final int NUMDBPAGES = 7000;
+  public static final int NUMDBPAGES = 170000;
   
   /* number of BM pages in any DB */
-  public static final int NUMBFPAGES = 500;
+  public static final int NUMBFPAGES = 2000;
   
   /* replacer algorithm in the DB */
   public static final String DBREPLACER = "Clock";

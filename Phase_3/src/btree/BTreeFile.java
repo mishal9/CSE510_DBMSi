@@ -84,7 +84,7 @@ implements GlobalConst {
 
 
 
-	protected Page pinPage(PageId pageno) 
+	public Page pinPage(PageId pageno) 
 			throws PinPageException
 	{
 		try {
@@ -508,14 +508,69 @@ implements GlobalConst {
 				trace.flush();
 			}
 
+			PageId pageno = headerPage.get_rootId();
+
+			if (pageno.pid == INVALID_PAGE){        // no pages in the BTREE
+				System.out.println("Error in btree ");
+				return;
+			}
+			KeyDataEntry rootentry;
+			BTIndexPage pageindex;
+			BTLeafPage pageleaf;
+			Page page= pinPage(pageno);
+			BTSortedPage sortPage=new BTSortedPage(page, headerPage.get_keyType());
+			RID first_entry = new RID();
+			if ( sortPage.getType() == NodeType.INDEX ) {
+				pageindex=new BTIndexPage(page, headerPage.get_keyType()); 
+				rootentry = pageindex.getFirst(first_entry);
+				//				pageindex.setNextPage(newRootPageId);
+
+				RID tempridq = new RID();
+				tempridq = pageindex.firstRecord();
+				KeyDataEntry qw = pageindex.getFirst(tempridq);
+//				while ( qw != null ) {
+//					System.out.println("record on the new root page "+((IndexData)qw.data).getData());
+//					qw = pageindex.getNext(tempridq);
+//				}
+			}
+			else {
+				pageleaf=new BTLeafPage(page, headerPage.get_keyType()); 
+				rootentry = pageleaf.getFirst(first_entry);
+				//				pageleaf.setNextPage(newRootPageId);
+
+				RID tempridq = new RID();
+				tempridq = pageleaf.firstRecord();
+				KeyDataEntry qw = pageleaf.getFirst(tempridq);
+//				while ( qw != null ) {
+//					System.out.println("record on the new root page "+((LeafData)qw.data).getData());
+//					qw = pageleaf.getNext(tempridq);
+//				}
+			}
+//			System.out.println("Inserting page "+pageno.pid+" to the root");
+//			System.out.println("New next page of the page is "+sortPage.getNextPage().pid);
+			newRootPage.insertKey(rootentry.key, pageno);
+
+			unpinPage(pageno, true);
 
 			newRootPage.insertKey( newRootEntry.key, 
 					((IndexData)newRootEntry.data).getData() );
 
+//			System.out.println("Inserting page "+((IndexData)newRootEntry.data).getData().pid+" to the root");
+//			System.out.println("New root "+newRootPageId.pid);
 
+			RID tempridq = new RID();
+			tempridq = newRootPage.firstRecord();
+			KeyDataEntry qw = newRootPage.getFirst(tempridq);
+//			while ( qw != null ) {
+//				System.out.println("record on the new root page "+((IndexData)qw.data).getData());
+//				qw = newRootPage.getNext(tempridq);
+//			}
 			// the old root split and is now the left child of the new root
-			newRootPage.setPrevPage(headerPage.get_rootId());
-
+//			newRootPage.setPrevPage(headerPage.get_rootId());
+			newRootPage.setPrevPage(new PageId(INVALID_PAGE));
+			newRootPage.setNextPage(new PageId(INVALID_PAGE));
+			//			newRootPage.insertKey(key, newRootPageId);
+			//			newRootPage.incrementSlotCnt(); // now it has one more child,
 			unpinPage(newRootPageId, true /* = DIRTY */);
 
 			updateHeader(newRootPageId);
@@ -556,7 +611,7 @@ implements GlobalConst {
 
 	{
 
-
+		//		System.out.println("Into _insert");
 		BTSortedPage currentPage;
 		Page page;
 		KeyDataEntry upEntry;
@@ -584,12 +639,14 @@ implements GlobalConst {
 			PageId       currentIndexPageId = currentPageId;
 			PageId nextPageId;
 
-			nextPageId=currentIndexPage.getPageNoByKey(key);
-
+			nextPageId=currentIndexPage.getPageNoByKeyCustom(key, headerPage.get_keyType());
 			// now unpin the page, recurse and then pin it again
 			unpinPage(currentIndexPageId);
-
-			upEntry= _insert(key, rid, nextPageId);
+			
+			if ( nextPageId.pid != INVALID_PAGE )
+				upEntry= _insert(key, rid, nextPageId);
+			else
+				upEntry = null;
 
 			// two cases:
 			// - upEntry == null: one level lower no split has occurred:
@@ -940,7 +997,8 @@ implements GlobalConst {
 			// on the index page one level up
 			return upEntry;
 		}
-		else {    
+		else { 
+			System.out.println("Page of the error page "+ currentPageId.pid);
 			throw new InsertException(null,"");
 		}
 	}
@@ -1055,6 +1113,8 @@ implements GlobalConst {
 
 		if ( trace!=null ) {
 			trace.writeBytes("VISIT node " + pageno + lineSep);
+//			trace.writeBytes("Search key :"+ lo_key.toString());
+			trace.writeBytes("Number of entried in parent "+sortPage.getSlotCnt()+lineSep);
 			trace.flush();
 		}
 
@@ -1062,22 +1122,60 @@ implements GlobalConst {
 		// ASSERTION
 		// - pageno and sortPage is the root of the btree
 		// - pageno and sortPage valid and pinned
-
+//		try {
+//			BT.printBTree(headerPage);
+//			BT.printAllLeafPages(headerPage);
+//		} catch (ConstructPageException | IteratorException | HashEntryNotFoundException | InvalidFrameNumberException
+//				| PageUnpinnedException | ReplacerException | IOException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+		
 		while (sortPage.getType() == NodeType.INDEX) {
+//			if ( lo_key == null ) {
+//				System.out.println("In lo key null ");
+//			}
+//			else {
+//				System.out.println("lo key "+lo_key.toString());
+//			}
+//			System.out.println("In while 2");
+//			System.out.println("calling page " +pageno.pid);
 			pageIndex=new BTIndexPage(page, headerPage.get_keyType()); 
 			prevpageno = pageIndex.getPrevPage();
+//			prevpageno = new PageId(pageIndex.getCurPage().pid);
 			curEntry= pageIndex.getFirst(startrid);
+//			System.out.println("entried in calling page "+pageIndex.getSlotCnt());
+//			System.out.println("entry key "+curEntry.key.toString());
+//			System.out.println("lokey "+lo_key.toString());
+			boolean entry_found = false;
 			while ( curEntry!=null && lo_key != null 
 					&& BT.keyCompare(curEntry.key, lo_key) < 0) {
-
+				entry_found = true;
 				prevpageno = ((IndexData)curEntry.data).getData();
+//				System.out.println("page id in while2 "+prevpageno.pid);
 				curEntry=pageIndex.getNext(startrid);
+			}
+			if ( lo_key == null ) {
+				RID temper = new RID();
+				curEntry = pageIndex.getFirst(temper);
+				if ( prevpageno.pid == INVALID_PAGE )
+					prevpageno = ((IndexData)curEntry.data).getData();
+//				System.out.println("lo key null print "+prevpageno.pid);
+			}
+			else {
+				if ( entry_found == false ) {
+					prevpageno = ((IndexData)curEntry.data).getData();
+				}
 			}
 
 			unpinPage(pageno);
-
+//			System.out.println("bad page 1 " +prevpageno.pid);
 			pageno = prevpageno;
 			page=pinPage(pageno);
+//			
+//			if ( pageno.pid == pageIndex.getCurPage().pid ) {
+//				break;
+//			}
 			sortPage=new BTSortedPage(page, headerPage.get_keyType()); 
 
 
@@ -1094,6 +1192,7 @@ implements GlobalConst {
 
 		curEntry=pageLeaf.getFirst(startrid);
 		while (curEntry==null) {
+//			System.out.println("In while 1");
 			// skip empty leaf pages off to left
 			nextpageno = pageLeaf.getNextPage();
 			unpinPage(pageno);
@@ -1103,6 +1202,7 @@ implements GlobalConst {
 			}
 
 			pageno = nextpageno; 
+//			System.out.println("bad page "+pageno.pid);
 			pageLeaf=  new BTLeafPage( pinPage(pageno), headerPage.get_keyType());    
 			curEntry=pageLeaf.getFirst(startrid);
 		}
@@ -1309,7 +1409,7 @@ implements GlobalConst {
 
 	}
 
-	private KeyClass _Delete ( KeyClass key,
+	private KeyDataEntry _Delete ( KeyClass key,
 			RID     rid,
 			PageId        currentPageId,
 			PageId        parentPageId)
@@ -1336,7 +1436,7 @@ implements GlobalConst {
 		page=pinPage(currentPageId);
 		sortPage=new BTSortedPage(page, headerPage.get_keyType());
 
-
+		//		System.out.println("In recursive deletion in btree ");
 		if ( trace!=null )
 		{
 			trace.writeBytes("VISIT node " + currentPageId +lineSep);
@@ -1356,13 +1456,12 @@ implements GlobalConst {
 
 			KeyClass deletedKey=key;
 			tmpEntry=leafPage.getFirst(curRid);
-
+			KeyDataEntry first_entry_in_case = new KeyDataEntry(tmpEntry.key, leafPage.getCurPage());
 			RID delRid;    
 			// for all records with key equal to 'key', delete it if its rid = 'rid'
 			while((tmpEntry!=null) && (BT.keyCompare(key,tmpEntry.key)>=0)) { 
 				// WriteUpdateLog is done in the btleafpage level - to log the
 				// deletion of the rid.
-
 				if ( leafPage.delEntry(new KeyDataEntry(key, rid)) ) {
 					// successfully found <key, rid> on this page and deleted it.
 
@@ -1372,7 +1471,10 @@ implements GlobalConst {
 						trace.writeBytes("TAKEFROM node "+leafPage.getCurPage()+lineSep);
 						trace.flush();
 					}
-
+					if ( leafPage.numberOfRecords() == 0 ) {
+						return first_entry_in_case;
+					}
+					
 					PageId leafPage_no=leafPage.getCurPage();     
 					if ( (4+leafPage.available_space()) <= 
 							((MAX_SPACE-HFPage.DPFIXED)/2) ) { 
@@ -1402,6 +1504,18 @@ implements GlobalConst {
 							return null;
 						}
 					}
+//					if ( leafPage.numberOfRecords() == 0 ) {
+//						// we need to delete this page from parent and update the next pointers
+//						BTIndexPage parentPage =
+//								new BTIndexPage(pinPage(parentPageId), 
+//										headerPage.get_keyType());
+//						PageId siblingPageId=new PageId();
+//						BTLeafPage siblingPage;
+//						int direction;
+//						System.out.println("All records deleted");
+//						unpinPage(leafPage_no, true /*= DIRTY */);
+//						return null;
+//					}
 					else { 
 						// get a sibling
 						BTIndexPage  parentPage;
@@ -1412,7 +1526,7 @@ implements GlobalConst {
 						PageId siblingPageId=new PageId();
 						BTLeafPage siblingPage;
 						int direction;
-						direction=parentPage.getSibling(key, siblingPageId);
+						direction=parentPage.getSiblingCustom(key, siblingPageId, leafPage.getCurPage());
 
 
 						if (direction==0) {
@@ -1449,15 +1563,21 @@ implements GlobalConst {
 						else if ( (siblingPage.available_space() + 8 /* 2*sizeof(slot) */ ) >=
 								( (MAX_SPACE-HFPage.DPFIXED) 
 										- leafPage.available_space())) {
-
+//							System.out.println("Merging 2 child "+siblingPage.getCurPage().pid+" "+leafPage.getCurPage().pid);
+//							System.out.println("Direction of merging "+direction);
 							// we can merge these two children
 							// get old child entry in the parent first
 							KeyDataEntry   oldChildEntry;
-							if (direction==-1)
+							KeyDataEntry delete_entry;
+							if (direction==-1) {
 								oldChildEntry = leafPage.getFirst(curRid);
+								delete_entry = new KeyDataEntry(oldChildEntry.key, leafPage.getCurPage());
+							}
+								
 							// get a copy
 							else {
 								oldChildEntry=siblingPage.getFirst(curRid);
+								delete_entry = new KeyDataEntry(oldChildEntry.key, siblingPage.getCurPage());
 							}
 
 							// merge the two children
@@ -1475,9 +1595,19 @@ implements GlobalConst {
 							RID firstRid=new RID(), insertRid;
 							for (tmpEntry= rightChild.getFirst(firstRid);
 									tmpEntry != null;
-									tmpEntry=rightChild.getFirst(firstRid)) {
+									tmpEntry=rightChild.getNext(firstRid)) {
+								//								System.out.println("Inside for leaf page");
 								leftChild.insertRecord(tmpEntry);
-								rightChild.deleteSortedRecord(firstRid);
+								try {
+									rightChild.deleteRecord(firstRid);
+								} catch (InvalidSlotNumberException e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
+								} catch (IOException e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
+								}
+								//								System.out.println("right child length "+rightChild.available_space());	
 							}
 
 							// adjust chain
@@ -1505,7 +1635,7 @@ implements GlobalConst {
 
 							freePage(rightChild.getCurPage());
 
-							return  oldChildEntry.key;
+							return  delete_entry;
 						}
 						else {
 							// It's a very rare case when we can do neither
@@ -1547,14 +1677,21 @@ implements GlobalConst {
 
 
 		if (  sortPage.getType() == NodeType.INDEX ) {
+			//			System.out.println("In index delete");
 			PageId childPageId;
 			BTIndexPage indexPage=new BTIndexPage(page, headerPage.get_keyType());
-			childPageId= indexPage.getPageNoByKey(key);
+			childPageId= indexPage.getPageNoByKey(key, headerPage.get_keyType());
 
 			// now unpin the page, recurse and then pin it again
 			unpinPage(currentPageId);
-
-			KeyClass oldChildKey= _Delete(key, rid,  childPageId, currentPageId);
+			
+			KeyDataEntry oldChildKey = null;
+			if ( childPageId.pid != INVALID_PAGE ) { 
+				oldChildKey= _Delete(key, rid,  childPageId, currentPageId);
+			}
+			else {
+				oldChildKey = null;
+			}
 
 			// two cases:
 			// - oldChildKey == null: one level lower no merge has occurred:
@@ -1573,14 +1710,14 @@ implements GlobalConst {
 			// save possible old child entry before deletion
 			PageId dummyPageId; 
 			KeyClass deletedKey = key;
-			RID curRid=indexPage.deleteKey(oldChildKey);
+			RID curRid=indexPage.deleteKeyentry(oldChildKey);
 
 			if (indexPage.getCurPage().pid == headerPage.get_rootId().pid) {
 				// the index page is the root
 				if (indexPage.numberOfRecords() == 0) {
-					BTSortedPage childPage;
-					childPage=new BTSortedPage(indexPage.getPrevPage(),
-							headerPage.get_keyType()); 
+//					BTSortedPage childPage;
+//					childPage=new BTSortedPage(indexPage.getPrevPage(),
+//							headerPage.get_keyType()); 
 
 
 					if ( trace !=null )
@@ -1591,9 +1728,9 @@ implements GlobalConst {
 						trace.flush();
 					}
 
-
-					updateHeader(indexPage.getPrevPage());
-					unpinPage(childPage.getCurPage());
+					PageId p = new PageId(INVALID_PAGE);
+					updateHeader(p);
+//					unpinPage(childPage.getCurPage());
 
 					freePage(indexPage.getCurPage());
 					return null;
@@ -1619,8 +1756,7 @@ implements GlobalConst {
 				PageId siblingPageId=new PageId();
 				BTIndexPage siblingPage;
 				int direction;
-				direction=parentPage.getSibling(key,
-						siblingPageId);
+				direction=parentPage.getSiblingCustom(key, siblingPageId, indexPage.getCurPage());
 				if ( direction==0) {
 					// there is no sibling. nothing can be done.
 
@@ -1675,11 +1811,14 @@ implements GlobalConst {
 
 					// get old child entry in the parent first
 					KeyClass oldChildEntry;
+					KeyDataEntry delete_entry;
 					if (direction==-1) {
 						oldChildEntry=indexPage.getFirst(curRid).key;
+						delete_entry = new KeyDataEntry(oldChildEntry, indexPage.getCurPage());
 					}
 					else {
-						oldChildEntry= siblingPage.getFirst(curRid).key;                    
+						oldChildEntry= siblingPage.getFirst(curRid).key;    
+						delete_entry = new KeyDataEntry(oldChildEntry, siblingPage.getCurPage());
 					}
 
 					// merge the two children
@@ -1713,6 +1852,7 @@ implements GlobalConst {
 					for (KeyDataEntry tmpEntry=rightChild.getFirst(firstRid);
 							tmpEntry != null;
 							tmpEntry=rightChild.getFirst(firstRid) ) {
+						System.out.println("Inside for index");
 						leftChild.insertKey(tmpEntry.key, 
 								((IndexData)tmpEntry.data).getData());
 						rightChild.deleteSortedRecord(firstRid); 
@@ -1724,7 +1864,7 @@ implements GlobalConst {
 
 					freePage(rightChild.getCurPage());
 
-					return oldChildEntry;  // ??? 
+					return delete_entry;  // ??? 
 
 				}
 				else {

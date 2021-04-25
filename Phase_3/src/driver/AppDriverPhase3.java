@@ -143,6 +143,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
     		System.out.println("Closing DB "+open_db_name);
     		SystemDefs.JavabaseDB.add_all_table_to_relation();
 			SystemDefs.JavabaseBM.flushAllPages();
+			SystemDefs.JavabaseBM.setIgnore_pinned_pages(false);
 			SystemDefs.JavabaseDB.closeDB();
 			is_current_db_open = false;
 			open_db_name = "";
@@ -351,6 +352,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
     	if ( validate_token_length(3, "delete_data") == false ) {
 			return;
 		}
+    	SystemDefs.JavabaseBM.setIgnore_pinned_pages(true);
     	/*printing the reads and writes and closing pcounter and also free the BM from the limit */
     	System.out.println("Number of Page reads: "+PCounter.get_rcounter());
     	System.out.println("Number of Page Writes: "+PCounter.get_wcounter());
@@ -370,6 +372,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
     	System.out.println("Number of Page reads: "+PCounter.get_rcounter());
     	System.out.println("Number of Page Writes: "+PCounter.get_wcounter());
     	PCounter.initialize();
+//    	SystemDefs.JavabaseBM.setIgnore_pinned_pages(false);
     }
     
     /* parses the output_table query for the exact structure 
@@ -1343,7 +1346,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}*/
-    	Table table = SystemDefs.JavabaseDB.get_relation("r_sii2000_1_75_200");
+    	Table table = SystemDefs.JavabaseDB.get_relation("r_sii2000_10_75_200");
     	try {
 			table.test();
 		} catch (InvalidTypeException e) {

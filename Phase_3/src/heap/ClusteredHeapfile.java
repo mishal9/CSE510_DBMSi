@@ -6,6 +6,7 @@ import java.util.List;
 
 import btree.BT;
 import btree.BTFileScan;
+import btree.BTLeafPage;
 import btree.BTreeFile;
 import btree.ConstructPageException;
 import btree.GetFileEntryException;
@@ -959,6 +960,12 @@ public class ClusteredHeapfile extends Heapfile implements GlobalConst {
 		ClusteredBTSortedPage LastBTPage = new ClusteredBTSortedPage();
 		ClusteredBTSortedPage pageinbuffer = new ClusteredBTSortedPage();
 		ClusteredBTSortedPage newDataPage = new ClusteredBTSortedPage();
+		
+		ClusteredBTSortedPage lookup_dirPage = new ClusteredBTSortedPage();
+		PageId lookup_currentDirPageId = new PageId();
+		ClusteredBTSortedPage lookup_dataPage = new ClusteredBTSortedPage();
+		PageId lookup_currentDataPageId = new PageId();
+		RID lookup_currentDataPageRid = new RID();
 
 		PageId currentDirPageId = new PageId(_firstDirPageId.pid);
 		PageId lastBTPageId = new PageId();
@@ -972,12 +979,10 @@ public class ClusteredHeapfile extends Heapfile implements GlobalConst {
 		KeyDataEntry preventry = null;
 
 		key = TupleUtils.get_key_from_tuple_attrtype(insert_tuple, attrType[key_index-1], key_index);
-		/*if ( attrType[key_index-1].attrType == AttrType.attrInteger )
-		 key = new IntegerKey(insert_tuple.getIntFld(key_index));
-	 else
-		 key = new StringKey(insert_tuple.getStrFld(key_index));
-		 */
+		
 		ClusteredBTreeFile btf  = new ClusteredBTreeFile(btsfilename);
+		btf.traceFilename("outtrace.txt");
+//		BT.printBTree(btf.headerPage);
 		BTFileScan indScan = ((ClusteredBTreeFile)btf).new_scan(key, null);
 		nextentry = indScan.get_next();
 
@@ -995,15 +1000,47 @@ public class ClusteredHeapfile extends Heapfile implements GlobalConst {
 				preventry = new KeyDataEntry( nextentry.key, nextentry.data );
 				nextentry = indScan.get_next();
 			}
+			if ( preventry == null ) {
+//				System.out.println("Empty heap ");
+				//we are inserting into an empty heap and empty tree
+				unpinPage(currentDirPageId,false /*undirty*/);
+				indScan.DestroyBTreeFileScan();
+				
+				currentDataPage = _newDatapage(dpinfo);
+				lookup_currentDirPageId = get_next_empty_slot();
+				pinPage(lookup_currentDirPageId, lookup_dirPage, false);
+				
+				atuple = dpinfo.convertToTuple();
+
+				byte [] tmpData = atuple.getTupleByteArray();
+				lookup_currentDataPageRid = lookup_dirPage.insertRecord(tmpData);
+
+				data_inserted_rid = currentDataPage.insertRecord(insert_tuple.getTupleByteArray());
+				btf.insert(key, data_inserted_rid);
+
+				dpinfo.recct++;
+				dpinfo.availspace = currentDataPage.available_space();
+
+
+				unpinPage(dpinfo.pageId, true /* = DIRTY */);
+
+				atuple = lookup_dirPage.returnRecord(lookup_currentDataPageRid);
+				DataPageInfo dpinfo_ondirpage = new DataPageInfo(atuple);
+
+
+				dpinfo_ondirpage.availspace = dpinfo.availspace;
+				dpinfo_ondirpage.recct = dpinfo.recct;
+				dpinfo_ondirpage.pageId.pid = dpinfo.pageId.pid;
+				dpinfo_ondirpage.flushToTuple();
+				
+				unpinPage(lookup_currentDirPageId, true /* = DIRTY */);
+				unpinPage(lookup_currentDirPageId, true /* = DIRTY */);
+				btf.close();
+				return data_inserted_rid;
+			}
 			RID rid_nextentry = ((LeafData)preventry.data).getData();
 
 			lastBTPageId = new PageId(rid_nextentry.pageNo.pid);
-
-			ClusteredBTSortedPage lookup_dirPage = new ClusteredBTSortedPage();
-			PageId lookup_currentDirPageId = new PageId();
-			ClusteredBTSortedPage lookup_dataPage = new ClusteredBTSortedPage();
-			PageId lookup_currentDataPageId = new PageId();
-			RID lookup_currentDataPageRid = new RID();
 
 			boolean status = _findDataPage(lastBTPageId,
 					lookup_currentDirPageId, lookup_dirPage, 
@@ -1057,7 +1094,7 @@ public class ClusteredHeapfile extends Heapfile implements GlobalConst {
 			{
 				if ( lookup_dirPage.available_space() >= dpinfo.size ) 
 				{
-					//System.out.println("Case where we need to insert new data page at the end and no new dir page");
+//					System.out.println("Case where we need to insert new data page at the end and no new dir page");
 					currentDataPage = _newDatapage(dpinfo);
 
 
@@ -1130,10 +1167,17 @@ public class ClusteredHeapfile extends Heapfile implements GlobalConst {
 			//System.out.println("We are in the next entry != null scnenario");
 			data_inserted_rid = handle_splitting_cases(insert_tuple, attrType, strsizes, key, nextentry, btf, key_index);
 		}
-		//BT.printBTree(btf.getHeaderPage());
-		//BT.printAllLeafPages(btf.getHeaderPage());
+//		BT.printBTree(btf.getHeaderPage());
+//		BT.printAllLeafPages(btf.getHeaderPage());
+//		Page page= btf.pinPage(btf.getHeaderPage().get_rootId());
+//		BTLeafPage leafPage;
+//		leafPage=new BTLeafPage(page, btf.headerPage.get_keyType());
+//		System.out.println("Number of entries in root "+leafPage.numberOfRecords());
+//		unpinPage(btf.getHeaderPage().get_rootId(), false /*= DIRTY */);
+//		BT.printAllLeafPages(btf.getHeaderPage());
+		
 		btf.close();
-
+//		System.out.println("Everything printed and added to the btree ");
 		return data_inserted_rid;
 
 	}
@@ -1205,6 +1249,9 @@ public class ClusteredHeapfile extends Heapfile implements GlobalConst {
 
 
 		if ( status == false ) {
+			System.err.println("Something wrong with the btree");
+//			BT.printBTree(btf.headerPage);
+//			BT.printAllLeafPages(btf.headerPage);
 			return null;
 		}
 		else 
@@ -1278,10 +1325,6 @@ public class ClusteredHeapfile extends Heapfile implements GlobalConst {
 						itr_hdr_tuple.tupleCopy(itr_tuple);
 						KeyClass itr_key = null;
 						itr_key = TupleUtils.get_key_from_tuple_attrtype(itr_hdr_tuple, attrtype[key_index-1], key_index);
-						//						if ( key instanceof IntegerKey )
-						//							itr_key = new IntegerKey(itr_hdr_tuple.getIntFld(key_index));
-						//						else
-						//							itr_key = new StringKey(itr_hdr_tuple.getStrFld(key_index));
 						if ( BT.keyCompare(key, itr_key) > 0 ) {
 							//System.out.println("Key greater");
 							itr_rid = lookup_dataPage.nextRecord(itr_rid);
@@ -1404,7 +1447,7 @@ public class ClusteredHeapfile extends Heapfile implements GlobalConst {
 			while ( temp != null ) {
 				Tuple atuple = currentDirPage.getRecord(temp);
 				DataPageInfo dpinfo1 = new DataPageInfo(atuple);
-//				System.out.println("dpinfo recct "+dpinfo1.recct+" "+dpinfo1.pageId.pid);
+				System.out.println("dpinfo recct "+dpinfo1.recct+" "+dpinfo1.pageId.pid);
 				temp = currentDirPage.nextRecord(temp);
 			}
 			prevDirPageId = new PageId(currentDirPageId.pid);
@@ -1696,6 +1739,7 @@ public class ClusteredHeapfile extends Heapfile implements GlobalConst {
 				continue;
 			}
 //			System.out.println("Hitting merge");
+//			System.out.println(getRecCnt());
 			newDataPage = _newDatapage(newdpinfo);
 			Tuple itr = new Tuple();
 			Tuple itr_hdr = TupleUtils.getEmptyTuple(attrtype, strsizes);
@@ -1749,12 +1793,21 @@ public class ClusteredHeapfile extends Heapfile implements GlobalConst {
 
 			KeyClass key_new;
 			key_new = TupleUtils.get_key_from_tuple_attrtype(itr_hdr, attrtype[key_index-1], key_index);
-
+			
+//			System.out.println("Going into delete");
+//			BT.printBTree(btf.getHeaderPage());
+//			BT.printAllLeafPages(btf.getHeaderPage());
+//			System.out.println("\nmerging\n");
 			indScan.DestroyBTreeFileScan();
 			btf.Delete(key_entry, rid_entry);
 			btf.Delete(key_nextentry, rid_nextentry);
+//			BT.printBTree(btf.headerPage);
+//			BT.printAllLeafPages(btf.headerPage);
 			btf.insert(key_new, tmprid);
+			
+//			BT.printAllLeafPages(btf.getHeaderPage());
 			btf.close();
+//			System.out.println("Coming out of delete");
 
 			unpinPage(newdpinfo.pageId, true);
 			lookup_dirPage.deleteRecord(lookup_currentDataPageRid);
@@ -1766,7 +1819,7 @@ public class ClusteredHeapfile extends Heapfile implements GlobalConst {
 			byte [] tmpData = atuple.getTupleByteArray();
 			lookup_currentDataPageRid = lookup_dirPage.insertRecord(tmpData);
 //			print_empty_slot();
-			
+//			System.out.println(getRecCnt());
 			//unpinPage(newdpinfo.pageId, true);
 			unpinPage(lookup_currentDirPageId, true);
 			unpinPage(nelookup_currentDirPageId, true);
@@ -1774,7 +1827,8 @@ public class ClusteredHeapfile extends Heapfile implements GlobalConst {
 			unpinPage(nelookup_currentDataPageId, true);
 			freePage(nelookup_currentDataPageId);
 			freePage(lookup_currentDataPageId);
-
+			
+//			System.out.println("Going into recursive merge call");
 			merge(btsfilename, attrtype, strsizes, key_index, table_tuple_size);
 			break;
 		}
@@ -1897,6 +1951,8 @@ public class ClusteredHeapfile extends Heapfile implements GlobalConst {
 							nelookup_dataPage.deleteRecord(lookup_rid);
 							dpinfo_entry.availspace = nelookup_dataPage.available_space();
 							dpinfo_entry.recct--;
+							lookup_rid = nelookup_dataPage.firstRecord();
+							continue;
 						}
 						else {
 							//							System.out.println("Not same");
@@ -1905,7 +1961,7 @@ public class ClusteredHeapfile extends Heapfile implements GlobalConst {
 					}
 					nelookup_dataPage.compact_slot_dir();
 					add_page_to_inserted_tuples(nelookup_dataPage);
-
+					dpinfo_entry.recct = nelookup_dataPage.numberOfRecords();
 //					System.out.println("Page slot count " + dpinfo_entry.recct);
 
 
