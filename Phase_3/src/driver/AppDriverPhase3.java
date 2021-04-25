@@ -628,7 +628,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    	else {
 	    		agg = null;
 	    	}
-	    	
+	    	final Table mater_table = new Table(out_tablename, "MATER");
 	    	Table groupby_table = SystemDefs.JavabaseDB.get_relation(groupby_tablename);
 	    	if ( ( agg == null ) || ( groupby_table == null ) ) {
 	    		validate_token_length(0, "groupby");
@@ -651,6 +651,14 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 			
 			for (int i=0; i<agg_attributes.length; i++ ) {
 				agg_attrtype[agg_attributes[i] - 1] = new AttrType(AttrType.attrReal);
+			}
+			
+			String[] names_mater = new String[agg_attributes.length+1];
+			names_mater[0] = groupby_table.getTable_attr_name()[groupby_attribute-1];
+			int c = 1;
+			for ( int i=0; i<agg_attributes.length; i++ ) {
+				names_mater[c] = groupby_table.getTable_attr_name()[agg_attributes[i]-1];
+				c++;
 			}
 			
 	    	/* run the appropriate groupby algorithm */
@@ -724,6 +732,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    			validate_token_length(0, "groupby");
 	    			break;
 	    	}
+	    	AttrType[] attrTypes = groupby._outAttrType;
 	    	List<Tuple> result = new ArrayList<>();
 			try {
                 result = groupby.get_next_aggr();
@@ -732,12 +741,29 @@ class DriverPhase3 extends TestDriver implements GlobalConst
                 status = false;
                 e.printStackTrace();
             }
+			
+			if ( is_output_saved ) {
+				mater_table.setTable_num_attr(groupby_projection.length);
+				mater_table.setTable_data_file(groupby_table.getTable_data_file());
+            	mater_table.setTable_attr_name(names_mater);
+				mater_table.intialise_table_str_sizes();
+//            	mater_table.setTable_tuple_size(t.size());
+				mater_table.setTable_attr_type(attrTypes);
+				mater_table.intialise_table_bunc();
+				mater_table.intialise_table_hunc();
+			}
 
             while(result != null) {
-				AttrType[] attrTypes = groupby._outAttrType;
+				
 				result.forEach((tuple) -> {
                     try {
-                        tuple.print(attrTypes);
+                    	if ( is_output_saved ) {
+                    		mater_table.setTable_tuple_size(tuple.size());
+                    		SystemDefs.JavabaseDB.add_to_mater_table(tuple, mater_table);
+                    	}
+                    	else {
+                    		tuple.print(attrTypes);
+                    	}
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -753,6 +779,11 @@ class DriverPhase3 extends TestDriver implements GlobalConst
             }
             groupby.close();
             groupby = null;
+            if ( is_output_saved ) {
+            	System.out.println("");
+				mater_table.add_table_to_global_queue();
+				mater_table.print_table_cl();
+            }
             /*printing the reads and writes and closing pcounter and also free the BM from the limit */
 	    	System.out.println("Number of Page reads: "+PCounter.get_rcounter());
 	    	System.out.println("Number of Page Writes: "+PCounter.get_wcounter());
