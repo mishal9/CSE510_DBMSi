@@ -898,6 +898,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 				mater_table.setTable_attr_name(join_col_names);
 			}
 			Iterator joiner = null;
+			SystemDefs.JavabaseBM.setIgnore_pinned_pages(true);
 	    	/* run the appropriate skyline algorithm */
 	    	switch ( join_algo ) {
 	    		case "NLJ":
