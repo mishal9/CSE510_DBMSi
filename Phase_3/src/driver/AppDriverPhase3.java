@@ -635,18 +635,12 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    		System.err.println("***ERROR in the Query***");
 	    		return;
 	    	}
-	    	Iterator groupby = null;
+
+			Iterator groupby = null;
 	    	FldSpec[] groupby_projection = get_projection_for_table(groupby_table, "outer", -1);
-			FileScan groupby_table_file_scan =  new FileScan(groupby_table.getTable_heapfile(),
-														   	 groupby_table.getTable_attr_type(),
-														   	 groupby_table.getTable_attr_size(),
-														   	 (short) groupby_table.getTable_num_attr(),
-														   	 (short) groupby_table.getTable_num_attr(),
-														   	 groupby_projection, 
-														   	 null);
+
 			FldSpec[] agg_fldspc = get_aggregation_list(agg_attributes);
 			FldSpec groupByAttr = new FldSpec(new RelSpec(RelSpec.outer), groupby_attribute);
-
 
 
 			/* keep the output attrtype ready */
@@ -659,15 +653,16 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 				agg_attrtype[agg_attributes[i] - 1] = new AttrType(AttrType.attrReal);
 			}
 			
-			HashIndexWindowedScan hiwfs = null;
 	    	/* run the appropriate groupby algorithm */
 	    	switch ( group_algo ) {
 	    		case "HASH":
 	    			//TBD run HASH groupby with proper params
-	    			if ( groupby_table.unclustered_index_exist(groupby_attribute, "hash") == false ) {
-	    				groupby_table.create_unclustered_index(groupby_attribute, "hash");
-	    			}
-	    			hiwfs = new HashIndexWindowedScan(new IndexType(IndexType.Hash),
+
+					if ( groupby_table.unclustered_index_exist(groupby_attribute, "hash") == false ) {
+						groupby_table.create_unclustered_index(groupby_attribute, "hash");
+					}
+
+					HashIndexWindowedScan hiwfs = new HashIndexWindowedScan(new IndexType(IndexType.Hash),
 	    											  groupby_table.getTable_heapfile(), 
 	    											  groupby_table.get_unclustered_index_filename(groupby_attribute, "hash"), 
 	    											  groupby_table.getTable_attr_type(),
@@ -678,6 +673,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    											  null, 
 	    											  groupby_attribute,//confirm that this is groupby attr
 	    											  false);
+
 
 					groupby_projection = new FldSpec[agg_fldspc.length + 1];
 					groupby_projection[0] = groupByAttr;
@@ -698,6 +694,14 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 												  groupby_n_pages);
 	    			break;
 	    		case "SORT":
+					FileScan groupby_table_file_scan =  new FileScan(groupby_table.getTable_heapfile(),
+							groupby_table.getTable_attr_type(),
+							groupby_table.getTable_attr_size(),
+							(short) groupby_table.getTable_num_attr(),
+							(short) groupby_table.getTable_num_attr(),
+							groupby_projection,
+							null);
+
 					groupby_projection = new FldSpec[agg_fldspc.length + 1];
 					groupby_projection[0] = new FldSpec(new RelSpec(RelSpec.outer), groupByAttr.offset);
 
@@ -705,7 +709,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 						groupby_projection[i] = new FldSpec(new RelSpec(RelSpec.outer), agg_fldspc[i-1].offset);
 					}
 
-	    			groupby = new GroupByWithSort(groupby_table.getTable_attr_type(),
+					groupby = new GroupByWithSort(groupby_table.getTable_attr_type(),
 	    										  groupby_table.getTable_num_attr(),
 	    										  groupby_table.getTable_attr_size(),
 	    										  groupby_table_file_scan,
@@ -730,13 +734,11 @@ class DriverPhase3 extends TestDriver implements GlobalConst
             }
 
             while(result != null) {
-				Iterator finalGroupby = groupby;
+				AttrType[] attrTypes = groupby._outAttrType;
 				result.forEach((tuple) -> {
                     try {
-                        tuple.print(finalGroupby._outAttrType);
-                        
+                        tuple.print(attrTypes);
                     } catch (IOException e) {
-                    	
                         e.printStackTrace();
                     }
                 });
@@ -750,6 +752,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
                 }
             }
             groupby.close();
+            groupby = null;
             /*printing the reads and writes and closing pcounter and also free the BM from the limit */
 	    	System.out.println("Number of Page reads: "+PCounter.get_rcounter());
 	    	System.out.println("Number of Page Writes: "+PCounter.get_wcounter());
