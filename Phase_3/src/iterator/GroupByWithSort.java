@@ -163,7 +163,7 @@ public class GroupByWithSort extends Iterator{
                 temp = blockNestedLoopsSky.get_next();
                 while (temp!=null) {
                     Projection.Project(temp, _attrType, result, _projlist, _projlist.length);
-                    _result.add(result);
+                    _result.add(new Tuple(result));
                     skylineEle++;
                     temp = blockNestedLoopsSky.get_next();
                 }
@@ -179,15 +179,11 @@ public class GroupByWithSort extends Iterator{
         }
 
         System.out.println("Skyline aggregation elements for the group "+skylineEle);
+        System.out.println("==============");
     }
 
     public List<Tuple> get_next_aggr() throws IOException, FieldNumberOutOfBoundException, UnknowAttrType, WrongPermat {
         _result = new ArrayList<>();
-        
-        /*
-        TODO: Define str sizes beforehand
-        TODO: Check MATER with GroupBy
-        */
 
         Tuple result = new Tuple(this.candidate_tuple_size);
 
@@ -219,7 +215,6 @@ public class GroupByWithSort extends Iterator{
         RID rid;
 
         while(t != null && t.getFloFld(_group_by_attr.offset) == _lastPolled){
-
             Projection.Project(t, _attrType, result, _projlist, _projlist.length);
 
             _group_size += 1;

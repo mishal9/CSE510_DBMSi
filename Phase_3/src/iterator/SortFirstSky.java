@@ -17,19 +17,19 @@ import static tests.TestDriver.OK;
 
 public class SortFirstSky extends Iterator implements GlobalConst {
 
-    private static int _n_pages;
-    private static String _relationName;
-    private static int[] _pref_list;
-    private static int _pref_list_length;
+    private  int _n_pages;
+    private  String _relationName;
+    private  int[] _pref_list;
+    private  int _pref_list_length;
     private Sort _sort;
-    private static AttrType[] _in;
-    private static short _len_in;
-    private static short[] _str_sizes;
-    private static Heapfile temp;
+    private  AttrType[] _in;
+    private  short _len_in;
+    private  short[] _str_sizes;
+    private  Heapfile temp;
     boolean status = OK;
-    private static AttrType[] _attrType;
-    private static Tuple[] _window;
-    private static short _tuple_size;
+    private  AttrType[] _attrType;
+    private  Tuple[] _window;
+    private  short _tuple_size;
     private int counter;
     private BlockNestedLoopsSky bnls;
 
@@ -55,13 +55,13 @@ public class SortFirstSky extends Iterator implements GlobalConst {
         _pref_list = pref_list;
         _pref_list_length = pref_list_length;
         _n_pages = n_pages;
-        _window = new Tuple[5];//new Tuple[(MINIBASE_PAGESIZE / _tuple_size) * (_n_pages)];
+        _window = new Tuple[5]; //new Tuple[(MINIBASE_PAGESIZE / _tuple_size) * (_n_pages/2)];
 
         _sort = (Sort)am1;
 
         try {
             // temp heap file to store overflown skyline objects
-            temp = new Heapfile(_relationName);
+            temp = new Heapfile("sortFirstSkyTemp.in");
         }
         catch (Exception e) {
             status = FAIL;
@@ -71,10 +71,6 @@ public class SortFirstSky extends Iterator implements GlobalConst {
         if ( status == OK ) {
             computeSkylines(_sort, _window);
 
-            // now check if temp_heap has records:
-            // empty window; outer_heap <- temp_heap
-            // delete outer loop
-            // run computeSkyLines(outer_heap_updated, window)
         }
 
     }
@@ -102,6 +98,16 @@ public class SortFirstSky extends Iterator implements GlobalConst {
         return null;
     }
 
+    @Override
+    public List<Tuple> get_next_aggr() throws Exception {
+        return null;
+    }
+
+    @Override
+    public KeyDataEntry get_next_key_data() throws ScanIteratorException {
+        return null;
+    }
+
     public boolean hasNext(){
         if(counter < _window.length)
             return _window[counter] != null;
@@ -115,6 +121,7 @@ public class SortFirstSky extends Iterator implements GlobalConst {
                 bnls.close();
                 temp.deleteFile();
             }
+            _sort.close();
         } catch (InvalidSlotNumberException e) {
             e.printStackTrace();
         } catch (InvalidTupleSizeException e) {
@@ -168,6 +175,7 @@ public class SortFirstSky extends Iterator implements GlobalConst {
         RID rid = null;
 
         while (t != null) {
+
             Tuple outer_tuple = new Tuple(t);
             boolean isDominatedBy = false;
 
@@ -175,7 +183,7 @@ public class SortFirstSky extends Iterator implements GlobalConst {
                 if (window[i] != null) {
                     // if window[i] is not null
                     // check if window_tuple dominates outer_tuple
-                    if (TupleUtils.Dominates(window[i], _in, outer_tuple, _in, _len_in, _str_sizes, _pref_list, _pref_list_length)) {
+                    if (TupleUtils.Dominates(window[i], _attrType, outer_tuple, _attrType, _len_in, _str_sizes, _pref_list, _pref_list_length)) {
                         // If tuple in heap file is dominated by at least one in main memory - simply move to the next element
                         isDominatedBy = true;
                         break;
@@ -217,27 +225,15 @@ public class SortFirstSky extends Iterator implements GlobalConst {
         bnls = new BlockNestedLoopsSky(
                 _in,
                 _in.length,
+                _str_sizes,
                 null,
-                null,
-                _relationName,
+                "sortFirstSkyTemp.in",
                 _pref_list,
                 _pref_list_length,
-                _n_pages
+                _n_pages/2
         );
 
         return;
     }
-
-	@Override
-	public List<Tuple> get_next_aggr() throws Exception {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public KeyDataEntry get_next_key_data() throws ScanIteratorException {
-		// TODO Auto-generated method stub
-		return null;
-	}
 
 }
