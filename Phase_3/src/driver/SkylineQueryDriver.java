@@ -132,16 +132,16 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
 				if(pref_list[i] != 1) pref_list[i] = 0;
 			}
 
-			System.out.println("Pref list: "+Arrays.toString(pref_list));
-			System.out.println("Pref list length: "+numberOfDimensions);
+//			System.out.println("Pref list: "+Arrays.toString(pref_list));
+//			System.out.println("Pref list length: "+numberOfDimensions);
 
 			//limiting buffer pages in BufMgr
-			System.out.println("No of buffers "+SystemDefs.JavabaseBM.getNumBuffers());
-			System.out.println("No of unpinned buffers "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
+//			System.out.println("No of buffers "+SystemDefs.JavabaseBM.getNumBuffers());
+//			System.out.println("No of unpinned buffers "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
 
 			GenerateIndexFiles obj = new GenerateIndexFiles();
 			IndexFile indexFile = obj.createCombinedBTreeIndex(relationName, skytable.getTable_attr_type(), pref_list, pref_list.length, skytable.getTable_attr_size());
-			System.out.println("Index created! ");
+//			System.out.println("Index created! ");
 			Tuple t = new Tuple();
 			short [] Ssizes = null;
 
@@ -185,12 +185,15 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
 										this.n_pages );
 			btree.computeSkylines();
 			Tuple skyEle = btree.get_next(); // first sky element
-			System.out.println("Nested Loop Skyline elements -->");
+			System.out.println("BTree Sort Skyline elements -->");
 			//System.out.print("First Sky element is: ");
-			System.out.println(Arrays.toString(skytable.getTable_attr_type()));
-
-			skyEle.print(skytable.getTable_attr_type());
-			SystemDefs.JavabaseDB.add_to_mater_table(skyEle, this.skyouttable);
+			if ( this.skyouttable == null ) {
+				skyEle.print(skytable.getTable_attr_type());
+			}
+			else {
+				skyEle.print(skytable.getTable_attr_type());
+				SystemDefs.JavabaseDB.add_to_mater_table(skyEle, this.skyouttable);
+			}
 			numSkyEle++;
 			while (skyEle != null) {
 				skyEle = btree.get_next(); // subsequent sky elements
@@ -198,12 +201,18 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
 					//System.out.println("No more sky elements");
 					break;
 				}
-				SystemDefs.JavabaseDB.add_to_mater_table(skyEle, this.skyouttable);
+				if ( this.skyouttable != null ) {
+					skyEle.print(skytable.getTable_attr_type());
+					SystemDefs.JavabaseDB.add_to_mater_table(skyEle, this.skyouttable);
+				}
+				else {
+					skyEle.print(skytable.getTable_attr_type());
+				}
 				numSkyEle++;
-				System.out.print("Sky element is: ");
-				skyEle.print(skytable.getTable_attr_type());
+//				System.out.print("Sky element is: ");
+				
 			}
-			System.out.println("Skyline Length: "+numSkyEle);
+			System.out.println("\nSkyline Length: "+numSkyEle);
 			btree.close();
 			obj.close();
 		}catch (Exception e){
