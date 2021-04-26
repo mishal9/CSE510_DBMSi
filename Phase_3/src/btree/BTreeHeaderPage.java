@@ -30,7 +30,7 @@ public class BTreeHeaderPage extends HFPage {
       setCurPage(pageno);
     }
   
-  PageId getPageId()
+  public PageId getPageId()
     throws IOException
     {
       return getCurPage();
@@ -39,7 +39,7 @@ public class BTreeHeaderPage extends HFPage {
   /** set the magic0
    *@param magic  magic0 will be set to be equal to magic  
    */
-  void set_magic0( int magic ) 
+  public void set_magic0( int magic ) 
     throws IOException 
     {
       setPrevPage(new PageId(magic)); 
@@ -72,7 +72,7 @@ public class BTreeHeaderPage extends HFPage {
   
   /** set the key type
    */  
-  void set_keyType( short key_type )
+  public void set_keyType( short key_type )
     throws IOException 
     {
       setSlot(3, (int)key_type, 0); 
@@ -88,7 +88,7 @@ public class BTreeHeaderPage extends HFPage {
   
   /** get the max keysize
    */
-  void set_maxKeySize(int key_size ) 
+  public void set_maxKeySize(int key_size ) 
     throws IOException
     {
       setSlot(1, key_size, 0); 
@@ -104,7 +104,7 @@ public class BTreeHeaderPage extends HFPage {
   
   /** set the delete fashion
    */
-  void set_deleteFashion(int fashion )
+  public void set_deleteFashion(int fashion )
     throws IOException
     {
       setSlot(2, fashion, 0);
