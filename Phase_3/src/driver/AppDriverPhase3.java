@@ -368,7 +368,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
     	System.out.println("Number of Page reads: "+PCounter.get_rcounter());
     	System.out.println("Number of Page Writes: "+PCounter.get_wcounter());
     	PCounter.initialize();
-//    	SystemDefs.JavabaseBM.setIgnore_pinned_pages(false);
+    	SystemDefs.JavabaseBM.setIgnore_pinned_pages(false);
     }
     
     /* parses the output_table query for the exact structure 

@@ -102,7 +102,6 @@ public class Scan implements GlobalConst{
     }
     
     catch (Exception e) {
-    	System.out.println("Scanning rid slot "+rid.slotNo+" page "+rid.pageNo.pid);
   //    System.err.println("SCAN: Error in Scan" + e);
       e.printStackTrace();
     }   
@@ -143,7 +142,7 @@ public class Scan implements GlobalConst{
 
       // reset everything and start over from the beginning
       reset();
-      //System.out.println("First data page called in position");
+      
       bst =  firstDataPage();
 
       if (bst != true)
@@ -193,7 +192,7 @@ public class Scan implements GlobalConst{
 	     IOException
   {
 	_hf = hf;
-		//System.out.println("First dat apage called in constructor");
+
     	firstDataPage();
   }
 
@@ -212,7 +211,6 @@ public class Scan implements GlobalConst{
     if (datapage != null) {
     
     try{
-    	//System.out.println("Unpinning the page in reset 1");
       unpinPage(datapageId, false);
     }
     catch (Exception e){
@@ -226,7 +224,6 @@ public class Scan implements GlobalConst{
     if (dirpage != null) {
     
       try{
-    	  //System.out.println("Unpinning the page in reset 2");
 	unpinPage(dirpageId, false);
       }
       catch (Exception e){
@@ -303,7 +300,6 @@ public class Scan implements GlobalConst{
       if (nextDirPageId.pid != INVALID_PAGE) {
 	
 	try {
-		//System.out.println("Unpinning the page in first data paee");
             unpinPage(dirpageId, false);
             dirpage = null;
 	    }
@@ -431,7 +427,6 @@ public class Scan implements GlobalConst{
 	// heapfile is empty to begin with
 	
 	try{
-		//System.out.println("Unpinning the page in next data page");
 	  unpinPage(dirpageId, false);
 	  dirpage = null;
 	}
@@ -648,11 +643,7 @@ public class Scan implements GlobalConst{
     throws HFBufMgrException {
 
     try {
-    	if ( SystemDefs.JavabaseBM.isPagePinned(pageno) )
-    	{
-    		//System.out.println("Unpinning the page in scan");
-    		SystemDefs.JavabaseBM.unpinPage(pageno, dirty);
-    	}
+      SystemDefs.JavabaseBM.unpinPage(pageno, dirty);
     }
     catch (Exception e) {
       throw new HFBufMgrException(e,"Scan.java: unpinPage() failed");

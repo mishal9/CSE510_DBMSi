@@ -759,7 +759,16 @@ public class BufMgr implements GlobalConst{
 
 	}
 
+	public int getPinCount(PageId globalPageId) {
+		int frameNo;
 
+		frameNo=hashTable.lookup(globalPageId);
+		if ( frameNo <0 ) {
+			return 0;
+		}
+		return frmeTable[frameNo].pin_count();
+	}
+	
 	/** User should call this method if she needs to delete a page.
 	 * this routine will call DB to deallocate the page.
 	 * 

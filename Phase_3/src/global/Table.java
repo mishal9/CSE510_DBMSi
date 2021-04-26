@@ -1599,7 +1599,7 @@ public class Table implements GlobalConst{
 		    		}
 		    		else {
 		    			//TBD delete the record from the heap file
-		    			rids_deleted.addAll( delete_record_from_heapfile_wapper(this.table_heapfile, t) );
+		    			rids_deleted.addAll( delete_record_from_heapfile(this.table_heapfile, t) );
 		    		}
 		    		delete_records_from_unclustered_indexes(rids_deleted, t);
 		    		//TBD update the unclustered index
@@ -1762,24 +1762,24 @@ public class Table implements GlobalConst{
 	  //TBD keep a list of all the deleted rids
 	  List<RID> deleted = new ArrayList<>();
 	  Heapfile hf = new Heapfile(heapfilename);
-	  Scan scan = hf.openScan();
-	  Tuple itr, itr_hdr;
-	  itr_hdr = TupleUtils.getEmptyTuple(this.table_attr_type, this.table_attr_size);
-	  RID temp = new RID();
-	  itr = scan.getNext(temp);
-	  while ( itr != null ) {
-		  itr_hdr.tupleCopy(itr);
-		  if ( TupleUtils.Equal(itr_hdr, t, this.table_attr_type, this.table_num_attr) ) {
-			  deleted.add(new RID(temp.pageNo, temp.slotNo));
-		  }
+	  if ( hf.getRecCnt() > 0) {
+		  Scan scan = hf.openScan();
+		  Tuple itr, itr_hdr;
+		  itr_hdr = TupleUtils.getEmptyTuple(this.table_attr_type, this.table_attr_size);
+		  RID temp = new RID();
 		  itr = scan.getNext(temp);
-	  }
-	  scan.closescan();
-	  scan = null;
-	  Iterator<RID> itr_hf = deleted.iterator();
-	  while ( itr_hf.hasNext() ) {
-		  hf = new Heapfile(heapfilename);
-		  hf.deleteRecord(itr_hf.next());
+		  while ( itr != null ) {
+			  itr_hdr.tupleCopy(itr);
+			  if ( TupleUtils.Equal(itr_hdr, t, this.table_attr_type, this.table_num_attr) ) {
+				  deleted.add(new RID(temp.pageNo, temp.slotNo));
+			  }
+			  itr = scan.getNext(temp);
+		  }
+		  scan.closescan();
+		  Iterator<RID> itr_hf = deleted.iterator();
+		  while ( itr_hf.hasNext() ) {
+			  hf.deleteRecord(itr_hf.next());
+		  }
 	  }
 	  return deleted;
   }

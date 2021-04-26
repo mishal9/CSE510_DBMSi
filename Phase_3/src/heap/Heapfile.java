@@ -750,6 +750,11 @@ public class Heapfile implements Filetype,  GlobalConst {
 				// delete empty directory page: (automatically unpinned?)
 				unpinPage(currentDirPageId, false/*undirty*/);
 				unpinPage(currentDirPageId, true/*undirty*/);
+				if ( SystemDefs.JavabaseBM.isPagePinned(currentDirPageId)) {
+					while ( SystemDefs.JavabaseBM.getPinCount(currentDirPageId) != 0 ) {
+						unpinPage(currentDirPageId, true);
+					}
+				}
 				freePage(currentDirPageId);
 
 
@@ -1070,15 +1075,3 @@ public class Heapfile implements Filetype,  GlobalConst {
 	} // end of delete_file_entry
 
 }// End of HeapFile 
-
-
-
-
-
-
-
-
-
-
-
-
