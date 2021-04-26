@@ -143,7 +143,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
     		System.out.println("Closing DB "+open_db_name);
     		SystemDefs.JavabaseDB.add_all_table_to_relation();
 			SystemDefs.JavabaseBM.flushAllPages();
-			//SystemDefs.JavabaseBM.setIgnore_pinned_pages(false);
+			SystemDefs.JavabaseBM.setIgnore_pinned_pages(false);
 			SystemDefs.JavabaseDB.closeDB();
 			is_current_db_open = false;
 			open_db_name = "";
@@ -352,7 +352,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
     	if ( validate_token_length(3, "delete_data") == false ) {
 			return;
 		}
-    	//SystemDefs.JavabaseBM.setIgnore_pinned_pages(true);
+    	SystemDefs.JavabaseBM.setIgnore_pinned_pages(true);
     	/*printing the reads and writes and closing pcounter and also free the BM from the limit */
     	System.out.println("Number of Page reads: "+PCounter.get_rcounter());
     	System.out.println("Number of Page Writes: "+PCounter.get_wcounter());
