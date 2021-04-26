@@ -324,8 +324,6 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 			return;
 		}
     	/*printing the reads and writes and closing pcounter and also free the BM from the limit */
-    	System.out.println("Number of Page reads: "+PCounter.get_rcounter());
-    	System.out.println("Number of Page Writes: "+PCounter.get_wcounter());
     	PCounter.initialize();
     	String filename = tokens[2];
     	String tablename = tokens[1];
@@ -354,8 +352,6 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 		}
     	SystemDefs.JavabaseBM.setIgnore_pinned_pages(true);
     	/*printing the reads and writes and closing pcounter and also free the BM from the limit */
-    	System.out.println("Number of Page reads: "+PCounter.get_rcounter());
-    	System.out.println("Number of Page Writes: "+PCounter.get_wcounter());
     	PCounter.initialize();
     	
     	String filename = tokens[2];
@@ -527,6 +523,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    	}
 	    	
 	    	/* initialising the pcounter and limiting system pages */
+	    	SystemDefs.JavabaseBM.setIgnore_pinned_pages(true);
 	    	SystemDefs.JavabaseBM.limit_memory_usage(true, skyline_n_pages);
 	    	PCounter.initialize();
 	    	
@@ -582,6 +579,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    	}
 	    	
 	    	/* limiting memory */
+	    	SystemDefs.JavabaseBM.setIgnore_pinned_pages(true);
 	    	SystemDefs.JavabaseBM.limit_memory_usage(true, groupby_n_pages);
 	    	PCounter.initialize();
 	    	
@@ -835,6 +833,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    	
 	    	/*------------join n_pages----------------------------*/
 	    	int join_n_pages = Integer.parseInt(tokens[7]);
+	    	SystemDefs.JavabaseBM.setIgnore_pinned_pages(true);
 	    	SystemDefs.JavabaseBM.limit_memory_usage(true, join_n_pages);
 	    	PCounter.initialize();
 	    	
@@ -1180,6 +1179,10 @@ class DriverPhase3 extends TestDriver implements GlobalConst
      * */
     public void parse_topkjoin() throws JoinsException, PageNotReadException, TupleUtilsException, PredEvalException, SortException, LowMemException, UnknowAttrType, UnknownKeyTypeException, Exception {
 //    	try {
+	    	if ( (tokens.length != 10) && ( tokens.length != 12 ) ) {
+	    		validate_token_length(0, "topkjoin");
+	    		return;
+	    	}
 	    	/* ----------------------which join needs to be calculated ------------------------------------*/
 	    	String join_algo = tokens[1]; //HASH/NRA
 	    	
@@ -1202,6 +1205,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    	
 	    	/*------------join n_pages----------------------------*/
 	    	int join_n_pages = Integer.parseInt(tokens[9]);
+	    	SystemDefs.JavabaseBM.setIgnore_pinned_pages(true);
 	    	SystemDefs.JavabaseBM.limit_memory_usage(true, join_n_pages);
 	    	PCounter.initialize();
 	    	
