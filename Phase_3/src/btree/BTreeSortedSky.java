@@ -108,20 +108,20 @@ public class BTreeSortedSky extends Iterator implements GlobalConst {
 
 
 	public void computeSkylines() throws  Exception {
-		System.out.println("Compute skyline ");
+//		System.out.println("Compute skyline ");
 
 		BTFileScan scan = ((BTreeFile) index_file).new_scan(null, null);
 		KeyDataEntry entry;
 		RID rid;
 
 		Tuple t = getEmptyTuple();
-		System.out.println("Number of pages "+n_pages);
-		this.window_size = ((int)(MINIBASE_PAGESIZE/t.size()))*(n_pages);
-		System.out.println("Tuple size "+t.size());
-		System.out.println("SIZE: " + window_size);
+//		System.out.println("Number of pages "+n_pages);
+		this.window_size = 5;
+//		System.out.println("Tuple size "+t.size());
+//		System.out.println("SIZE: " + window_size);
 
 		_window = new Tuple[window_size];
-		System.out.println("Windows size in btree sorted sky: "+ _window.length);
+//		System.out.println("Windows size in btree sorted sky: "+ _window.length);
 		entry = scan.get_next();
 
 		int count = 0;
@@ -183,7 +183,7 @@ public class BTreeSortedSky extends Iterator implements GlobalConst {
 		scan.DestroyBTreeFileScan();
 
 		SystemDefs.JavabaseBM.flushAllPages();
-		System.out.println("record count in temporary file: "+temp.getRecCnt());
+//		System.out.println("record count in temporary file: "+temp.getRecCnt());
 		this.temp_rcrd_count = temp.getRecCnt();
 		if( temp_rcrd_count == 0)
 			return;

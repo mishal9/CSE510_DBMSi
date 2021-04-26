@@ -70,7 +70,7 @@ implements GlobalConst {
 		return headerPage;
 	}
 
-	private PageId get_file_entry(String filename)         
+	protected PageId get_file_entry(String filename)         
 			throws GetFileEntryException
 	{
 		try {
@@ -98,7 +98,7 @@ implements GlobalConst {
 		}
 	}
 
-	private void add_file_entry(String fileName, PageId pageno) 
+	protected void add_file_entry(String fileName, PageId pageno) 
 			throws AddFileEntryException
 	{
 		try {
@@ -134,7 +134,7 @@ implements GlobalConst {
 		} 
 
 	}
-	private void delete_file_entry(String filename)
+	protected void delete_file_entry(String filename)
 			throws DeleteFileEntryException
 	{
 		try {
@@ -160,7 +160,10 @@ implements GlobalConst {
 
 
 
-
+	public BTreeFile() {
+		
+	}
+	
 	/**  BTreeFile class
 	 * an index file with given filename should already exist; this opens it.
 	 *@param filename the B+ tree file name. Input parameter.
@@ -373,6 +376,7 @@ implements GlobalConst {
 			IOException
 
 	{
+//		System.out.println("In the old insert");
 		KeyDataEntry  newRootEntry;
 
 		if (BT.getKeyLength(key) > headerPage.get_maxKeySize())

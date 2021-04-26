@@ -45,6 +45,7 @@ import bufmgr.HashEntryNotFoundException;
 import bufmgr.InvalidFrameNumberException;
 import bufmgr.PageUnpinnedException;
 import bufmgr.ReplacerException;
+import clustered_btree.ClBT;
 import clustered_btree.ClusteredBTreeFile;
 import hashindex.ClusHIndex;
 import hashindex.HIndex;
@@ -128,6 +129,7 @@ public class Table implements GlobalConst{
 	/* name of the heap file containing the heapfile for the tabe data */
 	private String table_heapfile;
 	
+	private int heapfilercnt = 0;
 	/* list of all the unclustered index attributes in the table --> 0,1,2,3... */
 	private boolean[] btree_unclustered_attr;
 	
@@ -596,34 +598,39 @@ public class Table implements GlobalConst{
 	  try {
 		/* open the data heapfile */
 		Heapfile hf = new Heapfile(this.table_heapfile);
-		Scan scan = hf.openScan();
-		
-		/* keep the key ready for insertion */
-		//KeyClass key;
-		
-		// create the index file
-		BTreeFile btf  = new BTreeFile(this.get_unclustered_index_filename(attr_number, "btree"),
-										table_attr_type[attr_number-1].attrType, 
-										table_attr_size[attr_number-1],
-										1/* delete */);
-		
-		/* start scanning each record and insert it to the btree */
-		RID rid = new RID();
-		Tuple t = TupleUtils.getEmptyTuple(table_attr_type, table_attr_size);
-		Tuple temp = scan.getNext(rid);
-		while ( temp != null ) {
-			t.tupleCopy(temp);
-			KeyClass key = TupleUtils.get_key_from_tuple_attrtype(t, table_attr_type[attr_number-1], attr_number);
-			btf.insert(key, rid);
-			temp = scan.getNext(rid);
+		if ( hf.getRecCnt() > 0 ) {
+			Scan scan = hf.openScan();
+			
+			/* keep the key ready for insertion */
+			//KeyClass key;
+			
+			// create the index file
+			BTreeFile btf  = new BTreeFile(this.get_unclustered_index_filename(attr_number, "btree"),
+											table_attr_type[attr_number-1].attrType, 
+											table_attr_size[attr_number-1],
+											1/* delete */);
+			
+			/* start scanning each record and insert it to the btree */
+			RID rid = new RID();
+			Tuple t = TupleUtils.getEmptyTuple(table_attr_type, table_attr_size);
+			Tuple temp = scan.getNext(rid);
+			while ( temp != null ) {
+				t.tupleCopy(temp);
+				KeyClass key = TupleUtils.get_key_from_tuple_attrtype(t, table_attr_type[attr_number-1], attr_number);
+				btf.insert(key, rid);
+				temp = scan.getNext(rid);
+			}
+			scan.closescan();
+			//BT.printBTree(btf.getHeaderPage());
+			//BT.printAllLeafPages(btf.getHeaderPage());
+			btf.close();
+			
+			/* mark the unclustered index exist key */
+			btree_unclustered_attr[attr_number-1] = true;
 		}
-		scan.closescan();
-		//BT.printBTree(btf.getHeaderPage());
-		//BT.printAllLeafPages(btf.getHeaderPage());
-		btf.close();
-		
-		/* mark the unclustered index exist key */
-		btree_unclustered_attr[attr_number-1] = true;
+		else {
+			System.out.println("data Heapfile empty. Please insert some records first");
+		}
 	} catch (HFException e) {
 		// TODO Auto-generated catch block
 		e.printStackTrace();
@@ -703,6 +710,9 @@ public class Table implements GlobalConst{
 		// TODO Auto-generated catch block
 		e.printStackTrace();
 	} catch (ReplacerException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (InvalidSlotNumberException e) {
 		// TODO Auto-generated catch block
 		e.printStackTrace();
 	}
@@ -939,11 +949,6 @@ public class Table implements GlobalConst{
   
   /* inserts data into an already existing table */
   public void insert_data( String filename ) throws Exception {
-	  /* created a temp heap file of the data */
-	  //create_table(this.temp_heap_file, filename);
-	  
-	  /* print out the table name under process */
-		System.out.println("Inserting into table "+this.tablename);
 		
 		/* clearing the buffers */
 		SystemDefs.JavabaseDB.db_deleted_rids.clear();
@@ -1024,12 +1029,17 @@ public class Table implements GlobalConst{
 		    								  this.clustered_btree_attr, 
 		    								  this.get_clustered_index_filename(this.clustered_btree_attr, "btree") );
 		    			update_records_from_global_queue();
-//		    			hf.merge(this.get_clustered_index_filename(this.clustered_btree_attr, "btree"),
-//		    					 this.table_attr_type,
-//		    					 this.table_attr_size,
-//		    					 this.clustered_btree_attr,
-//		    					 this.table_tuple_size);
-//		    			update_records_from_global_queue();
+		    			hf.merge(this.get_clustered_index_filename(this.clustered_btree_attr, "btree"),
+		    					 this.table_attr_type,
+		    					 this.table_attr_size,
+		    					 this.clustered_btree_attr,
+		    					 this.table_tuple_size);
+		    			update_records_from_global_queue();
+		    			if ( hf.getRecCnt() == heapfilercnt ) {
+		    				System.out.println(heapfilercnt);
+//		    				System.exit(0);
+		    			}
+		    			heapfilercnt++;
 		    		}
 		    		else if ( clustered_index_exist("hash") ) {
 		    			HashKey key;
@@ -1058,12 +1068,12 @@ public class Table implements GlobalConst{
 		    	hasher.close();
 		    }
 		    if ( clustered_index_exist("btree") ) {
-		    	hf.merge(this.get_clustered_index_filename(this.clustered_btree_attr, "btree"),
-   					 this.table_attr_type,
-   					 this.table_attr_size,
-   					 this.clustered_btree_attr,
-   					 this.table_tuple_size);
-		    	update_records_from_global_queue();
+//		    	hf.merge(this.get_clustered_index_filename(this.clustered_btree_attr, "btree"),
+//   					 this.table_attr_type,
+//   					 this.table_attr_size,
+//   					 this.clustered_btree_attr,
+//   					 this.table_tuple_size);
+//		    	update_records_from_global_queue();
 		    }
         }
         catch (Exception e) {
@@ -1091,27 +1101,13 @@ public class Table implements GlobalConst{
 					BTreeFile btf  = new BTreeFile(this.get_unclustered_index_filename(i+1, "btree"));
 					KeyClass key;
 					key = TupleUtils.get_key_from_tuple_attrtype(t, table_attr_type[i], i+1);
-					/*if ( table_attr_type[i].attrType == AttrType.attrInteger ) {
-						key = new IntegerKey(t.getIntFld(i+1));
-					}
-					else {
-						key = new StringKey(t.getStrFld(i+1));
-					}*/
 					btf.insert(key, rid);
-					//BT.printBTree(btf.getHeaderPage());
-					//BT.printAllLeafPages(btf.getHeaderPage());
 					btf.close();
 			  }
 			  if ( hash_unclustered_attr[i] ) {
 				  
 				  	HIndex hasher = new HIndex(this.get_unclustered_index_filename(i+1, "hash") );
 					HashKey keyh = TupleUtils.get_hashkey_from_tuple_attrtype(t, table_attr_type[i], i+1);
-					/*if ( table_attr_type[i].attrType == AttrType.attrInteger ) {
-						keyh = new HashKey(t.getIntFld(i+1));
-					}
-					else {
-						keyh = new HashKey(t.getStrFld(i+1));
-					}*/
 					hasher.insert(keyh, rid);
 					//hasher.print_bucket_names();
 					hasher.close();
@@ -1310,12 +1306,6 @@ public class Table implements GlobalConst{
 	    	}
 	    	RID rid = new RID();
 	    	HashKey key = TupleUtils.get_hashkey_from_tuple_attrtype(t1, table_attr_type[this.clustered_hash_attr-1], this.clustered_hash_attr);
-			/*if ( table_attr_type[this.clustered_hash_attr-1].attrType == AttrType.attrInteger ) {
-				key = new HashKey(t.getIntFld(this.clustered_hash_attr));
-			}
-			else {
-				key = new HashKey(t.getStrFld(this.clustered_hash_attr));
-			}*/
 	    	rid = hindex.insert(key, t1);
 	    }
 	  	hindex.close();
@@ -1448,14 +1438,7 @@ public class Table implements GlobalConst{
         while ( t1 != null ) {
         	t_s.tupleCopy(t1);
         	key = TupleUtils.get_key_from_tuple_attrtype(t_s, table_attr_type[this.clustered_btree_attr-1], this.clustered_btree_attr);
-        	/*if ( table_attr_type[this.clustered_btree_attr-1].attrType == AttrType.attrInteger ) {
-				key = new IntegerKey(t_s.getIntFld(this.clustered_btree_attr));
-			}
-			else {
-				key = new StringKey(t_s.getStrFld(this.clustered_btree_attr));
-			}*/
         	curr_rid = hf1.insertRecord(t_s.getTupleByteArray()/*, this.table_attr_type, this.table_attr_size*/);
-        	//System.out.println("BTREE clustered insert rid page "+ curr_rid.pageNo.pid+" slot "+curr_rid.slotNo);
         	if ( ( prev_rid.pageNo.pid != curr_rid.pageNo.pid ) && ( prev_rid.pageNo.pid != INVALID_PAGE ) ) {
         		btf.insert(prev_key, prev_rid);
         	}
@@ -1469,13 +1452,15 @@ public class Table implements GlobalConst{
         	t1 = sort_c.get_next();
         }
         if ( ( prev_rid.pageNo.pid == curr_rid.pageNo.pid ) && ( prev_rid.pageNo.pid != INVALID_PAGE ) ) {
+//        	BT.printBTree(btf.headerPage);
     		btf.insert(key, curr_rid);
     	}
         sort_c.close();
         fscan.close();
 	    hf.deleteFile();
-	    System.out.println("Number of elements in the table "+hf1.getRecCnt());
-	    //BT.printAllLeafPages(btf.getHeaderPage());
+	    heapfilercnt = hf1.getRecCnt();
+//	    BT.printBTree(btf.headerPage);
+//	    BT.printAllLeafPages(btf.getHeaderPage());
 	    btf.close();
 	}catch (HFException | HFBufMgrException | HFDiskMgrException | IOException e) {
 		System.err.println("*** Could not create heap file\n");
@@ -1597,18 +1582,15 @@ public class Table implements GlobalConst{
 		    	RID rid = new RID();
 		    	try {
 		    		if ( clustered_index_exist("btree") ) {
-		    			System.out.print("Deleting tuple ");
-		    			t.print(table_attr_type);
 		    			rids_deleted = hf.deleteRecord(t, this.get_clustered_index_filename(this.clustered_btree_attr, "btree"),
 								 this.table_attr_type, this.table_attr_size, this.clustered_btree_attr, 1);
 		    			update_records_from_global_queue();
-//		    			System.in.read();
-//		    			hf.merge(this.get_clustered_index_filename(this.clustered_btree_attr, "btree"),
-//		    					 this.table_attr_type,
-//		    					 this.table_attr_size,
-//		    					 this.clustered_btree_attr,
-//		    					 this.table_tuple_size);
-//		    			update_records_from_global_queue();
+		    			hf.merge(this.get_clustered_index_filename(this.clustered_btree_attr, "btree"),
+		    					 this.table_attr_type,
+		    					 this.table_attr_size,
+		    					 this.clustered_btree_attr,
+		    					 this.table_tuple_size);
+		    			update_records_from_global_queue();
 		    		}
 		    		else if ( clustered_index_exist("hash") ) {
 		    			HashKey hkey = TupleUtils.get_hashkey_from_tuple_attrtype(t, table_attr_type[this.clustered_hash_attr-1], this.clustered_hash_attr);
@@ -1633,13 +1615,13 @@ public class Table implements GlobalConst{
 				}
 		    }
 		    if ( clustered_index_exist("btree") ) {
-		    	System.out.println("Merging operation -->");
-		    	hf.merge(this.get_clustered_index_filename(this.clustered_btree_attr, "btree"),
-   					 this.table_attr_type,
-   					 this.table_attr_size,
-   					 this.clustered_btree_attr,
-   					 this.table_tuple_size);
-		    	update_records_from_global_queue();
+//		    	System.out.println("Merging operation -->");
+//		    	hf.merge(this.get_clustered_index_filename(this.clustered_btree_attr, "btree"),
+//   					 this.table_attr_type,
+//   					 this.table_attr_size,
+//   					 this.clustered_btree_attr,
+//   					 this.table_tuple_size);
+//		    	update_records_from_global_queue();
 		    }
 		    
 	  }catch (Exception e1) {
@@ -1664,8 +1646,8 @@ public class Table implements GlobalConst{
 		  System.out.println("***********************Printing clustered btree index***********************");
 		  String btsfilename = get_clustered_index_filename(att_number, "btree");
 		  ClusteredBTreeFile btf  = new ClusteredBTreeFile(btsfilename);
-		  BT.printBTree(btf.getHeaderPage());
-		  BT.printAllLeafPages(btf.getHeaderPage());
+		  ClBT.printBTree(btf.getHeaderPage());
+		  ClBT.printAllLeafPages(btf.getHeaderPage());
 		  btf.close();
 	  }
 	  if ( unclustered_index_exist(att_number, "hash") ) {
@@ -1740,7 +1722,7 @@ public class Table implements GlobalConst{
 	  }
 	  IndexScan iscan = new IndexScan(new IndexType(IndexType.Cl_B_Index_DESC), 
 			   						  this.table_heapfile, 
-			   						  this.get_clustered_index_filename(3, "btree"),
+			   						  this.get_clustered_index_filename(2, "btree"),
 			   						  this.table_attr_type, 
 			   						  this.table_attr_size, 
 			   						  this.table_num_attr, 
@@ -1764,29 +1746,40 @@ public class Table implements GlobalConst{
 //	  btf.close();
   }
   
+  private List<RID> delete_record_from_heapfile_wapper(String filename, Tuple t) throws InvalidSlotNumberException, Exception {
+	  List<RID> deleted = new ArrayList<>();
+	  List<RID> inside_delete = new ArrayList<>();
+	  inside_delete = delete_record_from_heapfile(filename, t);
+	  while ( inside_delete.size() > 0 ) {
+		  deleted.addAll(inside_delete);
+		  inside_delete.clear();
+		  inside_delete = delete_record_from_heapfile(filename, t);
+	  }
+	  return deleted;
+  }
   /* removes a tuple from the table heapfile */
   private List<RID> delete_record_from_heapfile(String heapfilename, Tuple t) throws InvalidSlotNumberException, Exception {
 	  //TBD keep a list of all the deleted rids
 	  List<RID> deleted = new ArrayList<>();
 	  Heapfile hf = new Heapfile(heapfilename);
-	  Scan scan = hf.openScan();
-	  Tuple itr, itr_hdr;
-	  itr_hdr = TupleUtils.getEmptyTuple(this.table_attr_type, this.table_attr_size);
-	  RID temp = new RID();
-	  itr = scan.getNext(temp);
-	  while ( itr != null ) {
-		  itr_hdr.tupleCopy(itr);
-		  if ( TupleUtils.Equal(itr_hdr, t, this.table_attr_type, this.table_num_attr) ) {
-			  deleted.add(new RID(temp.pageNo, temp.slotNo));
-//			  hf.deleteRecord(temp);
-		  }
+	  if ( hf.getRecCnt() > 0) {
+		  Scan scan = hf.openScan();
+		  Tuple itr, itr_hdr;
+		  itr_hdr = TupleUtils.getEmptyTuple(this.table_attr_type, this.table_attr_size);
+		  RID temp = new RID();
 		  itr = scan.getNext(temp);
-	  }
-	  scan.closescan();
-	  
-	  Iterator<RID> itr_hf = deleted.iterator();
-	  while ( itr_hf.hasNext() ) {
-		  hf.deleteRecord(itr_hf.next());
+		  while ( itr != null ) {
+			  itr_hdr.tupleCopy(itr);
+			  if ( TupleUtils.Equal(itr_hdr, t, this.table_attr_type, this.table_num_attr) ) {
+				  deleted.add(new RID(temp.pageNo, temp.slotNo));
+			  }
+			  itr = scan.getNext(temp);
+		  }
+		  scan.closescan();
+		  Iterator<RID> itr_hf = deleted.iterator();
+		  while ( itr_hf.hasNext() ) {
+			  hf.deleteRecord(itr_hf.next());
+		  }
 	  }
 	  return deleted;
   }
@@ -1806,12 +1799,6 @@ public class Table implements GlobalConst{
 				  if ( btree_unclustered_attr[i] ) {
 					  	KeyClass key = TupleUtils.get_key_from_tuple_attrtype(deleted_tuple, table_attr_type[i], i+1);
 						BTreeFile btf  = new BTreeFile(this.get_unclustered_index_filename(i+1, "btree"));
-						/*if ( table_attr_type[i].attrType == AttrType.attrInteger ) {
-							key = new IntegerKey( deleted_tuple.getIntFld(i+1) );
-						}
-						else {
-							key = new StringKey( deleted_tuple.getStrFld(i+1) );
-						}*/
 						btf.Delete(key, rid_delete);
 						btf.close();
 				  }
@@ -1819,12 +1806,6 @@ public class Table implements GlobalConst{
 					  
 					  	HIndex hasher = new HIndex(this.get_unclustered_index_filename(i+1, "hash") );
 						HashKey keyh = TupleUtils.get_hashkey_from_tuple_attrtype(deleted_tuple, table_attr_type[i], i+1);
-						/*if ( table_attr_type[i].attrType == AttrType.attrInteger ) {
-							keyh = new HashKey( deleted_tuple.getIntFld(i+1) );
-						}
-						else {
-							keyh = new HashKey( deleted_tuple.getStrFld(i+1) );
-						}*/
 						hasher.delete(keyh, rid_delete);
 						hasher.close();
 				  }
@@ -1922,12 +1903,6 @@ public class Table implements GlobalConst{
 				  if ( btree_unclustered_attr[i] ) {
 					  	KeyClass key = TupleUtils.get_key_from_tuple_attrtype(deleted_tuple, table_attr_type[i], i+1);
 						BTreeFile btf  = new BTreeFile(this.get_unclustered_index_filename(i+1, "btree"));
-						/*if ( table_attr_type[i].attrType == AttrType.attrInteger ) {
-							key = new IntegerKey( deleted_tuple.getIntFld(i+1) );
-						}
-						else {
-							key = new StringKey( deleted_tuple.getStrFld(i+1) );
-						}*/
 						btf.Delete(key, rid_delete);
 						btf.close();
 				  }
@@ -1935,12 +1910,6 @@ public class Table implements GlobalConst{
 					  
 					  	HIndex hasher = new HIndex(this.get_unclustered_index_filename(i+1, "hash") );
 						HashKey keyh = TupleUtils.get_hashkey_from_tuple_attrtype(deleted_tuple, table_attr_type[i], i+1);
-						/*if ( table_attr_type[i].attrType == AttrType.attrInteger ) {
-							keyh = new HashKey( deleted_tuple.getIntFld(i+1) );
-						}
-						else {
-							keyh = new HashKey( deleted_tuple.getStrFld(i+1) );
-						}*/
 						hasher.delete(keyh, rid_delete);
 						hasher.close();
 				  }
@@ -1960,12 +1929,6 @@ public class Table implements GlobalConst{
 				  if ( btree_unclustered_attr[i] ) {
 					  	KeyClass key = TupleUtils.get_key_from_tuple_attrtype(inserted_tuple, table_attr_type[i], i+1);;
 						BTreeFile btf  = new BTreeFile(this.get_unclustered_index_filename(i+1, "btree"));
-						/*if ( table_attr_type[i].attrType == AttrType.attrInteger ) {
-							key = new IntegerKey( inserted_tuple.getIntFld(i+1) );
-						}
-						else {
-							key = new StringKey( inserted_tuple.getStrFld(i+1) );
-						}*/
 						btf.insert(key, rid_insert);
 						btf.close();
 				  }
@@ -1973,16 +1936,77 @@ public class Table implements GlobalConst{
 					  
 					  	HIndex hasher = new HIndex(this.get_unclustered_index_filename(i+1, "hash") );
 					  	HashKey keyh = TupleUtils.get_hashkey_from_tuple_attrtype(inserted_tuple, table_attr_type[i], i+1);
-						/*if ( table_attr_type[i].attrType == AttrType.attrInteger ) {
-							keyh = new HashKey( inserted_tuple.getIntFld(i+1) );
-						}
-						else {
-							keyh = new HashKey( inserted_tuple.getStrFld(i+1) );
-						}*/
 						hasher.insert(keyh, rid_insert);
 						hasher.close();
 				  }
 			  }
+		  }
+	  }
+	  SystemDefs.JavabaseDB.db_deleted_rids.clear();
+	  SystemDefs.JavabaseDB.db_deleted_tuples.clear();
+	  SystemDefs.JavabaseDB.db_inserted_rids.clear();
+	  SystemDefs.JavabaseDB.db_inserted_tuples.clear();
+  }
+
+  /* adds and delete data to unclustered indexes
+   * from the global queue in DB
+   */
+  private void update_records_from_global_queue_once() throws Exception {
+	  assert ( SystemDefs.JavabaseDB.db_deleted_rids.size() == SystemDefs.JavabaseDB.db_deleted_tuples.size() );
+	  assert ( SystemDefs.JavabaseDB.db_inserted_rids.size() == SystemDefs.JavabaseDB.db_inserted_tuples.size() );
+	  Iterator<Tuple> itr_tuple_de = SystemDefs.JavabaseDB.db_deleted_tuples.iterator();
+	  Iterator<RID> itr_rid_de = SystemDefs.JavabaseDB.db_deleted_rids.iterator();
+	  Iterator<Tuple> itr_tuple_in = SystemDefs.JavabaseDB.db_inserted_tuples.iterator();
+	  Iterator<RID> itr_rid_in = SystemDefs.JavabaseDB.db_inserted_rids.iterator();
+	  
+	  while ( true ) {
+		  if ( itr_tuple_de.hasNext() )
+		  {
+			  RID rid_delete = itr_rid_de.next();
+			  Tuple temp_tup = itr_tuple_de.next();
+			  Tuple deleted_tuple = TupleUtils.getEmptyTuple(this.table_attr_type, this.table_attr_size);
+			  deleted_tuple.tupleCopy(temp_tup);
+			  
+			  for ( int i=0; i<btree_unclustered_attr.length; i++ ) {
+				  if ( btree_unclustered_attr[i] ) {
+					  	KeyClass key = TupleUtils.get_key_from_tuple_attrtype(deleted_tuple, table_attr_type[i], i+1);
+						BTreeFile btf  = new BTreeFile(this.get_unclustered_index_filename(i+1, "btree"));
+						btf.Delete(key, rid_delete);
+						btf.close();
+				  }
+				  if ( hash_unclustered_attr[i] ) {
+					  
+					  	HIndex hasher = new HIndex(this.get_unclustered_index_filename(i+1, "hash") );
+						HashKey keyh = TupleUtils.get_hashkey_from_tuple_attrtype(deleted_tuple, table_attr_type[i], i+1);
+						hasher.delete(keyh, rid_delete);
+						hasher.close();
+				  }
+			  }
+		  }
+		  if ( itr_tuple_in.hasNext() ) {
+			  RID rid_insert = itr_rid_in.next();
+			  Tuple temp_tup = itr_tuple_in.next();
+			  Tuple inserted_tuple = TupleUtils.getEmptyTuple(this.table_attr_type, this.table_attr_size);
+			  inserted_tuple.tupleCopy(temp_tup);
+			  
+			  for ( int i=0; i<btree_unclustered_attr.length; i++ ) {
+				  if ( btree_unclustered_attr[i] ) {
+					  	KeyClass key = TupleUtils.get_key_from_tuple_attrtype(inserted_tuple, table_attr_type[i], i+1);;
+						BTreeFile btf  = new BTreeFile(this.get_unclustered_index_filename(i+1, "btree"));
+						btf.insert(key, rid_insert);
+						btf.close();
+				  }
+				  if ( hash_unclustered_attr[i] ) {
+					  
+					  	HIndex hasher = new HIndex(this.get_unclustered_index_filename(i+1, "hash") );
+					  	HashKey keyh = TupleUtils.get_hashkey_from_tuple_attrtype(inserted_tuple, table_attr_type[i], i+1);
+						hasher.insert(keyh, rid_insert);
+						hasher.close();
+				  }
+			  }
+		  }
+		  if ( ( itr_tuple_de.hasNext() == false ) && ( itr_tuple_in.hasNext() == false ) ) {
+			  break;
 		  }
 	  }
 	  SystemDefs.JavabaseDB.db_deleted_rids.clear();
@@ -1996,5 +2020,3 @@ public class Table implements GlobalConst{
 	  SystemDefs.JavabaseDB.add_to_relation_queue(this);
   }
 }
-
-

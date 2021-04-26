@@ -500,7 +500,7 @@ public class TupleUtils {
 			}
 		}
 		else if ( key1 instanceof StringKey ) {
-			if ( ((StringKey) key1).getKey().equals( ((IntegerKey) key2).getKey() ) ) {
+			if ( ((StringKey) key1).getKey().equals( ((StringKey) key2).getKey() ) ) {
 				return true;
 			}
 		}

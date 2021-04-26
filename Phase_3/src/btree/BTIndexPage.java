@@ -311,14 +311,18 @@ public class BTIndexPage extends BTSortedPage{
 	    }
 	    else {
               pageNo.pid = getLeftLink().pid;
-              return -1; //left sibling
+              if ( pageNo.pid != INVALID_PAGE )
+            	  return -1; //left sibling
+              return 0;
 	    }
 	  }
 	}
 	entry=BT.getEntryFromBytes(getpage(), getSlotOffset(0),
 				   getSlotLength(0), keyType, NodeType.INDEX);    
 	pageNo.pid=  ((IndexData)entry.data).getData().pid; 
-	return 1;  //right sibling
+	if ( pageNo.pid != INVALID_PAGE )
+		return 1;  //right sibling
+	return 0;
       }
       catch (Exception e) {
 	throw new IndexFullDeleteException(e, "Get sibling failed");

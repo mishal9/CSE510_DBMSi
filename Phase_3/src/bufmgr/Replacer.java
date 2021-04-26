@@ -62,8 +62,12 @@ abstract class Replacer implements GlobalConst
 		}
 
 		if ((mgr.frameTable())[frameNo].pin_count() == 0) {
-
-			throw new PageUnpinnedException (null, "BUFMGR: PAGE_NOT_PINNED.");
+			if ( mgr.isIgnore_pinned_pages() ) {
+				
+			}
+			else {
+				throw new PageUnpinnedException (null, "BUFMGR: PAGE_NOT_PINNED.");
+			}
 
 		}
 
@@ -85,9 +89,7 @@ abstract class Replacer implements GlobalConst
 	{
 
 		if ( (mgr.frameTable())[frameNo].pin_count() > 1 ) {
-
 			throw new PagePinnedException (null, "BUFMGR: PAGE_PINNED.");
-
 		}
 
 		(mgr.frameTable())[frameNo].unpin();
