@@ -248,15 +248,26 @@ public class HashJoin extends Iterator {
         	outer_h = new HIndex(outer_hash_index_name);
         }
         n_win2 = outer_h.get_number_of_buckets();
+        int win = Math.min(n_win1, n_win2);
         outer_h.close();
-        
+        System.out.println(n_win1 + " " + n_win2);
         n_current = 0;
-        outer_hiws = new HashIndexWindowedScan(new IndexType(IndexType.Hash), outer_temp_heap_name, outer_hash_index_name,
+        if(win < n_win1)
+            outer_hiws = new HashIndexWindowedScan(new IndexType(IndexType.Hash), outer_temp_heap_name, outer_hash_index_name,
                                                 _in1, t1_str_sizes, in1_len, outer_projection.length, outer_projection,
-                                        null, fld1, false);
-        inner_hiws = new HashIndexWindowedScan(new IndexType(IndexType.Hash), relationName, inner_hash_index_name,
+                                        null, fld1, win);
+        else
+            outer_hiws = new HashIndexWindowedScan(new IndexType(IndexType.Hash), outer_temp_heap_name, outer_hash_index_name,
+                    _in1, t1_str_sizes, in1_len, outer_projection.length, outer_projection,
+                    null, fld1, n_win1);
+        if(win < n_win2)
+            inner_hiws = new HashIndexWindowedScan(new IndexType(IndexType.Hash), relationName, inner_hash_index_name,
                                                 _in2, t2_str_sizes, in2_len, inner_projection.length, inner_projection,
-                                        null, fld2, false);
+                                        null, fld2, win);
+        else
+            inner_hiws = new HashIndexWindowedScan(new IndexType(IndexType.Hash), relationName, inner_hash_index_name,
+                    _in2, t2_str_sizes, in2_len, inner_projection.length, inner_projection,
+                    null, fld2, n_win2);
     }
 
     /**
@@ -292,8 +303,9 @@ public class HashJoin extends Iterator {
     {
         Tuple t=null;
         if(it==null){
-            it_outer = outer_hiws.get_next();
             it_inner = inner_hiws.get_next();
+            it_outer = outer_hiws.get_next();
+
             if(it_inner==null || it_outer==null){
                 return null;
             }
