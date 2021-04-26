@@ -300,7 +300,7 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
 		for(int i=0;i<COLS;i++) {
 			attrsize_for_sort[i] = skytable.getTable_attr_size()[i];
 		}
-		attrsize_for_sort[COLS] = STRSIZE;
+		attrsize_for_sort[COLS] = 4;
 
 		//SystemDefs.JavabaseBM.limit_memory_usage(true, _n_pages);
 
@@ -317,7 +317,7 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
 		SortFirstSky sortFirstSky = null;
 		try {
 			sortFirstSky = new SortFirstSky(attrType_for_sort,
-					(short) (COLS+1),
+					(short) COLS,
 					attrsize_for_sort,
 					sort,
 					(short)skytable.getTable_tuple_size(),
@@ -325,8 +325,7 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
 					this.pref_list,
 					this.pref_list.length,
 					this.n_pages);
-			fscan.close();
-			sort.close();
+
 			System.out.println("Sort First Sky Skyline elements -->");
 			Tuple temp;
 			try {
@@ -334,7 +333,7 @@ class SkylineQueryDriver extends TestDriver implements GlobalConst
 				while (temp!=null) {
 //					System.out.println("Size of temp: "+temp.size());
 					SystemDefs.JavabaseDB.add_to_mater_table(temp, this.skyouttable);
-					temp.printTuple(attrType_for_sort);
+					temp.printTuple(attrType_for_proj);
 					numSkyEle++;
 					temp = sortFirstSky.get_next();
 				}
