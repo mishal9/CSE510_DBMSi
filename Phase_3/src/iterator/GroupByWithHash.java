@@ -17,12 +17,12 @@ import btree.ScanIteratorException;
 import static global.GlobalConst.MINIBASE_PAGESIZE;
 
 public class GroupByWithHash extends Iterator{
-    public static List<Tuple> _result;
-    private static AttrType[] _attrType;
-    private static int _len_in;
-    private static boolean status = true;
-    private static short[] _attr_sizes;
-    private static AggType _agg_type;
+    public  List<Tuple> _result;
+    private  AttrType[] _attrType;
+    private  int _len_in;
+    private  boolean status = true;
+    private  short[] _attr_sizes;
+    private  AggType _agg_type;
     // number of tuples the queue can hold
     private int _n_pages;
     FldSpec[] _agg_list, _proj_list;
@@ -81,6 +81,9 @@ public class GroupByWithHash extends Iterator{
                     _result.add(tuple);
                 });
             }
+
+            grpSort.close();
+            grpSort = null;
         }else{
             return null;
         }

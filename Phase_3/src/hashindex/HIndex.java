@@ -262,7 +262,11 @@ public class HIndex implements GlobalConst {
 
 	public void close() throws Exception {
 		if (headerPage != null) {
-			SystemDefs.JavabaseBM.unpinPage(headerPageId, true);
+			try {
+				SystemDefs.JavabaseBM.unpinPage(headerPageId, true);
+			}catch(Exception e){
+
+			}
 			headerPage = null;
 		}
 	}

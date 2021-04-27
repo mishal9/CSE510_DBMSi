@@ -16,16 +16,15 @@ import static global.GlobalConst.STRSIZE;
 
 
 public class GroupByWithSort extends Iterator{
-    public static List<Tuple> _result;
-    private static Sort _sort;
-    private static AttrType[] _attrType;
-    private static FldSpec _group_by_attr;
-    private static int _len_in;
-    private static boolean status = true;
-    private static short[] _attr_sizes;
-    private static AggType _agg_type;
-    private static FldSpec[] _agg_list;
-
+    public  List<Tuple> _result;
+    private  Sort _sort;
+    private  AttrType[] _attrType;
+    private  FldSpec _group_by_attr;
+    private  int _len_in;
+    private  boolean status = true;
+    private  short[] _attr_sizes;
+    private  AggType _agg_type;
+    private  FldSpec[] _agg_list;
     // heap file containing our data on which skyline is computed
     private Heapfile _skyline_grp_heap;
 
@@ -33,7 +32,7 @@ public class GroupByWithSort extends Iterator{
     private int          candidate_tuple_size;
 
     // Value of the aggregation attribute in the last tuple
-    private static float _lastPolled;
+    private  float _lastPolled;
 
     // buffer pages allocation
     private int _n_pages;
@@ -41,12 +40,12 @@ public class GroupByWithSort extends Iterator{
     // get the next immediate tuple
     private Tuple _next;
 
-    private static float _aggr_val;
-    private static int _group_size;
-    private static float _grp_result;
-    private static Iterator _am;
-    private static FldSpec[] _projlist;
-    private static int _nOutFlds;
+    private  float _aggr_val;
+    private  int _group_size;
+    private  float _grp_result;
+    private  Iterator _am;
+    private  FldSpec[] _projlist;
+    private  int _nOutFlds;
 
     public GroupByWithSort(
             AttrType[] in1, int len_in1, short[] t1_str_sizes,
@@ -115,7 +114,7 @@ public class GroupByWithSort extends Iterator{
         }
 
         try {
-            _sort = new Sort(_attrType, (short) _len_in, _attr_sizes, _am, group_by_attr.offset, new TupleOrder(TupleOrder.Descending), 32, 3);
+            _sort = new Sort(_attrType, (short) _len_in, _attr_sizes, _am, group_by_attr.offset, new TupleOrder(TupleOrder.Descending), 32, (int)_n_pages /2);
         }
         catch (Exception e) {
             status = false;
@@ -130,12 +129,11 @@ public class GroupByWithSort extends Iterator{
 
     public void skyline_Aggregation(String skyline_grp_heap, FldSpec[] pref_list, AttrType[] attrType, short[] attrSize, int buffer){
         BlockNestedLoopsSky blockNestedLoopsSky = null;
-        System.out.println("Running skyline aggregation");
         int[] preference_list = new int[pref_list.length];
         for(int i=0; i<pref_list.length; i++){
             preference_list[i] = pref_list[i].offset;
         }
-
+        int skylineEle = 0;
 
         try {
             blockNestedLoopsSky = new BlockNestedLoopsSky(attrType,
@@ -165,7 +163,8 @@ public class GroupByWithSort extends Iterator{
                 temp = blockNestedLoopsSky.get_next();
                 while (temp!=null) {
                     Projection.Project(temp, _attrType, result, _projlist, _projlist.length);
-                    _result.add(result);
+                    _result.add(new Tuple(result));
+                    skylineEle++;
                     temp = blockNestedLoopsSky.get_next();
                 }
 
@@ -178,17 +177,13 @@ public class GroupByWithSort extends Iterator{
         } finally {
             blockNestedLoopsSky.close();
         }
+
+        System.out.println("Skyline aggregation elements for the group "+skylineEle);
+        System.out.println("==============");
     }
 
     public List<Tuple> get_next_aggr() throws IOException, FieldNumberOutOfBoundException, UnknowAttrType, WrongPermat {
         _result = new ArrayList<>();
-
-        /*
-        TODO: Set projection attributes for skyline aggregation
-        TODO: Define str sizes beforehand
-        */
-
-
 
         Tuple result = new Tuple(this.candidate_tuple_size);
 
@@ -220,7 +215,6 @@ public class GroupByWithSort extends Iterator{
         RID rid;
 
         while(t != null && t.getFloFld(_group_by_attr.offset) == _lastPolled){
-
             Projection.Project(t, _attrType, result, _projlist, _projlist.length);
 
             _group_size += 1;
@@ -259,7 +253,7 @@ public class GroupByWithSort extends Iterator{
 
         // Compute Skyline here
         if(_agg_type.aggType == AggType.SKYLINE) {
-            skyline_Aggregation("skyline_group_by2.in", _agg_list, _attrType, _attr_sizes, _n_pages - 3);
+            skyline_Aggregation("skyline_group_by2.in", _agg_list, _attrType, _attr_sizes, _n_pages /2);
             recreateSkyLineHeap();
             // Reset aggregation
             resetAggregation();
@@ -311,7 +305,6 @@ public class GroupByWithSort extends Iterator{
 
     @Override
     public void close() throws IOException, SortException, JoinsException, IndexException {
-        _am.close();
         _sort.close();
         _sort = null;
         _am = null;
@@ -330,9 +323,9 @@ public class GroupByWithSort extends Iterator{
         }
     }
 
-	@Override
-	public KeyDataEntry get_next_key_data() throws ScanIteratorException {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public KeyDataEntry get_next_key_data() throws ScanIteratorException {
+        // TODO Auto-generated method stub
+        return null;
+    }
 }

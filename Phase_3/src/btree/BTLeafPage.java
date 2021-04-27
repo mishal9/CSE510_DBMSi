@@ -278,6 +278,10 @@ public class BTLeafPage extends BTSortedPage {
 	    
             // get the last record 
             KeyDataEntry lastEntry;
+           	int slotlength = getSlotLength(getSlotCnt()-1);
+           	if ( slotlength == 0 ) {
+           		return false;
+           	}
             lastEntry=BT.getEntryFromBytes(getpage(),getSlotOffset(getSlotCnt()-1)
 					   ,getSlotLength(getSlotCnt()-1), keyType, NodeType.LEAF);
 	    

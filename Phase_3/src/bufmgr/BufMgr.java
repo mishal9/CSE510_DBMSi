@@ -358,6 +358,19 @@ public class BufMgr implements GlobalConst{
 
 	/* flag to indicate if only partial buffer manager memory is available for further processing */
 	private boolean limit_memory_usage = false;
+	
+	/* flag to ignore pinned pages at the end */
+	private boolean ignore_pinned_pages = false;
+
+
+	public boolean isIgnore_pinned_pages() {
+		return ignore_pinned_pages;
+	}
+
+
+	public void setIgnore_pinned_pages(boolean ignore_pinned_pages) {
+		this.ignore_pinned_pages = ignore_pinned_pages;
+	}
 
 
 	/** Factor out the common code for the two versions of Flush 
@@ -388,8 +401,30 @@ public class BufMgr implements GlobalConst{
 		for (i=0; i < numBuffers; i++)   // write all valid dirty pages to disk
 			if ( (all_pages !=0) || (frmeTable[i].pageNo.pid == pageid.pid)) {
 
-				if ( frmeTable[i].pin_count() != 0 )
-					unpinned++;
+				if ( frmeTable[i].pin_count() != 0 ) {
+					if ( this.ignore_pinned_pages ) {
+						while ( frmeTable[i].pin_count() != 0 ) {
+							try {
+								unpinPage(new PageId(frmeTable[i].pageNo.pid), true);
+							} catch (ReplacerException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							} catch (PageUnpinnedException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							} catch (HashEntryNotFoundException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							} catch (InvalidFrameNumberException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+						}
+					}
+					else {
+						unpinned++;
+					}
+				}
 
 				if ( frmeTable[i].dirty != false ) {
 
@@ -629,8 +664,8 @@ public class BufMgr implements GlobalConst{
 		int frameNo;
 
 		frameNo=hashTable.lookup(PageId_in_a_DB);
-		//System.out.println("Frame number "+frameNo);
-		//System.out.println("Frame pin count "+frameTable()[frameNo].pin_cnt);
+//		System.out.println("Frame number "+frameNo);
+//		System.out.println("Frame pin count "+frameTable()[frameNo].pin_cnt);
 		if (frameNo<0){
 			throw new HashEntryNotFoundException (null, "BUFMGR: HASH_NOT_FOUND.");
 		}
@@ -724,7 +759,16 @@ public class BufMgr implements GlobalConst{
 
 	}
 
+	public int getPinCount(PageId globalPageId) {
+		int frameNo;
 
+		frameNo=hashTable.lookup(globalPageId);
+		if ( frameNo <0 ) {
+			return 0;
+		}
+		return frmeTable[frameNo].pin_count();
+	}
+	
 	/** User should call this method if she needs to delete a page.
 	 * this routine will call DB to deallocate the page.
 	 * 

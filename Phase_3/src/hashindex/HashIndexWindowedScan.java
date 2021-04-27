@@ -33,6 +33,7 @@ public class HashIndexWindowedScan {
     private int n_windows, current_window;
     HashBucket bucket;
     Scan scan;
+    int win;
 
 
     public HashIndexWindowedScan(
@@ -46,15 +47,15 @@ public class HashIndexWindowedScan {
             FldSpec outFlds[],
             CondExpr selects[],
             final int fldNum,
-            final boolean indexOnly
-        )
+            int win
+    )
             throws IndexException,
             InvalidTypeException,
             InvalidTupleSizeException,
             UnknownIndexTypeException,
             IOException,
-            Exception
-    {
+            Exception {
+        this.win = win;
         _fldNum = fldNum;
         _noInFlds = noInFlds;
         _types = types;
@@ -74,7 +75,6 @@ public class HashIndexWindowedScan {
         tuple1.setHdr((short) noInFlds, types, str_sizes);
 
         t1_size = tuple1.size();
-        index_only = indexOnly;  // added by bingjie miao
 
         main_heap_file = relName;
 
@@ -82,6 +82,59 @@ public class HashIndexWindowedScan {
             case IndexType.Hash:
                 HindFile = new HIndex(indName);
                 n_windows = HindFile.get_number_of_buckets();
+                current_window = 0;
+                break;
+            default:
+                throw new UnknownIndexTypeException("Only hash index is supported so far");
+        }
+    }
+
+    public HashIndexWindowedScan(
+            IndexType index,
+            final String relName,
+            final String indName,
+            AttrType types[],
+            short str_sizes[],
+            int noInFlds,
+            int noOutFlds,
+            FldSpec outFlds[],
+            CondExpr selects[],
+            final int fldNum,
+            boolean indexOnly
+    )
+            throws IndexException,
+            InvalidTypeException,
+            InvalidTupleSizeException,
+            UnknownIndexTypeException,
+            IOException,
+            Exception {
+        _fldNum = fldNum;
+        _noInFlds = noInFlds;
+        _types = types;
+        _s_sizes = str_sizes;
+
+        AttrType[] Jtypes = new AttrType[noOutFlds];
+        short[] ts_sizes;
+        Jtuple = new Tuple();
+
+        ts_sizes = TupleUtils.setup_op_tuple(Jtuple, Jtypes, types, noInFlds, str_sizes, outFlds, noOutFlds);
+
+        _selects = selects;
+        perm_mat = outFlds;
+        _noOutFlds = noOutFlds;
+        tuple1 = new Tuple();
+
+        tuple1.setHdr((short) noInFlds, types, str_sizes);
+
+        t1_size = tuple1.size();
+
+        main_heap_file = relName;
+
+        switch (index.indexType) {
+            case IndexType.Hash:
+                HindFile = new HIndex(indName);
+                n_windows = HindFile.get_number_of_buckets();
+                win = n_windows;
                 current_window = 0;
                 break;
             default:
@@ -97,30 +150,30 @@ public class HashIndexWindowedScan {
         if (current_window > n_windows) {
             return null;
         }
-        bucket = new HashBucket(HindFile.headerPage.get_NthBucketName(current_window));
+        bucket = new HashBucket(HindFile.headerPage.get_NthBucketName(current_window % win));
         current_window += 1;
         window_heap_file = "";
-        if(scan!=null){
+        if (scan != null) {
             scan.closescan();
         }
         scan = bucket.heapfile.openScan();
         Iterator hifs = new HIndexedFileScan(main_heap_file,
-                        scan,
-                        _types,
-                        _s_sizes,
+                scan,
+                _types,
+                _s_sizes,
                 (short) _noInFlds,
-                        _noOutFlds,
-                        perm_mat);
+                _noOutFlds,
+                perm_mat);
         return hifs;
     }
 
-    public void close(){
+    public void close() {
         scan.closescan();
         try {
-			HindFile.close();
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+            HindFile.close();
+        } catch (Exception e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
     }
 }

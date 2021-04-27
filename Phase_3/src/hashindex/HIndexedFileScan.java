@@ -77,7 +77,7 @@ public class HIndexedFileScan extends Iterator {
     }
 
     public void close() throws IOException, JoinsException, SortException, IndexException {
-        main_scan.closescan();
+        window_scan.closescan();
         main_heap = null;
     }
 

@@ -779,7 +779,7 @@ class GroupByHashDriver extends TestDriver
                     aggType[3],
                     projlist,
                     3,
-                    5);
+                    20);
 
 
             try {
@@ -815,7 +815,7 @@ class GroupByHashDriver extends TestDriver
         } finally {
             try {
                 grpHash.close();
-                hiwfs.close();
+                //hiwfs.close();
             } catch (IOException e) {
                 e.printStackTrace();
             } catch (SortException e) {

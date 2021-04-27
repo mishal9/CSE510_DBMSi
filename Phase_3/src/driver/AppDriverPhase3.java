@@ -143,6 +143,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
     		System.out.println("Closing DB "+open_db_name);
     		SystemDefs.JavabaseDB.add_all_table_to_relation();
 			SystemDefs.JavabaseBM.flushAllPages();
+			SystemDefs.JavabaseBM.setIgnore_pinned_pages(false);
 			SystemDefs.JavabaseDB.closeDB();
 			is_current_db_open = false;
 			open_db_name = "";
@@ -323,8 +324,6 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 			return;
 		}
     	/*printing the reads and writes and closing pcounter and also free the BM from the limit */
-    	System.out.println("Number of Page reads: "+PCounter.get_rcounter());
-    	System.out.println("Number of Page Writes: "+PCounter.get_wcounter());
     	PCounter.initialize();
     	String filename = tokens[2];
     	String tablename = tokens[1];
@@ -351,9 +350,8 @@ class DriverPhase3 extends TestDriver implements GlobalConst
     	if ( validate_token_length(3, "delete_data") == false ) {
 			return;
 		}
+    	SystemDefs.JavabaseBM.setIgnore_pinned_pages(true);
     	/*printing the reads and writes and closing pcounter and also free the BM from the limit */
-    	System.out.println("Number of Page reads: "+PCounter.get_rcounter());
-    	System.out.println("Number of Page Writes: "+PCounter.get_wcounter());
     	PCounter.initialize();
     	
     	String filename = tokens[2];
@@ -370,6 +368,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
     	System.out.println("Number of Page reads: "+PCounter.get_rcounter());
     	System.out.println("Number of Page Writes: "+PCounter.get_wcounter());
     	PCounter.initialize();
+    	SystemDefs.JavabaseBM.setIgnore_pinned_pages(false);
     }
     
     /* parses the output_table query for the exact structure 
@@ -524,6 +523,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    	}
 	    	
 	    	/* initialising the pcounter and limiting system pages */
+	    	SystemDefs.JavabaseBM.setIgnore_pinned_pages(true);
 	    	SystemDefs.JavabaseBM.limit_memory_usage(true, skyline_n_pages);
 	    	PCounter.initialize();
 	    	
@@ -579,6 +579,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    	}
 	    	
 	    	/* limiting memory */
+	    	SystemDefs.JavabaseBM.setIgnore_pinned_pages(true);
 	    	SystemDefs.JavabaseBM.limit_memory_usage(true, groupby_n_pages);
 	    	PCounter.initialize();
 	    	
@@ -625,25 +626,19 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    	else {
 	    		agg = null;
 	    	}
-	    	
+	    	final Table mater_table = new Table(out_tablename, "MATER");
 	    	Table groupby_table = SystemDefs.JavabaseDB.get_relation(groupby_tablename);
 	    	if ( ( agg == null ) || ( groupby_table == null ) ) {
 	    		validate_token_length(0, "groupby");
 	    		System.err.println("***ERROR in the Query***");
 	    		return;
 	    	}
-	    	Iterator groupby = null;
+
+			Iterator groupby = null;
 	    	FldSpec[] groupby_projection = get_projection_for_table(groupby_table, "outer", -1);
-			FileScan groupby_table_file_scan =  new FileScan(groupby_table.getTable_heapfile(),
-														   	 groupby_table.getTable_attr_type(),
-														   	 groupby_table.getTable_attr_size(),
-														   	 (short) groupby_table.getTable_num_attr(),
-														   	 (short) groupby_table.getTable_num_attr(),
-														   	 groupby_projection, 
-														   	 null);
+
 			FldSpec[] agg_fldspc = get_aggregation_list(agg_attributes);
 			FldSpec groupByAttr = new FldSpec(new RelSpec(RelSpec.outer), groupby_attribute);
-
 
 
 			/* keep the output attrtype ready */
@@ -656,15 +651,24 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 				agg_attrtype[agg_attributes[i] - 1] = new AttrType(AttrType.attrReal);
 			}
 			
-			HashIndexWindowedScan hiwfs = null;
+			String[] names_mater = new String[agg_attributes.length+1];
+			names_mater[0] = groupby_table.getTable_attr_name()[groupby_attribute-1];
+			int c = 1;
+			for ( int i=0; i<agg_attributes.length; i++ ) {
+				names_mater[c] = groupby_table.getTable_attr_name()[agg_attributes[i]-1];
+				c++;
+			}
+			
 	    	/* run the appropriate groupby algorithm */
 	    	switch ( group_algo ) {
 	    		case "HASH":
 	    			//TBD run HASH groupby with proper params
-	    			if ( groupby_table.unclustered_index_exist(groupby_attribute, "hash") == false ) {
-	    				groupby_table.create_unclustered_index(groupby_attribute, "hash");
-	    			}
-	    			hiwfs = new HashIndexWindowedScan(new IndexType(IndexType.Hash),
+
+					if ( groupby_table.unclustered_index_exist(groupby_attribute, "hash") == false ) {
+						groupby_table.create_unclustered_index(groupby_attribute, "hash");
+					}
+
+					HashIndexWindowedScan hiwfs = new HashIndexWindowedScan(new IndexType(IndexType.Hash),
 	    											  groupby_table.getTable_heapfile(), 
 	    											  groupby_table.get_unclustered_index_filename(groupby_attribute, "hash"), 
 	    											  groupby_table.getTable_attr_type(),
@@ -675,6 +679,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    											  null, 
 	    											  groupby_attribute,//confirm that this is groupby attr
 	    											  false);
+
 
 					groupby_projection = new FldSpec[agg_fldspc.length + 1];
 					groupby_projection[0] = groupByAttr;
@@ -695,6 +700,14 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 												  groupby_n_pages);
 	    			break;
 	    		case "SORT":
+					FileScan groupby_table_file_scan =  new FileScan(groupby_table.getTable_heapfile(),
+							groupby_table.getTable_attr_type(),
+							groupby_table.getTable_attr_size(),
+							(short) groupby_table.getTable_num_attr(),
+							(short) groupby_table.getTable_num_attr(),
+							groupby_projection,
+							null);
+
 					groupby_projection = new FldSpec[agg_fldspc.length + 1];
 					groupby_projection[0] = new FldSpec(new RelSpec(RelSpec.outer), groupByAttr.offset);
 
@@ -702,7 +715,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 						groupby_projection[i] = new FldSpec(new RelSpec(RelSpec.outer), agg_fldspc[i-1].offset);
 					}
 
-	    			groupby = new GroupByWithSort(groupby_table.getTable_attr_type(),
+					groupby = new GroupByWithSort(groupby_table.getTable_attr_type(),
 	    										  groupby_table.getTable_num_attr(),
 	    										  groupby_table.getTable_attr_size(),
 	    										  groupby_table_file_scan,
@@ -717,6 +730,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    			validate_token_length(0, "groupby");
 	    			break;
 	    	}
+	    	AttrType[] attrTypes = groupby._outAttrType;
 	    	List<Tuple> result = new ArrayList<>();
 			try {
                 result = groupby.get_next_aggr();
@@ -725,15 +739,30 @@ class DriverPhase3 extends TestDriver implements GlobalConst
                 status = false;
                 e.printStackTrace();
             }
+			
+			if ( is_output_saved ) {
+				mater_table.setTable_num_attr(groupby_projection.length);
+				mater_table.setTable_data_file(groupby_table.getTable_data_file());
+            	mater_table.setTable_attr_name(names_mater);
+				mater_table.intialise_table_str_sizes();
+//            	mater_table.setTable_tuple_size(t.size());
+				mater_table.setTable_attr_type(attrTypes);
+				mater_table.intialise_table_bunc();
+				mater_table.intialise_table_hunc();
+			}
 
             while(result != null) {
-				Iterator finalGroupby = groupby;
+				
 				result.forEach((tuple) -> {
                     try {
-                        tuple.print(finalGroupby._outAttrType);
-                        
+                    	if ( is_output_saved ) {
+                    		mater_table.setTable_tuple_size(tuple.size());
+                    		SystemDefs.JavabaseDB.add_to_mater_table(tuple, mater_table);
+                    	}
+                    	else {
+                    		tuple.print(attrTypes);
+                    	}
                     } catch (IOException e) {
-                    	
                         e.printStackTrace();
                     }
                 });
@@ -747,6 +776,12 @@ class DriverPhase3 extends TestDriver implements GlobalConst
                 }
             }
             groupby.close();
+            groupby = null;
+            if ( is_output_saved ) {
+            	System.out.println("");
+				mater_table.add_table_to_global_queue();
+				mater_table.print_table_cl();
+            }
             /*printing the reads and writes and closing pcounter and also free the BM from the limit */
 	    	System.out.println("Number of Page reads: "+PCounter.get_rcounter());
 	    	System.out.println("Number of Page Writes: "+PCounter.get_wcounter());
@@ -798,6 +833,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    	
 	    	/*------------join n_pages----------------------------*/
 	    	int join_n_pages = Integer.parseInt(tokens[7]);
+	    	SystemDefs.JavabaseBM.setIgnore_pinned_pages(true);
 	    	SystemDefs.JavabaseBM.limit_memory_usage(true, join_n_pages);
 	    	PCounter.initialize();
 	    	
@@ -861,6 +897,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 				mater_table.setTable_attr_name(join_col_names);
 			}
 			Iterator joiner = null;
+			SystemDefs.JavabaseBM.setIgnore_pinned_pages(true);
 	    	/* run the appropriate skyline algorithm */
 	    	switch ( join_algo ) {
 	    		case "NLJ":
@@ -1142,6 +1179,10 @@ class DriverPhase3 extends TestDriver implements GlobalConst
      * */
     public void parse_topkjoin() throws JoinsException, PageNotReadException, TupleUtilsException, PredEvalException, SortException, LowMemException, UnknowAttrType, UnknownKeyTypeException, Exception {
 //    	try {
+	    	if ( (tokens.length != 10) && ( tokens.length != 12 ) ) {
+	    		validate_token_length(0, "topkjoin");
+	    		return;
+	    	}
 	    	/* ----------------------which join needs to be calculated ------------------------------------*/
 	    	String join_algo = tokens[1]; //HASH/NRA
 	    	
@@ -1164,6 +1205,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    	
 	    	/*------------join n_pages----------------------------*/
 	    	int join_n_pages = Integer.parseInt(tokens[9]);
+	    	SystemDefs.JavabaseBM.setIgnore_pinned_pages(true);
 	    	SystemDefs.JavabaseBM.limit_memory_usage(true, join_n_pages);
 	    	PCounter.initialize();
 	    	
@@ -1197,8 +1239,29 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    	        FldSpec mergeAttr2_Hash = new FldSpec(new RelSpec(RelSpec.innerRel), inner_merge_attribute);
 
 	    	        Table t1hash = SystemDefs.JavabaseDB.get_relation(outer_table_name);
+	    	        if ( t1hash == null ) {
+	    	    		System.err.println("***Table not found ***");
+	    	    		validate_token_length(0, "topkjoin");;
+	    	    		return;
+	    	    	}
 	        		Table t2hash = SystemDefs.JavabaseDB.get_relation(inner_table_name); 
+	        		if ( t2hash == null ) {
+	    	    		System.err.println("***Table not found ***");
+	    	    		validate_token_length(0, "topkjoin");;
+	    	    		return;
+	    	    	}
 	        		
+	        		String[] join_attrname = new String[t1hash.getTable_num_attr()+t2hash.getTable_num_attr()];
+	        		for ( int i = 0; i < t1hash.getTable_num_attr(); i++ ) {
+	        			join_attrname[i] = t1hash.getTable_attr_name()[i];
+	        		}
+	        		for ( int i = 0; i < (innerr_join_attribute-1); i++ ) {
+	        			join_attrname[t1hash.getTable_num_attr()+i] = t2hash.getTable_attr_name()[i];
+	        		}
+	        		for ( int i = innerr_join_attribute; i < t2hash.getTable_num_attr(); i++ ) {
+	        			join_attrname[t1hash.getTable_num_attr()+i-1] = t2hash.getTable_attr_name()[i];
+	        		}
+	        		join_attrname[join_attrname.length-1] = "Merge";
 
 				
 	                TopK_HashJoin tjhj = new TopK_HashJoin(
@@ -1215,14 +1278,37 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    	    		);
 	        		
 	                Tuple t = tjhj.get_next();
-	                
-	                System.out.println("\nResult of Top-K HASH Join -->");
+	                Table outtable = null;
+	                if ( is_output_saved ) {
+	                	//form the mater table
+	                	outtable = new Table(out_tablename, "MATER");
+	                	outtable.setTable_num_attr(t1hash.getTable_num_attr()+t2hash.getTable_num_attr());
+	                	outtable.setTable_data_file(t1hash.getTable_data_file());
+	                	outtable.setTable_attr_name(join_attrname);
+	                	outtable.intialise_table_str_sizes();
+	                	outtable.setTable_tuple_size(t.size());
+	                	outtable.setTable_attr_type(tjhj.newAttrType);
+	                	outtable.intialise_table_bunc();
+	                	outtable.intialise_table_hunc();
+	                }
+	                System.out.println("\nComputing topK HASH Join -->");
+//	                System.out.println("attrtype "+Arrays.toString(tjhj.newAttrType));
 	                while(t != null) {
-	                	t.print(tjhj.newAttrType);
+	                	if ( outtable != null ) {
+	                		SystemDefs.JavabaseDB.add_to_mater_table(t, outtable);
+	                	}
+	                	else {
+	                		t.print(tjhj.newAttrType);
+	                	}
 	                	t = tjhj.get_next();
 	                }
 //	                System.out.println("ENDS HERE -----");
 	                tjhj.close();
+	                if ( outtable != null ) {
+	    				System.out.println("");
+	    				outtable.add_table_to_global_queue();
+	    				outtable.print_table_cl();
+	    			}
 	    			break;
 	    		case "NRA":
 	    			//TBD run top-K-join NRA with proper params
@@ -1233,8 +1319,30 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 	    	        FldSpec mergeAttr2 = new FldSpec(new RelSpec(RelSpec.innerRel), inner_merge_attribute);
 	    	        
 	    	        Table t1 = SystemDefs.JavabaseDB.get_relation(outer_table_name);
-	        		Table t2 = SystemDefs.JavabaseDB.get_relation(inner_table_name); 
+	    	        if ( t1 == null ) {
+	    	    		System.err.println("***Table not found ***");
+	    	    		validate_token_length(0, "topkjoin");;
+	    	    		return;
+	    	    	}
+	    	        
+	        		Table t2 = SystemDefs.JavabaseDB.get_relation(inner_table_name);
+	        		if ( t2 == null ) {
+	    	    		System.err.println("***Table not found ***");
+	    	    		validate_token_length(0, "topkjoin");;
+	    	    		return;
+	    	    	}
 	        		
+	        		String[] join_attrname_nra = new String[t1.getTable_num_attr()+t2.getTable_num_attr()];
+	        		for ( int i = 0; i < t1.getTable_num_attr(); i++ ) {
+	        			join_attrname_nra[i] = t1.getTable_attr_name()[i];
+	        		}
+	        		for ( int i = 0; i < (innerr_join_attribute-1); i++ ) {
+	        			join_attrname_nra[t1.getTable_num_attr()+i] = t2.getTable_attr_name()[i];
+	        		}
+	        		for ( int i = innerr_join_attribute; i < t2.getTable_num_attr(); i++ ) {
+	        			join_attrname_nra[t1.getTable_num_attr()+i-1] = t2.getTable_attr_name()[i];
+	        		}
+	        		join_attrname_nra[join_attrname_nra.length-1] = "Merge";
 	
 	    			TopK_NRAJoin tknj = new TopK_NRAJoin(
 	    					t1.getTable_attr_type(), t1.getTable_attr_type().length, t1.getTable_attr_size(),
@@ -1257,12 +1365,36 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 					
 					Tuple r = tknj.get_next();
 					
-					System.out.println("\nResult of Top-K NRA Join -->");
+					Table mater_table = null;
+	                if ( is_output_saved ) {
+	                	//form the mater table
+	                	mater_table = new Table(out_tablename, "MATER");
+	                	mater_table.setTable_num_attr(t1.getTable_num_attr()+t2.getTable_num_attr());
+	                	mater_table.setTable_data_file(t1.getTable_data_file());
+	                	mater_table.setTable_attr_name(join_attrname_nra);
+	                	mater_table.intialise_table_str_sizes();
+	                	mater_table.setTable_tuple_size(r.size());
+	                	mater_table.setTable_attr_type(tknj.joinAttrType);
+	                	mater_table.intialise_table_bunc();
+	                	mater_table.intialise_table_hunc();
+	                }
+	                
+					System.out.println("\ncalculating Top-K NRA Join -->");
 					while(r != null) {
-						r.print(tknj.joinAttrType);
+						if ( mater_table != null ) {
+							SystemDefs.JavabaseDB.add_to_mater_table(r, mater_table);
+						}
+						else {
+							r.print(tknj.joinAttrType);
+						}
 						r = tknj.get_next();
 					}
 					tknj.close();
+					if ( mater_table != null ) {
+						System.out.println("");
+						mater_table.add_table_to_global_queue();
+						mater_table.print_table_cl();
+					}
 	    			break;
 	    		default:
 	    			validate_token_length(0, "topkjoin");
@@ -1343,7 +1475,7 @@ class DriverPhase3 extends TestDriver implements GlobalConst
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}*/
-    	Table table = SystemDefs.JavabaseDB.get_relation("r_sii2000_1_75_200");
+    	Table table = SystemDefs.JavabaseDB.get_relation("r_sii2000_10_75_200");
     	try {
 			table.test();
 		} catch (InvalidTypeException e) {
