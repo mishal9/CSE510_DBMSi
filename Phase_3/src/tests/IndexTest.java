@@ -100,7 +100,13 @@ class IndexDriver extends TestDriver
     }
 
     //Run the tests. Return type different from C++
-    boolean _pass = runAllTests();
+    boolean _pass = false;
+	try {
+		_pass = runAllTests();
+	} catch (HFException | HFBufMgrException | HFDiskMgrException | IOException e1) {
+		// TODO Auto-generated catch block
+		e1.printStackTrace();
+	}
 
     //Clean up again
     try {

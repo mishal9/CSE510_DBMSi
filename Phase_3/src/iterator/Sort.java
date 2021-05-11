@@ -1,6 +1,10 @@
 package iterator;
 
 import java.io.*;
+import java.util.List;
+
+import btree.KeyDataEntry;
+import btree.ScanIteratorException;
 import global.*;
 import bufmgr.*;
 import diskmgr.*;
@@ -711,10 +715,12 @@ public class Sort extends Iterator implements GlobalConst
         // clean up
         if (!closeFlag) {
 
+
             try {
                 _am.close();
             }
             catch (Exception e) {
+                System.out.println("Error: "+e);
                 throw new SortException(e, "Sort.java: error in closing iterator.");
             }
 
@@ -742,6 +748,18 @@ public class Sort extends Iterator implements GlobalConst
             closeFlag = true;
         }
     }
+
+	@Override
+	public List<Tuple> get_next_aggr() throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public KeyDataEntry get_next_key_data() throws ScanIteratorException {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
 }
 

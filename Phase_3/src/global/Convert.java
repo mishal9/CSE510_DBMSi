@@ -302,4 +302,25 @@ public class Convert{
       System.arraycopy (B, 0, data, position, 2);
       
     }
+  
+  /**
+   * reads a string that has been encoded using a modified UTF-8 format from
+   * the given byte array at the specified position
+   * @param       data            a byte array
+   * @param       position        the position in data[]
+   * @param 	length 		the length of the string in bytes
+   *			         (=strlength +2)
+   * @exception   java.io.IOException I/O errors
+   * @return      the string
+   */
+  public static byte[] getbyteValue(int position, byte []data, int length)
+    throws java.io.IOException
+    {
+      byte tmp[] = new byte[length];  
+      
+      // copy the value from data array out to a tmp byte array
+      System.arraycopy (data, position, tmp, 0, length);
+      
+      return tmp;
+    }
 }

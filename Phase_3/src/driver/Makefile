@@ -5,10 +5,10 @@ BINPATH = $(JDKPATH)/bin
 JAVAC = $(JDKPATH)/bin/javac -classpath $(CLASSPATH)
 JAVA  = $(JDKPATH)/bin/java  -classpath $(CLASSPATH)
 
-# test buffer manager
+# test driver
 
-AppDriver:AppDriver.java
-	$(JAVAC) AppDriver.java
+AppDriverPhase3:AppDriverPhase3.java
+	$(JAVAC) AppDriverPhase3.java
 
-driver: AppDriver
-	$(JAVA) driver.AppDriver
+driver3: AppDriverPhase3
+	$(JAVA) driver.AppDriverPhase3

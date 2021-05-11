@@ -116,6 +116,22 @@ BTreeSortedSkyTest:BTreeSortedSkyTest.java
 btreesortskytest: BTreeSortedSkyTest
 	$(JAVA) tests.BTreeSortedSkyTest
 
+# test group by sort
+
+GroupBySortTest:GroupBySortTest.java
+	$(JAVAC) TestDriver.java GroupBySortTest.java
+
+groupbysorttest: GroupBySortTest
+	$(JAVA) tests.GroupBySortTest
+
+# test group by hash
+
+GroupByHashTest:GroupByHashTest.java
+	$(JAVAC) TestDriver.java GroupByHashTest.java
+
+groupbyhashtest: GroupByHashTest
+	$(JAVA) tests.GroupByHashTest
+
 
 
 

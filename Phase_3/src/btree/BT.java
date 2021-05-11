@@ -73,7 +73,7 @@ public class BT  implements GlobalConst{
 	 *@exception  KeyNotMatchException  key is neither StringKey nor  IntegerKey 
 	 *@exception IOException   error  from the lower layer  
 	 */  
-	protected final static int getKeyLength(KeyClass key) 
+	public final static int getKeyLength(KeyClass key) 
 			throws  KeyNotMatchException, 
 			IOException
 	{
@@ -118,7 +118,7 @@ public class BT  implements GlobalConst{
 	 *  nor NodeType.INDEX.
 	 *@exception IOException  error from the lower layer 
 	 */ 
-	protected final static int getKeyDataLength(KeyClass key, short pageType ) 
+	public final static int getKeyDataLength(KeyClass key, short pageType ) 
 			throws KeyNotMatchException, 
 			NodeNotMatchException, 
 			IOException
@@ -143,7 +143,7 @@ public class BT  implements GlobalConst{
 	 *  nor NodeType.INDEX.
 	 *@exception ConvertException  error from the lower layer 
 	 */
-	protected final static 
+	public final static 
 	KeyDataEntry getEntryFromBytes( byte[] from, int offset,  
 			int length, int keyType, short nodeType )
 					throws KeyNotMatchException, 
@@ -200,7 +200,7 @@ public class BT  implements GlobalConst{
 	 *@exception NodeNotMatchException entry.data is neither LeafData nor IndexData
 	 *@exception ConvertException error from the lower layer
 	 */
-	protected final static byte[] getBytesFromEntry( KeyDataEntry entry ) 
+	public final static byte[] getBytesFromEntry( KeyDataEntry entry ) 
 			throws KeyNotMatchException, 
 			NodeNotMatchException, 
 			ConvertException
@@ -364,9 +364,6 @@ public class BT  implements GlobalConst{
 			System.out.println("The Tree is Empty!!!");
 			return;
 		}
-
-		System.out.println("");
-		System.out.println("");
 		System.out.println("");
 		System.out.println("---------------The B+ Tree Structure---------------");
 
@@ -376,7 +373,6 @@ public class BT  implements GlobalConst{
 		_printTree(header.get_rootId(), "     ", 1, header.get_keyType());
 
 		System.out.println("--------------- End ---------------");
-		System.out.println("");
 		System.out.println("");
 	}
 
@@ -437,17 +433,13 @@ public class BT  implements GlobalConst{
 		}
 
 		System.out.println("");
-		System.out.println("");
-		System.out.println("");
 		System.out.println("---------------The B+ Tree Leaf Pages---------------");
 
 
 		_printAllLeafPages(header.get_rootId(), header.get_keyType());
 
 		System.out.println("");
-		System.out.println("");
 		System.out.println("------------- All Leaf Pages Have Been Printed --------");
-		System.out.println("");
 		System.out.println("");
 	}
 

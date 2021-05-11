@@ -1,6 +1,8 @@
 package iterator;
 
+import btree.KeyDataEntry;
 import btree.LeafData;
+import btree.ScanIteratorException;
 import bufmgr.*;
 import global.*;
 import heap.*;
@@ -8,31 +10,26 @@ import index.IndexException;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 
 import static tests.TestDriver.FAIL;
 import static tests.TestDriver.OK;
 
 public class SortFirstSky extends Iterator implements GlobalConst {
 
-    private static int _n_pages;
-    private static String _relationName;
-    private static int[] _pref_list;
-    private static int _pref_list_length;
-    private Iterator am1;
+    private  int _n_pages;
+    private  String _relationName;
+    private  int[] _pref_list;
+    private  int _pref_list_length;
     private Sort _sort;
-    private static AttrType[] _in;
-    private static short _len_in;
-    private static short[] _str_sizes;
-    private static Heapfile temp;
-    private static FileScan _tscan; // for scanning the temp heap file
+    private  AttrType[] _in;
+    private  short _len_in;
+    private  short[] _str_sizes;
+    private  Heapfile temp;
     boolean status = OK;
-    private static short REC_LEN = 32;
-    private static AttrType[] _attrType;
-    private static short[] _attrSize;
-    private static FldSpec[] _projlist;
-    //private static LinkedHashSet<Tuple> _window;
-    private static Tuple[] _window;
-    private static short _tuple_size;
+    private  AttrType[] _attrType;
+    private  Tuple[] _window;
+    private  short _tuple_size;
     private int counter;
     private BlockNestedLoopsSky bnls;
 
@@ -49,7 +46,6 @@ public class SortFirstSky extends Iterator implements GlobalConst {
         this.counter = 0;
 
         _attrType = new AttrType[_len_in];
-        _attrSize = new short[_len_in];
 
         for(int i=0; i<_attrType.length; i++){
             _attrType[i] = new AttrType(AttrType.attrReal);
@@ -58,21 +54,9 @@ public class SortFirstSky extends Iterator implements GlobalConst {
         _relationName = relationName;
         _pref_list = pref_list;
         _pref_list_length = pref_list_length;
-        _n_pages = n_pages; // (let one out for spare in case of temp heap)
-        // _window = new LinkedHashSet<Tuple>(_n_pages);
-        _window = new Tuple[(MINIBASE_PAGESIZE / _tuple_size) * (_n_pages/2)];
-        //_window = new Tuple[1];
-        // Sort "test1sortPref.in"
-        /*
-        try {
-            _sort = new SortPref(_attrType, (short) _len_in, _attrSize, _fscan,  new TupleOrder(TupleOrder.Descending), _pref_list, _pref_list_length, 900);
-        }
-        catch (Exception e) {
-            status = FAIL;
-            e.printStackTrace();
-        }
+        _n_pages = n_pages;
+        _window = new Tuple[5]; //new Tuple[(MINIBASE_PAGESIZE / _tuple_size) * (_n_pages/2)];
 
-         */
         _sort = (Sort)am1;
 
         try {
@@ -83,23 +67,10 @@ public class SortFirstSky extends Iterator implements GlobalConst {
             status = FAIL;
             e.printStackTrace();
         }
-        /*
-        System.out.println("----------   SORT FIRST SKY INIT VARS   -------------");
-        System.out.println("Attributes length: "+_len_in);
-        System.out.println("Relation name: "+_relationName);
-        System.out.println("Preferences list: "+ Arrays.toString(_pref_list));
-        System.out.println("Preferences list length: "+_pref_list_length);
-        System.out.println("Size of each tuple: "+_tuple_size);
-        System.out.println("Length of the buffer: "+_window.length);
-        System.out.println("-----------------------------------------------------");
-        */
+
         if ( status == OK ) {
             computeSkylines(_sort, _window);
 
-            // now check if temp_heap has records:
-            // empty window; outer_heap <- temp_heap
-            // delete outer loop
-            // run computeSkyLines(outer_heap_updated, window)
         }
 
     }
@@ -127,6 +98,16 @@ public class SortFirstSky extends Iterator implements GlobalConst {
         return null;
     }
 
+    @Override
+    public List<Tuple> get_next_aggr() throws Exception {
+        return null;
+    }
+
+    @Override
+    public KeyDataEntry get_next_key_data() throws ScanIteratorException {
+        return null;
+    }
+
     public boolean hasNext(){
         if(counter < _window.length)
             return _window[counter] != null;
@@ -136,9 +117,11 @@ public class SortFirstSky extends Iterator implements GlobalConst {
     @Override
     public void close() throws IOException, JoinsException, SortException, IndexException {
         try {
-            if(temp.getRecCnt() > 0)
+            if(temp.getRecCnt() > 0) {
                 bnls.close();
                 temp.deleteFile();
+            }
+            _sort.close();
         } catch (InvalidSlotNumberException e) {
             e.printStackTrace();
         } catch (InvalidTupleSizeException e) {
@@ -150,7 +133,6 @@ public class SortFirstSky extends Iterator implements GlobalConst {
         } catch (FileAlreadyDeletedException e) {
             e.printStackTrace();
         }
-        SystemDefs.JavabaseBM.limit_memory_usage(false, _n_pages);
 
     }
 
@@ -191,64 +173,8 @@ public class SortFirstSky extends Iterator implements GlobalConst {
         int count = 0;
 
         RID rid = null;
-        /*
+
         while (t != null) {
-
-            Tuple outer_tuple = new Tuple(t);
-            boolean isDominatedBy = false;
-            if(count == 0){
-                window[count] = outer_tuple;
-            }else {
-                // compare outer_tuple with all the window objects here
-                for (int i = 0; i < window.length; i++) {
-                    if (window[i] != null) {
-                        // if window[i] is not null
-                        // check if window_tuple dominates outer_tuple
-                        if (TupleUtils.Dominates(window[i], _attrType, outer_tuple, _attrType, _len_in, _str_sizes, _pref_list, _pref_list_length)) {
-                            // If tuple in heap file is dominated by at least one in main memory - simply move to the next element
-                            isDominatedBy = true;
-                            System.out.println("Heap tuple");
-                            outer_tuple.print(_in);
-                            System.out.println("Dominated by ");
-                            window[i].print(_in);
-                            System.out.println(" ");
-                            break;
-                        }
-                    }
-                }
-            }
-
-            if(isDominatedBy == false) {
-                System.out.println("Not dominated by any in the window");
-                if (count < window.length) {
-                    // move outer tuple to window
-                    // If tuple in outer loop dominates the window object - replace the window object
-                    window[count] = outer_tuple;
-                } else {
-                    // move outer tuple to heap
-                    try {
-                        rid = temp.insertRecord(outer_tuple.returnTupleByteArray());
-                    } catch (Exception e) {
-                        status = FAIL;
-                        e.printStackTrace();
-                    }
-                }
-            }
-
-            count++;
-
-            try {
-                t = sort.get_next();
-            }
-            catch (Exception e) {
-                status = FAIL;
-                e.printStackTrace();
-            }
-        }
-
-         */
-
-        while (t != null && count < window.length) {
 
             Tuple outer_tuple = new Tuple(t);
             boolean isDominatedBy = false;
@@ -260,66 +186,25 @@ public class SortFirstSky extends Iterator implements GlobalConst {
                     if (TupleUtils.Dominates(window[i], _attrType, outer_tuple, _attrType, _len_in, _str_sizes, _pref_list, _pref_list_length)) {
                         // If tuple in heap file is dominated by at least one in main memory - simply move to the next element
                         isDominatedBy = true;
-                        /*
-                        System.out.println("Heap tuple");
-                        outer_tuple.print(_in);
-                        System.out.println("Dominated by ");
-                        window[i].print(_in);
-                        System.out.println(" ");
-
-                         */
                         break;
                     }
                 }
             }
 
             if(!isDominatedBy) {
-                window[count++] = outer_tuple;
-            }
-
-            try {
-                t = sort.get_next();
-            }
-            catch (Exception e) {
-                status = FAIL;
-                e.printStackTrace();
-            }
-        }
-
-        while (t != null) {
-            boolean isDominatedBy = false;
-            Tuple htuple = new Tuple(t);
-
-            for (int i = 0; i < window.length; i++) {
-                if (window[i] != null) {
-                    // if window[i] is not null
-                    // check if window_tuple dominates outer_tuple
-                    if (TupleUtils.Dominates(window[i], _attrType, htuple, _attrType, _len_in, _str_sizes, _pref_list, _pref_list_length)) {
-                        // If tuple in heap file is dominated by at least one in main memory - simply move to the next element
-                        isDominatedBy = true;
-                        /*
-                        System.out.println("Heap tuple");
-                        htuple.print(_in);
-                        System.out.println("Dominated by ");
-                        window[i].print(_in);
-                        System.out.println(" ");
-
-                         */
-                        break;
+                if(count < window.length)
+                    window[count++] = outer_tuple;
+                else{
+                    try {
+                        rid = temp.insertRecord(outer_tuple.returnTupleByteArray());
+                    }
+                    catch (Exception e) {
+                        status = FAIL;
+                        e.printStackTrace();
                     }
                 }
             }
 
-            if(!isDominatedBy){
-                try {
-                    rid = temp.insertRecord(htuple.returnTupleByteArray());
-                }
-                catch (Exception e) {
-                    status = FAIL;
-                    e.printStackTrace();
-                }
-            }
-
             try {
                 t = sort.get_next();
             }
@@ -328,14 +213,7 @@ public class SortFirstSky extends Iterator implements GlobalConst {
                 e.printStackTrace();
             }
         }
-        /*
-        System.out.println("=====Window Skyline Tuples=====");
 
-        for(int i=0; i<window.length; i++){
-            if(window[i] != null)
-                window[i].print(_in);
-        }
-        */
         if( temp.getRecCnt() == 0)
             return;
 
@@ -347,30 +225,13 @@ public class SortFirstSky extends Iterator implements GlobalConst {
         bnls = new BlockNestedLoopsSky(
                 _in,
                 _in.length,
-                null,
+                _str_sizes,
                 null,
                 "sortFirstSkyTemp.in",
                 _pref_list,
                 _pref_list_length,
                 _n_pages/2
         );
-
-
-        System.out.println("=====Temp heap Skyline Tuples=====");
-        /*
-        Tuple skl;
-        try {
-            skl = bnls.get_next();
-            while (skl!=null) {
-                skl.print(_in);
-                skl = bnls.get_next();
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        */
-        //bnls.close();
 
         return;
     }

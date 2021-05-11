@@ -1,8 +1,10 @@
 package btree;
 
 import java.io.IOException;
+import java.util.List;
 
 import bufmgr.PageNotReadException;
+import driver.BtreeGeneratorUtil;
 import global.AttrType;
 import global.GlobalConst;
 import global.RID;
@@ -19,6 +21,7 @@ import iterator.JoinsException;
 import iterator.LowMemException;
 import iterator.PredEvalException;
 import iterator.SortException;
+import iterator.TupleUtils;
 import iterator.TupleUtilsException;
 import iterator.UnknowAttrType;
 import iterator.UnknownKeyTypeException;
@@ -61,7 +64,7 @@ public class BTreeSky extends Iterator implements GlobalConst {
 			String relationName, int[] pref_list, int pref_length_list, IndexFile[] index_file_list,
 			int n_pages) throws Exception {
 
-
+		this.prunedHeapFileName = System.currentTimeMillis()+".pruned";
 		this.relationName = relationName;
 		this.btreeindexes = (BTreeFile[]) index_file_list;
 
@@ -102,13 +105,14 @@ public class BTreeSky extends Iterator implements GlobalConst {
 				//System.out.println("getNumUnpinnedBuffers "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
 			}
 		}
+		KeyClass firstSkyEleKey = null; int btreeWithFirstSkyEle = -1;
 		RID firstSkyLineElementRID = null;
 		boolean stopBtreeSkyLoop =false;
 		for (int skyLoopCtr = 0; /*skyLoopCtr <= 5 &&*/ stopBtreeSkyLoop  == false; skyLoopCtr++) {
 
 			// loop over full index scans for each btree
 			for (int i = 0; i < numberOfBtreeIndexes; i++) {
-				KeyDataEntry scannedVal = fullBtreeIndexScans[i].get_next();
+				KeyDataEntry scannedVal = fullBtreeIndexScans[i].get_next_entry();
 				if (scannedVal == null) {
 					System.out.println("got null");
 					break;
@@ -140,6 +144,9 @@ public class BTreeSky extends Iterator implements GlobalConst {
 				if (foundCount == (numberOfBtreeIndexes - 1)) {
 					stopBtreeSkyLoop = true; // stop the btree skyline loop
 					firstSkyLineElementRID = rid;
+					firstSkyEleKey = scannedVal.key;
+					btreeWithFirstSkyEle = i;
+//					System.out.println("firstSkyEleKey: "+firstSkyEleKey+" btreeWithFirstSkyEle: "+btreeWithFirstSkyEle);
 					if (debug) {
 						System.out.println("firstSkyLineElement: " + firstSkyLineElementRID);
 					}
@@ -161,11 +168,35 @@ public class BTreeSky extends Iterator implements GlobalConst {
 
 		//open main relation data file
 		Heapfile originalDataHeapFile = new Heapfile(relationName);
-		firstSkyLineElement = getEmptyTuple();
+		firstSkyLineElement = TupleUtils.getEmptyTuple(attrType, t1_str_sizes);
 		firstSkyLineElement.tupleCopy(originalDataHeapFile.getRecord(firstSkyLineElementRID));
 
 		//create heapfile with all elements of the all the arrays of the indexes
+		
+		//BtreeGeneratorUtil.scanBtree(relationName,btreeindexes[btreeWithFirstSkyEle].dbname, attrType, t1_str_sizes,5,btreeWithFirstSkyEle);
+		//handling duplicates on skyline
+		//do handle duplicates open a scan on btree which found the first sky eleemnt
+		// keep scanning till key is same as key of first sky element
+		BTFileScan bla = btreeindexes[btreeWithFirstSkyEle].new_scan(firstSkyEleKey, null);
+		for (boolean flag = false; flag == false; ) {
+			KeyDataEntry scannedVal = bla.get_next();
+			if (scannedVal == null) {
+				//System.out.println("got null");
+				flag = true;
+				break;
+			}
 
+			RID rid = ((LeafData) scannedVal.data).getData();
+			KeyClass key = scannedVal.key;
+			//System.out.println("key::::::::::::::::;; "+key+" sky key:"+firstSkyEleKey);
+			if (BT.keyCompare(key, firstSkyEleKey) == 0) {
+				//System.out.println("heuheuehuehueheu: " + key + " rid: " + rid);
+				setArr[btreeWithFirstSkyEle].add(rid);
+			} else {
+				flag = true;
+			}
+		}
+		bla.DestroyBTreeFileScan();
 		//create a heapfile which will store the pruned data
 		Heapfile prunedDataFile = new Heapfile(prunedHeapFileName );
 
@@ -222,7 +253,7 @@ public class BTreeSky extends Iterator implements GlobalConst {
 
 		}
 		
-		System.out.println("Will now run Block Nested Loop Skyline on \n Pruned DataFile record count: "+prunedDataFile.getRecCnt());
+//		System.out.println("Will now run Block Nested Loop Skyline on \n Pruned DataFile record count: "+prunedDataFile.getRecCnt());
 		
 		//run block nested loop skyline on the pruned data now
 		
@@ -233,35 +264,17 @@ public class BTreeSky extends Iterator implements GlobalConst {
 			setArr[i].close();
 			
 		}
+		insertCheckerList.close();
 		
 		if(debug) {
 			System.out.println("getNumUnpinnedBuffers "+SystemDefs.JavabaseBM.getNumUnpinnedBuffers());
 			System.out.println("getNumBuffers "+SystemDefs.JavabaseBM.getNumBuffers());
 		}
 		//unlimit the buffer manager here, it will be limited again in BNL
-		SystemDefs.JavabaseBM.limit_memory_usage(false, this.n_pages);
-		SystemDefs.JavabaseBM.flushAllPages();
+		//SystemDefs.JavabaseBM.limit_memory_usage(false, this.n_pages);
+		//SystemDefs.JavabaseBM.flushAllPages();
 		Iterator bnlIterator = null;
 		blockNestedLoopSkyline = new BlockNestedLoopsSky(attrType, attrType.length, t1_str_sizes, bnlIterator, prunedHeapFileName, pref_list, pref_length_list, n_pages);
-	}
-
-
-	public static void main(String[] args) {
-		System.out.println("start");
-		float aa = (float) 0.356314137;
-		System.out.println(aa+" " );
-
-
-	}
-
-	//util method to create an empty tuple of reqd specs
-	private Tuple getEmptyTuple() throws InvalidTypeException, InvalidTupleSizeException, IOException {
-		Tuple t = new Tuple();
-		t.setHdr((short) attrType.length, attrType, t1_str_sizes);
-		int size = t.size();
-		t = new Tuple(size);
-		t.setHdr((short) attrType.length, attrType, t1_str_sizes);
-		return t;
 	}
 
 
@@ -282,7 +295,26 @@ public class BTreeSky extends Iterator implements GlobalConst {
 
 	@Override
 	public void close() throws IOException, JoinsException, SortException, IndexException {
+		try {
+			new Heapfile(prunedHeapFileName).deleteFile();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 		blockNestedLoopSkyline.close();
+	}
+
+
+	@Override
+	public List<Tuple> get_next_aggr() throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+
+	@Override
+	public KeyDataEntry get_next_key_data() throws ScanIteratorException {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

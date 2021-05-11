@@ -22,7 +22,7 @@ import heap.*;
    * magic0, rootId, keyType, maxKeySize, deleteFashion,
    * and type(=NodeType.BTHEAD)
    */
-class BTreeHeaderPage extends HFPage {
+public class BTreeHeaderPage extends HFPage {
   
   void setPageId(PageId pageno) 
     throws IOException 
@@ -30,7 +30,7 @@ class BTreeHeaderPage extends HFPage {
       setCurPage(pageno);
     }
   
-  PageId getPageId()
+  public PageId getPageId()
     throws IOException
     {
       return getCurPage();
@@ -39,7 +39,7 @@ class BTreeHeaderPage extends HFPage {
   /** set the magic0
    *@param magic  magic0 will be set to be equal to magic  
    */
-  void set_magic0( int magic ) 
+  public void set_magic0( int magic ) 
     throws IOException 
     {
       setPrevPage(new PageId(magic)); 
@@ -56,7 +56,7 @@ class BTreeHeaderPage extends HFPage {
   
   /** set the rootId
    */
-  void  set_rootId( PageId rootID )
+  public void  set_rootId( PageId rootID )
     throws IOException 
     {
       setNextPage(rootID); 
@@ -64,7 +64,7 @@ class BTreeHeaderPage extends HFPage {
   
   /** get the rootId
    */
-  PageId get_rootId()
+  public PageId get_rootId()
     throws IOException
     { 
       return getNextPage();
@@ -72,7 +72,7 @@ class BTreeHeaderPage extends HFPage {
   
   /** set the key type
    */  
-  void set_keyType( short key_type )
+  public void set_keyType( short key_type )
     throws IOException 
     {
       setSlot(3, (int)key_type, 0); 
@@ -80,7 +80,7 @@ class BTreeHeaderPage extends HFPage {
   
   /** get the key type
    */
-  short get_keyType() 
+  public short get_keyType() 
     throws IOException
     {
       return   (short)getSlotLength(3);
@@ -88,7 +88,7 @@ class BTreeHeaderPage extends HFPage {
   
   /** get the max keysize
    */
-  void set_maxKeySize(int key_size ) 
+  public void set_maxKeySize(int key_size ) 
     throws IOException
     {
       setSlot(1, key_size, 0); 
@@ -96,7 +96,7 @@ class BTreeHeaderPage extends HFPage {
   
   /** set the max keysize
    */
-  int get_maxKeySize() 
+  public int get_maxKeySize() 
     throws IOException
     {
       return getSlotLength(1);
@@ -104,7 +104,7 @@ class BTreeHeaderPage extends HFPage {
   
   /** set the delete fashion
    */
-  void set_deleteFashion(int fashion )
+  public void set_deleteFashion(int fashion )
     throws IOException
     {
       setSlot(2, fashion, 0);
@@ -112,7 +112,7 @@ class BTreeHeaderPage extends HFPage {
   
   /** get the delete fashion
    */
-  int get_deleteFashion() 
+  public int get_deleteFashion() 
     throws IOException
     { 
       return getSlotLength(2); 
@@ -159,6 +159,23 @@ class BTreeHeaderPage extends HFPage {
       catch (Exception e) {
 	throw new ConstructPageException(e, "construct header page failed");
       }
-    }  
+    } 
+  
+  /** get the page no. of the last btree leaf
+   */
+  public int get_maxPageno() 
+    throws IOException
+    {
+      return   (short)getSlotLength(4);
+    }
+  
+  /** set the page no. of the last btree leaf
+   */
+  public void set_maxPageno(PageId pageno ) 
+    throws IOException
+    {
+	  //System.out.println("Updating the max key's header page in btree "+ pageno.pid);
+      setSlot(4, pageno.pid, 0); 
+    }
   
 } // end of BTreeHeaderPage

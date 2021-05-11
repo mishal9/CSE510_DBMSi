@@ -2,9 +2,15 @@ package iterator;
 
 import heap.*;
 import global.*;
+import hashindex.*;
 import java.io.*;
 import java.lang.*;
 import java.util.Arrays;
+
+import btree.FloatKey;
+import btree.IntegerKey;
+import btree.KeyClass;
+import btree.StringKey;
 
 /**
  * some useful method when processing Tuple
@@ -34,12 +40,15 @@ public class TupleUtils {
 		int t1_i, t2_i;
 		float t1_r, t2_r;
 		String t1_s, t2_s;
-
+		//System.out.println("field number "+t1_fld_no);
+		//System.out.println("comparing for attrtype"+fldType.attrType);
 		switch (fldType.attrType) {
 		case AttrType.attrInteger: // Compare two integers.
 			try {
 				t1_i = t1.getIntFld(t1_fld_no);
 				t2_i = t2.getIntFld(t2_fld_no);
+				//System.out.println(t1_i);
+				//System.out.println(t2_i);
 			} catch (FieldNumberOutOfBoundException e) {
 				throw new TupleUtilsException(e, "FieldNumberOutOfBoundException is caught by TupleUtils.java");
 			}
@@ -85,11 +94,24 @@ public class TupleUtils {
 		}
 	}
 
+	public static Tuple getEmptyTuple(AttrType[] attrType, short[] t1_str_sizes) throws InvalidTypeException, InvalidTupleSizeException, IOException {
+		Tuple t = new Tuple();
+		t.setHdr((short) attrType.length, attrType, t1_str_sizes);
+		int size = t.size();
+		t = new Tuple(size);
+		t.setHdr((short) attrType.length, attrType, t1_str_sizes);
+		return t;
+	}
+	
 	public static boolean Dominates(Tuple t1, AttrType[] type1, Tuple t2, AttrType[] type2, short len_in,
 			short[] str_sizes, int[] pref_list, int pref_list_length)
 			throws IOException, TupleUtilsException, UnknowAttrType, FieldNumberOutOfBoundException {
+		//System.out.println(Arrays.toString(pref_list));
+		//System.out.println(Arrays.toString(str_sizes));
+		//t1.print(type1);
+		//t2.print(type2);
 		for (int i = 0; i < pref_list_length; i++) {
-			if (CompareTupleWithTuple(type1[i], t1, pref_list[i], t2, pref_list[i]) != 1)
+			if (CompareTupleWithTuple(type1[pref_list[i]-1], t1, pref_list[i], t2, pref_list[i]) != 1)
 				return false;
 		}
 		return true;
@@ -374,5 +396,114 @@ public class TupleUtils {
 			throw new TupleUtilsException(e, "setHdr() failed");
 		}
 		return res_str_sizes;
+	}
+	
+	public static KeyClass get_key_from_tuple(Tuple tuple, AttrType[] attrtype, int key_index) throws FieldNumberOutOfBoundException, IOException {
+		KeyClass key = null;
+		if ( attrtype[key_index-1].attrType == AttrType.attrInteger ) {
+			key = new IntegerKey( tuple.getIntFld(key_index) );
+		}
+		if ( attrtype[key_index-1].attrType == AttrType.attrReal ) {
+			key = new FloatKey( tuple.getFloFld(key_index) );
+		}
+		else {
+			key = new StringKey( tuple.getStrFld(key_index) );
+		}
+		return key;
+	}
+	
+	public static KeyClass get_key_from_tuple_attrtype( Tuple t, AttrType attr_type, int attr_number) throws FieldNumberOutOfBoundException, IOException {
+		KeyClass key = null;
+		switch (attr_type.attrType) {
+			case AttrType.attrInteger:
+				key = new IntegerKey(t.getIntFld(attr_number));
+				break;
+			case AttrType.attrString:
+				key = new StringKey(t.getStrFld(attr_number));
+				break;
+			case AttrType.attrReal:
+				key = new FloatKey(t.getFloFld(attr_number));
+				break;
+			default:
+				System.out.println("Wrong key information");
+				break;
+		}
+		return key;
+	}
+	
+	public static KeyClass get_key_from_key( KeyClass orig_key, AttrType attr_type) throws FieldNumberOutOfBoundException, IOException {
+		KeyClass key = null;
+		switch (attr_type.attrType) {
+			case AttrType.attrInteger:
+				key = new IntegerKey( ((IntegerKey)orig_key).getKey() );
+				break;
+			case AttrType.attrString:
+				key = new StringKey( ((StringKey)orig_key).getKey() );
+				break;
+			case AttrType.attrReal:
+				key = new FloatKey( ((FloatKey)orig_key).getKey() );
+				break;
+			default:
+				System.out.println("Wrong key information");
+				break;
+		}
+		return key;
+	}
+	
+	public static KeyClass get_key_from_key_type( KeyClass orig_key, Tuple t, int attr_number) throws FieldNumberOutOfBoundException, IOException {
+		KeyClass key = null;
+		if ( orig_key instanceof IntegerKey ) {
+			key = new IntegerKey(t.getIntFld(attr_number));
+		}
+		else if ( orig_key instanceof FloatKey ) {
+			key = new FloatKey(t.getFloFld(attr_number));
+		}
+		else if ( orig_key instanceof StringKey ) {
+			key = new StringKey(t.getStrFld(attr_number));
+		}
+		else {
+			System.out.println("Something is wrong in get key from key type");
+		}
+		return key;
+	}
+	
+	public static HashKey get_hashkey_from_tuple_attrtype( Tuple t, AttrType attr_type, int attr_number) throws FieldNumberOutOfBoundException, IOException {
+		HashKey key = null;
+		switch (attr_type.attrType) {
+			case AttrType.attrInteger:
+				key = new HashKey(t.getIntFld(attr_number));
+				break;
+			case AttrType.attrString:
+				key = new HashKey(t.getStrFld(attr_number));
+				break;
+			case AttrType.attrReal:
+				key = new HashKey(t.getFloFld(attr_number));
+				break;
+			default:
+				System.out.println("Wrong key information");
+				break;
+		}
+		return key;
+	}
+	
+	public static boolean are_keys_equal( KeyClass key1, KeyClass key2) {
+		if ( key1 instanceof IntegerKey ) {
+//			System.out.println("key1 "+((IntegerKey) key1).getKey() );
+//			System.out.println("Key2 "+ ((IntegerKey) key2).getKey());
+			if ( ((IntegerKey) key1).getKey().equals( ((IntegerKey) key2).getKey() ) ) {
+				return true;
+			}
+		}
+		else if ( key1 instanceof FloatKey ) {
+			if ( ((FloatKey) key1).getKey().equals( ((FloatKey) key2).getKey() ) ) {
+				return true;
+			}
+		}
+		else if ( key1 instanceof StringKey ) {
+			if ( ((StringKey) key1).getKey().equals( ((StringKey) key2).getKey() ) ) {
+				return true;
+			}
+		}
+		return false;
 	}
 }

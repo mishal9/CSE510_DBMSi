@@ -22,7 +22,7 @@ import heap.*;
 public class BTSortedPage  extends HFPage{
 
   
-  int keyType; //it will be initialized in BTFile
+  protected int keyType; //it will be initialized in BTFile
   
   
   /** pin the page with pageno, and get the corresponding SortedPage
@@ -92,7 +92,7 @@ public class BTSortedPage  extends HFPage{
    *@return its rid where the entry was inserted; null if no space left.
    *@exception  InsertRecException error when insert
    */
-   protected RID insertRecord( KeyDataEntry entry)
+   public RID insertRecord( KeyDataEntry entry)
           throws InsertRecException 
    {
      int i;
@@ -192,13 +192,54 @@ public class BTSortedPage  extends HFPage{
    *@param return the number of records.
    *@exception IOException I/O errors
    */
-  protected int numberOfRecords() 
+  public int numberOfRecords() 
     throws IOException
     {
       return getSlotCnt();
     }
+  
+  /**Iterators.  
+	 * One of the two functions: get_first and get_next which  provide an
+	 * iterator interface to the records on a BTIndexPage.
+	 *@param rid It will be modified and next rid will be passed out by itself.
+	 *         Input and Output parameter.
+	 *@return return the next KeyDataEntry in the index page. 
+	 *null if no more record
+	 *@exception IteratorException iterator error
+	 */
+	public KeyDataEntry getLast(RID rid)
+			throws  IteratorException 
+	{
+		KeyDataEntry  entry; 
+		int i;
+		try{
+			rid.slotNo = getSlotCnt()-1; //must before any return;
+			rid.pageNo = getCurPage();
+
+			if ( rid.slotNo >= getSlotCnt())
+			{
+				return null;
+			}
+
+			entry=BT.getEntryFromBytes(getpage(),getSlotOffset(getSlotCnt()-1), 
+					getSlotLength(getSlotCnt()-1),
+					keyType, NodeType.INDEX);
+
+			return entry;
+		} 
+		catch (Exception e) {
+			throw new IteratorException(e, "Get next entry failed");
+		}
+	} // end of getNext
+	
+	public RID lastRecord() {
+		RID rid = null;
+		try {
+			rid = new RID(getCurPage(), getSlotCnt()-1);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return rid;
+	}
 };
-
-
-
-

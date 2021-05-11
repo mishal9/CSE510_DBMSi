@@ -38,6 +38,7 @@ db:
 	make -C index
 	make -C iterator
 	make -C driver
+	make -C hashindex
 
 doc:
 	$(JAVADOC) $(DOCFILES)
@@ -49,3 +50,10 @@ test:
 clean:
 	\rm -f $(CLASSPATH)/*.class *~ \#* core $(JARFILES) TRACE
 
+
+Iterator:
+	make -C iterator
+hash:
+	make -C hashindex
+Driver:
+	make -C driver
