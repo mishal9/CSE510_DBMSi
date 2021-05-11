@@ -1,6 +1,7 @@
 package hashindex;
 
 import btree.*;
+import diskmgr.PCounter;
 import global.AttrType;
 import global.GlobalConst;
 import global.PageId;
@@ -119,6 +120,30 @@ public class HIndex implements GlobalConst {
 			HashUtils.log("after split splitPointer: " + splitPointer);
 
 		}
+	}
+	
+	public void increaseBucets(int target) throws Exception {
+		int buc = headerPage.get_NumberOfBuckets();
+		
+		for(int i =buc;i<target;i++) {
+			//System.out.println("Adding a bucket page to HIndex: "+ i);
+
+			headerPage.set_NumberOfBuckets(headerPage.get_NumberOfBuckets() + 1);
+			// rehash element in bucket splitPointer
+
+			int splitPointer = headerPage.get_SplitPointerLocation();
+			rehashBucket(headerPage.get_NthBucketName(splitPointer ), headerPage.get_H0Deapth() + 1);
+			splitPointer++;
+			if (splitPointer == (1 << headerPage.get_H0Deapth())) {
+				splitPointer = 0;
+				headerPage.set_H0Deapth(headerPage.get_H0Deapth() + 1);
+				HashUtils.log("resetting split pointer to 0 ");
+			}
+			headerPage.set_SplitPointerLocation(splitPointer);
+			HashUtils.log("after split splitPointer: " + splitPointer);
+
+		}
+		PCounter.initialize();
 	}
 
 	/**

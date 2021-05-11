@@ -207,7 +207,7 @@ public class HashJoin extends Iterator {
         	inner_h = new HIndex(inner_hash_index_name);
         }
         n_win1 = inner_h.get_number_of_buckets();
-        inner_h.close();
+//        inner_h.close();
         
         // create heap file for outer relation and create hash index on it.
         if ( outer_table == null ) {
@@ -248,26 +248,35 @@ public class HashJoin extends Iterator {
         	outer_h = new HIndex(outer_hash_index_name);
         }
         n_win2 = outer_h.get_number_of_buckets();
-        int win = Math.min(n_win1, n_win2);
+
+//        outer_h.close();
+        System.out.println("hash index info");
+        int inc = inner_h.headerPage.get_EntriesCount();
+        int outc = outer_h.headerPage.get_EntriesCount();
+        int inbuc = inner_h.headerPage.get_NumberOfBuckets();
+        int oubuc = outer_h.headerPage.get_NumberOfBuckets();
+        //System.out.println(" inc:"+inner_h.headerPage.get_EntriesCount()+" outc:"+outer_h.headerPage.get_EntriesCount());
+       // System.out.println(" inbuc:"+inner_h.headerPage.get_NumberOfBuckets()+" oubuc:"+outer_h.headerPage.get_NumberOfBuckets());
+        //increase buckets of the index with less buckets to max buckets
+        
+        if(inbuc>oubuc) {
+        	outer_h.increaseBucets(inbuc);
+        }else {
+        	 inner_h.increaseBucets(oubuc);
+        }
+        //System.out.println(" inc:"+inner_h.headerPage.get_EntriesCount()+" outc:"+outer_h.headerPage.get_EntriesCount());
+       // System.out.println(" inbuc:"+inner_h.headerPage.get_NumberOfBuckets()+" oubuc:"+outer_h.headerPage.get_NumberOfBuckets());
+        inner_h.close();
         outer_h.close();
-        System.out.println(n_win1 + " " + n_win2);
+
         n_current = 0;
-        if(win < n_win1)
-            outer_hiws = new HashIndexWindowedScan(new IndexType(IndexType.Hash), outer_temp_heap_name, outer_hash_index_name,
-                                                _in1, t1_str_sizes, in1_len, outer_projection.length, outer_projection,
-                                        null, fld1, win);
-        else
-            outer_hiws = new HashIndexWindowedScan(new IndexType(IndexType.Hash), outer_temp_heap_name, outer_hash_index_name,
-                    _in1, t1_str_sizes, in1_len, outer_projection.length, outer_projection,
-                    null, fld1, n_win1);
-        if(win < n_win2)
-            inner_hiws = new HashIndexWindowedScan(new IndexType(IndexType.Hash), relationName, inner_hash_index_name,
-                                                _in2, t2_str_sizes, in2_len, inner_projection.length, inner_projection,
-                                        null, fld2, win);
-        else
-            inner_hiws = new HashIndexWindowedScan(new IndexType(IndexType.Hash), relationName, inner_hash_index_name,
-                    _in2, t2_str_sizes, in2_len, inner_projection.length, inner_projection,
-                    null, fld2, n_win2);
+n_current = 0;
+outer_hiws = new HashIndexWindowedScan(new IndexType(IndexType.Hash), outer_temp_heap_name, outer_hash_index_name,
+                                        _in1, t1_str_sizes, in1_len, outer_projection.length, outer_projection,
+                                null, fld1, false);
+inner_hiws = new HashIndexWindowedScan(new IndexType(IndexType.Hash), relationName, inner_hash_index_name,
+                                        _in2, t2_str_sizes, in2_len, inner_projection.length, inner_projection,
+                                null, fld2, false);
     }
 
     /**
